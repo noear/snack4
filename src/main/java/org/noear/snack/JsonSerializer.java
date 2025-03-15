@@ -6,13 +6,9 @@ import java.io.Writer;
 import java.util.Map;
 
 /**
- * JSON 序列化器，用于将 ONode 转为 JSON 字符串
+ * 高性能 JSON 序列化器
  */
 public class JsonSerializer {
-
-    /**
-     * 将 ONode 转为 JSON 字符串
-     */
     public static String toJsonString(ONode node) {
         try (StringWriter writer = new StringWriter()) {
             serialize(node, writer);
@@ -22,9 +18,6 @@ public class JsonSerializer {
         }
     }
 
-    /**
-     * 将 ONode 序列化到 Writer
-     */
     public static void serialize(ONode node, Writer writer) throws IOException {
         switch (node.getType()) {
             case ONode.TYPE_OBJECT:
@@ -72,7 +65,7 @@ public class JsonSerializer {
     }
 
     private static String escapeString(String s) {
-        StringBuilder sb = new StringBuilder(s.length() * 2); // 预分配容量
+        StringBuilder sb = new StringBuilder(s.length() * 2);
         for (char c : s.toCharArray()) {
             switch (c) {
                 case '"': sb.append("\\\""); break;

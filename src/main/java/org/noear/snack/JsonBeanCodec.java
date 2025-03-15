@@ -1,20 +1,20 @@
 package org.noear.snack;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Java Bean 和 ONode 双向转换器
+ * 高性能 Java Bean 和 JSON 双向转换器
  */
 public class JsonBeanCodec {
-    private static final Map<Class<?>, List<Field>> FIELD_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<String, MethodHandle>> FIELD_HANDLE_CACHE = new ConcurrentHashMap<>();
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     /**
      * 将 ONode 转为指定类型的 Java Bean
@@ -25,7 +25,7 @@ public class JsonBeanCodec {
         }
         try {
             return convertNodeToBean(node, clazz);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException("Failed to convert ONode to Bean", e);
         }
     }
@@ -39,29 +39,31 @@ public class JsonBeanCodec {
         }
         try {
             return convertBeanToNode(bean);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new RuntimeException("Failed to convert Bean to ONode", e);
         }
     }
 
-    private static <T> T convertNodeToBean(ONode node, Class<T> clazz) throws Exception {
+    private static <T> T convertNodeToBean(ONode node, Class<T> clazz) throws Throwable {
         T bean = clazz.getDeclaredConstructor().newInstance();
-        for (Field field : getFields(clazz)) {
-            String fieldName = field.getName();
+        Map<String, MethodHandle> fieldHandles = getFieldHandles(clazz);
+        for (Map.Entry<String, MethodHandle> entry : fieldHandles.entrySet()) {
+            String fieldName = entry.getKey();
             if (node.hasKey(fieldName)) {
                 ONode fieldNode = node.get(fieldName);
-                Object value = convertValue(fieldNode, field.getGenericType());
-                field.set(bean, value);
+                Object value = convertValue(fieldNode, entry.getValue().type().returnType());
+                entry.getValue().invoke(bean, value);
             }
         }
         return bean;
     }
 
-    private static ONode convertBeanToNode(Object bean) throws Exception {
+    private static ONode convertBeanToNode(Object bean) throws Throwable {
         ONode node = new ONode(new HashMap<>());
-        for (Field field : getFields(bean.getClass())) {
-            String fieldName = field.getName();
-            Object value = field.get(bean);
+        Map<String, MethodHandle> fieldHandles = getFieldHandles(bean.getClass());
+        for (Map.Entry<String, MethodHandle> entry : fieldHandles.entrySet()) {
+            String fieldName = entry.getKey();
+            Object value = entry.getValue().invoke(bean);
             node.set(fieldName, convertValueToNode(value));
         }
         return node;
@@ -151,14 +153,20 @@ public class JsonBeanCodec {
         return node;
     }
 
-    private static List<Field> getFields(Class<?> clazz) {
-        return FIELD_CACHE.computeIfAbsent(clazz, k -> {
-            List<Field> fields = new ArrayList<>();
+    private static Map<String, MethodHandle> getFieldHandles(Class<?> clazz) {
+        return FIELD_HANDLE_CACHE.computeIfAbsent(clazz, k -> {
+            Map<String, MethodHandle> fieldHandles = new HashMap<>();
             for (Field field : k.getDeclaredFields()) {
                 field.setAccessible(true);
-                fields.add(field);
+                try {
+                    MethodHandle setter = LOOKUP.unreflectSetter(field);
+                    MethodHandle getter = LOOKUP.unreflectGetter(field);
+                    fieldHandles.put(field.getName(), setter);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Failed to create MethodHandle for field: " + field.getName(), e);
+                }
             }
-            return fields;
+            return fieldHandles;
         });
     }
 }
