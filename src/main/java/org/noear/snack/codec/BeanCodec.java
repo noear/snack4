@@ -10,6 +10,17 @@ import java.util.stream.Collectors;
 public class BeanCodec {
     private static final Map<Class<?>, Map<String, Field>> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Codec<?>> CODEC_REGISTRY = new ConcurrentHashMap<>();
+
+    // 注册自定义编解码器
+    public static <T> void registerCodec(Class<T> clazz, Codec<T> codec) {
+        CODEC_REGISTRY.put(clazz, codec);
+    }
+
+    // 移除自定义编解码器
+    public static void unregisterCodec(Class<?> clazz) {
+        CODEC_REGISTRY.remove(clazz);
+    }
 
     // 序列化：对象转ONode
     public static ONode serialize(Object bean) {
@@ -52,6 +63,14 @@ public class BeanCodec {
             return new ONode(null);
         }
 
+        // 优先使用自定义编解码器
+        Codec<Object> codec = (Codec<Object>) CODEC_REGISTRY.get(bean.getClass());
+        if (codec != null) {
+            ONode node = new ONode();
+            codec.encode(node, bean);
+            return node;
+        }
+
         // 循环引用检测
         if (visited.containsKey(bean)) {
             throw new StackOverflowError("Circular reference detected: " + bean.getClass().getName());
@@ -75,6 +94,14 @@ public class BeanCodec {
     private static ONode convertValueToNode(Object value, Map<Object, Object> visited) throws Exception {
         if (value == null) {
             return new ONode(null);
+        }
+
+        // 优先使用自定义编解码器
+        Codec<Object> codec = (Codec<Object>) CODEC_REGISTRY.get(value.getClass());
+        if (codec != null) {
+            ONode node = new ONode();
+            codec.encode(node, value);
+            return node;
         }
 
         if (value instanceof ONode) {
@@ -120,6 +147,12 @@ public class BeanCodec {
 
     @SuppressWarnings("unchecked")
     private static <T> T convertNodeToBean(ONode node, Class<T> clazz, Map<Object, Object> visited) throws Exception {
+        // 优先使用自定义编解码器
+        Codec<T> codec = (Codec<T>) CODEC_REGISTRY.get(clazz);
+        if (codec != null) {
+            return codec.decode(node);
+        }
+
         Constructor<T> constructor = clazz.getDeclaredConstructor();
         constructor.setAccessible(true);
         T bean = constructor.newInstance();
@@ -159,6 +192,12 @@ public class BeanCodec {
 
         // 处理基本类型
         Class<?> clazz = (Class<?>) (targetType instanceof Class ? targetType : ((ParameterizedType) targetType).getRawType());
+
+        // 优先使用自定义编解码器
+        Codec<?> codec = CODEC_REGISTRY.get(clazz);
+        if (codec != null) {
+            return codec.decode(node);
+        }
 
         if (clazz == String.class) return node.getString();
         if (clazz == Integer.class || clazz == int.class) return node.getInt();
