@@ -6,7 +6,7 @@ import org.noear.snack.ONode;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 
-public class JsonBeanCodecTest {
+public class JsonBeanCodecSimpleTest {
 
     // 测试用例 1: 基本数据类型转换
     public static class SimpleBean {
