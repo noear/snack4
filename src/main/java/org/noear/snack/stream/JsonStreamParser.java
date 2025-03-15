@@ -1,10 +1,9 @@
 package org.noear.snack.stream;
 
 import org.noear.snack.ONode;
-import org.noear.snack.codec.JsonParser;
+import org.noear.snack.codec.JsonReader;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.Map;
 
 /**
@@ -20,9 +19,9 @@ public class JsonStreamParser {
         void value(ONode value) throws IOException;
     }
 
-    private final JsonParser parser;
+    private final JsonReader parser;
 
-    public JsonStreamParser(JsonParser parser) {
+    public JsonStreamParser(JsonReader parser) {
         this.parser = parser;
     }
 

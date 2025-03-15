@@ -2,7 +2,7 @@ package features;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.*;
-import org.noear.snack.codec.JsonParser;
+import org.noear.snack.codec.JsonReader;
 import org.noear.snack.exception.SchemaException;
 import org.noear.snack.schema.validator.SchemaValidator;
 
@@ -25,7 +25,7 @@ public class BaseTest {
                 + "}"
                 + "}";
 
-        ONode node =  JsonParser.parse(json);
+        ONode node =  JsonReader.parse(json);
 
         // 验证解析结果
         System.out.println(node.get("name").getString()); // Alice
@@ -51,11 +51,11 @@ public class BaseTest {
         System.out.println(schemaJson);
 
         // 数据校验
-        JsonParser parser = new JsonParser(new StringReader(schemaJson));
+        JsonReader parser = new JsonReader(new StringReader(schemaJson));
         ONode schemaNode = parser.parse();
         SchemaValidator validator = new SchemaValidator(schemaNode);
 
-        ONode data = new JsonParser(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).parse();
+        ONode data = new JsonReader(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).parse();
         try {
             validator.validate(data);
         } catch (SchemaException e) {

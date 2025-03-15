@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class JsonParser {
+public class JsonReader {
     private static final int BUFFER_SIZE = 8192;
     private final Reader reader;
     private final char[] buffer = new char[BUFFER_SIZE];
@@ -23,11 +23,11 @@ public class JsonParser {
 
     private final Options opts;
 
-    public JsonParser(Reader reader) {
+    public JsonReader(Reader reader) {
         this(reader, Options.def());
     }
 
-    public JsonParser(Reader reader, Options opts) {
+    public JsonReader(Reader reader, Options opts) {
         this.reader = reader;
         this.opts = opts != null ? opts : Options.def();
     }
@@ -38,7 +38,7 @@ public class JsonParser {
     }
 
     public static ONode parse(String json, Options opts) throws IOException {
-        return new JsonParser(new StringReader(json), opts).parse();
+        return new JsonReader(new StringReader(json), opts).parse();
     }
 
     public ONode parse() throws IOException {

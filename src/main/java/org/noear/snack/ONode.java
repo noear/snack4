@@ -1,8 +1,8 @@
 package org.noear.snack;
 
 import org.noear.snack.codec.BeanCodec;
-import org.noear.snack.codec.JsonParser;
-import org.noear.snack.codec.JsonSerializer;
+import org.noear.snack.codec.JsonReader;
+import org.noear.snack.codec.JsonWriter;
 import org.noear.snack.core.Options;
 import org.noear.snack.schema.validator.SchemaValidator;
 
@@ -143,11 +143,11 @@ public final class ONode {
 
     // 添加带 Options 的静态方法
     public static ONode load(String json, Options opts) throws IOException {
-        return new JsonParser(new StringReader(json), opts).parse();
+        return new JsonReader(new StringReader(json), opts).parse();
     }
 
     public String toJson(Options opts) {
-        return JsonSerializer.serialize(this, opts);
+        return JsonWriter.serialize(this, opts);
     }
 
     // 保持原有方法兼容性
