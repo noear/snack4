@@ -2,6 +2,10 @@
 package org.noear.snack.schema;
 
 import org.noear.snack.ONode;
+import org.noear.snack.schema.rule.CompiledRule;
+import org.noear.snack.schema.rule.EnumRule;
+import org.noear.snack.schema.rule.TypeRule;
+import org.noear.snack.schema.rule.ValidationRule;
 import org.noear.snack.util.PathTracker;
 import org.noear.snack.exception.SchemaException;
 
@@ -290,19 +294,7 @@ public class SchemaValidator {
     // 异常处理
     private SchemaException typeMismatch(String expected, ONode actual, PathTracker path) {
         return new SchemaException("Expected type " + expected + " but got " +
-                getTypeName(actual.getType()) + " at " + path.currentPath());
-    }
-
-    private static String getTypeName(int type) {
-        switch (type) {
-            case ONode.TYPE_NULL: return "null";
-            case ONode.TYPE_BOOLEAN: return "boolean";
-            case ONode.TYPE_NUMBER: return "number";
-            case ONode.TYPE_STRING: return "string";
-            case ONode.TYPE_ARRAY: return "array";
-            case ONode.TYPE_OBJECT: return "object";
-            default: return "unknown";
-        }
+                TypeRule.getTypeName(actual.getType()) + " at " + path.currentPath());
     }
 
     // 预编译相关实现
@@ -339,79 +331,6 @@ public class SchemaValidator {
             path.enterIndex(0);
             compileSchemaRecursive(schemaNode.get("items"), rules, path);
             path.exit();
-        }
-    }
-
-    /**
-     * 预编译规则接口
-     */
-    private interface ValidationRule {
-        void validate(ONode data) throws SchemaException;
-    }
-
-    /**
-     * 编译验证规则实现
-     */
-    private class CompiledRule {
-        private final List<ValidationRule> rules;
-
-        CompiledRule(List<ValidationRule> rules) {
-            this.rules = rules;
-        }
-
-        void validate(ONode data, PathTracker path) throws SchemaException {
-            for (ValidationRule rule : rules) {
-                rule.validate(data);
-            }
-        }
-    }
-
-    /**
-     * 类型验证规则实现
-     */
-    private class TypeRule implements ValidationRule {
-        private final Set<String> allowedTypes;
-
-        TypeRule(ONode typeNode) {
-            this.allowedTypes = new HashSet<>();
-            if (typeNode.isString()) {
-                allowedTypes.add(typeNode.getString());
-            } else if (typeNode.isArray()) {
-                for (ONode t : typeNode.getArray()) {
-                    allowedTypes.add(t.getString());
-                }
-            }
-        }
-
-        @Override
-        public void validate(ONode data) throws SchemaException {
-            String actualType = getTypeName(data.getType());
-            if (!allowedTypes.contains(actualType)) {
-                throw new SchemaException("Type mismatch. Expected: " + allowedTypes + ", Actual: " + actualType);
-            }
-        }
-    }
-
-    /**
-     * 枚举验证规则实现
-     */
-    private class EnumRule implements ValidationRule {
-        private final Set<ONode> allowedValues;
-
-        EnumRule(ONode enumNode) {
-            this.allowedValues = new HashSet<>();
-            if (enumNode.isArray()) {
-                for (ONode value : enumNode.getArray()) {
-                    allowedValues.add(value);
-                }
-            }
-        }
-
-        @Override
-        public void validate(ONode data) throws SchemaException {
-            if (!allowedValues.contains(data)) {
-                throw new SchemaException("Value not in enum list");
-            }
         }
     }
 }
