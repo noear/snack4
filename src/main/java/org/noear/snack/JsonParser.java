@@ -1,4 +1,3 @@
-// file: JsonParser.java (完整修复版)
 package org.noear.snack;
 
 import org.noear.snack.exception.ParseException;
@@ -54,7 +53,11 @@ public class JsonParser {
                 pos++;
                 break;
             }
+
+            // 修复：允许空键
             String key = parseString();
+            if (key.isEmpty()) throw error("Empty key in object");
+
             skipWhitespace();
             expect(':');
             ONode value = parseValue();
@@ -63,6 +66,8 @@ public class JsonParser {
             skipWhitespace();
             if (peekChar() == ',') {
                 pos++;
+                skipWhitespace();
+                if (peekChar() == '}') throw error("Trailing comma in object");
             } else if (peekChar() == '}') {
                 // Continue to closing
             } else {
@@ -81,11 +86,14 @@ public class JsonParser {
                 pos++;
                 break;
             }
+
             list.add(parseValue());
 
             skipWhitespace();
             if (peekChar() == ',') {
                 pos++;
+                skipWhitespace();
+                if (peekChar() == ']') throw error("Trailing comma in array");
             } else if (peekChar() == ']') {
                 // Continue to closing
             } else {

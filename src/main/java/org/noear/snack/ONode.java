@@ -75,6 +75,10 @@ public final class ONode {
         return type == TYPE_OBJECT;
     }
 
+    public Object getValue() {
+        return value;
+    }
+
     public Boolean getBoolean() {
         return (Boolean) value;
     }
@@ -221,6 +225,16 @@ public final class ONode {
             }
         }
         return sb.toString();
+    }
+
+    public int size() {
+        if (isArray()) {
+            return getArray().size();
+        } else if (isObject()) {
+            return getObject().size();
+        } else {
+            return 1;
+        }
     }
 
     // 对象池支持
