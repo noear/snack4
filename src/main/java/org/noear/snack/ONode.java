@@ -145,7 +145,6 @@ public final class ONode {
         return JsonSerializer.toJsonString(this);
     }
 
-
     public int size() {
         if (isArray()) {
             return getArray().size();
@@ -180,20 +179,13 @@ public final class ONode {
 
     public static String typeToString(int type) {
         switch (type) {
-            case TYPE_NULL:
-                return "null";
-            case TYPE_BOOLEAN:
-                return "boolean";
-            case TYPE_NUMBER:
-                return "number";
-            case TYPE_STRING:
-                return "string";
-            case TYPE_ARRAY:
-                return "array";
-            case TYPE_OBJECT:
-                return "object";
-            default:
-                return "unknown";
+            case TYPE_NULL: return "null";
+            case TYPE_BOOLEAN: return "boolean";
+            case TYPE_NUMBER: return "number";
+            case TYPE_STRING: return "string";
+            case TYPE_ARRAY: return "array";
+            case TYPE_OBJECT: return "object";
+            default: return "unknown";
         }
     }
 }

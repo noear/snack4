@@ -7,11 +7,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
- * 将 ONode 转为 Java Bean 的转换器
+ * Java Bean 和 ONode 双向转换器
  */
-public class BeanToNodeConverter {
+public class BeanNodeConverter {
+    private static final Map<Class<?>, List<Field>> FIELD_CACHE = new ConcurrentHashMap<>();
 
     /**
      * 将 ONode 转为指定类型的 Java Bean
@@ -27,10 +30,23 @@ public class BeanToNodeConverter {
         }
     }
 
+    /**
+     * 将 Java Bean 转为 ONode
+     */
+    public static ONode toNode(Object bean) {
+        if (bean == null) {
+            return new ONode(null);
+        }
+        try {
+            return convertBeanToNode(bean);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert Bean to ONode", e);
+        }
+    }
+
     private static <T> T convertNodeToBean(ONode node, Class<T> clazz) throws Exception {
         T bean = clazz.getDeclaredConstructor().newInstance();
-        for (Field field : clazz.getDeclaredFields()) {
-            field.setAccessible(true);
+        for (Field field : getFields(clazz)) {
             String fieldName = field.getName();
             if (node.hasKey(fieldName)) {
                 ONode fieldNode = node.get(fieldName);
@@ -39,6 +55,16 @@ public class BeanToNodeConverter {
             }
         }
         return bean;
+    }
+
+    private static ONode convertBeanToNode(Object bean) throws Exception {
+        ONode node = new ONode(new HashMap<>());
+        for (Field field : getFields(bean.getClass())) {
+            String fieldName = field.getName();
+            Object value = field.get(bean);
+            node.set(fieldName, convertValueToNode(value));
+        }
+        return node;
     }
 
     private static Object convertValue(ONode node, Type type) {
@@ -79,12 +105,28 @@ public class BeanToNodeConverter {
         throw new IllegalArgumentException("Unsupported type: " + type);
     }
 
-    private static <T> List<T> convertToList(ONode node, Class<T> elementType) {
-        List<T> list = new ArrayList<>();
-        for (ONode item : node.getArray()) {
-            list.add((T) convertValue(item, elementType));
+    private static ONode convertValueToNode(Object value) {
+        if (value == null) {
+            return new ONode(null);
+        } else if (value instanceof String) {
+            return new ONode((String) value);
+        } else if (value instanceof Number) {
+            return new ONode((Number) value);
+        } else if (value instanceof Boolean) {
+            return new ONode((Boolean) value);
+        } else if (value instanceof List) {
+            return convertListToNode((List<?>) value);
+        } else if (value instanceof Map) {
+            return convertMapToNode((Map<?, ?>) value);
+        } else {
+            return toNode(value);
         }
-        return list;
+    }
+
+    private static <T> List<T> convertToList(ONode node, Class<T> elementType) {
+        return node.getArray().stream()
+                .map(item -> (T) convertValue(item, elementType))
+                .collect(Collectors.toList());
     }
 
     private static <K, V> Map<K, V> convertToMap(ONode node, Class<K> keyType, Class<V> valueType) {
@@ -95,5 +137,28 @@ public class BeanToNodeConverter {
             map.put(key, value);
         }
         return map;
+    }
+
+    private static ONode convertListToNode(List<?> list) {
+        ONode node = new ONode(new ArrayList<>());
+        list.forEach(item -> node.add(convertValueToNode(item)));
+        return node;
+    }
+
+    private static ONode convertMapToNode(Map<?, ?> map) {
+        ONode node = new ONode(new HashMap<>());
+        map.forEach((key, value) -> node.set(key.toString(), convertValueToNode(value)));
+        return node;
+    }
+
+    private static List<Field> getFields(Class<?> clazz) {
+        return FIELD_CACHE.computeIfAbsent(clazz, k -> {
+            List<Field> fields = new ArrayList<>();
+            for (Field field : k.getDeclaredFields()) {
+                field.setAccessible(true);
+                fields.add(field);
+            }
+            return fields;
+        });
     }
 }

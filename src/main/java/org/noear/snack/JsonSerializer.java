@@ -72,30 +72,16 @@ public class JsonSerializer {
     }
 
     private static String escapeString(String s) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(s.length() * 2); // 预分配容量
         for (char c : s.toCharArray()) {
             switch (c) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
+                case '"': sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\b': sb.append("\\b"); break;
+                case '\f': sb.append("\\f"); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
                 default:
                     if (c < 0x20) {
                         sb.append(String.format("\\u%04x", (int) c));
