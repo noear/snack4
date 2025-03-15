@@ -133,56 +133,62 @@ public class JsonParser {
     }
 
     private Number parseNumber() throws IOException {
-        pos--; // 回退到第一个数字字符
-        int start = pos;
-        boolean isDouble = false;
-        char c;
+        StringBuilder sb = new StringBuilder();
+        char c = peekChar();
 
-        // 修复：确保至少有一个数字字符
-        if (pos >= limit) throw error("Invalid number format");
-
-        // 解析符号
-        if (buffer[pos] == '-') pos++;
+        // 处理负数
+        if (c == '-') {
+            sb.append(c);
+            pos++;
+        }
 
         // 解析整数部分
-        c = buffer[pos];
-        if (c == '0') {
-            pos++;
-            if (pos < limit && isDigit(buffer[pos])) throw error("Leading zeros not allowed");
-        } else if (c >= '1' && c <= '9') {
-            while (pos < limit && isDigit(buffer[pos])) pos++;
+        if (peekChar() == '0') {
+            sb.append(nextChar());
+            if (isDigit(peekChar())) {
+                throw error("Leading zeros not allowed");
+            }
+        } else if (isDigit(peekChar())) {
+            while (isDigit(peekChar())) {
+                sb.append(nextChar());
+            }
         } else {
             throw error("Invalid number format");
         }
 
         // 解析小数部分
-        if (pos < limit && buffer[pos] == '.') {
-            isDouble = true;
-            pos++;
-            if (pos >= limit || !isDigit(buffer[pos])) throw error("Invalid decimal format");
-            while (pos < limit && isDigit(buffer[pos])) pos++;
+        if (peekChar() == '.') {
+            sb.append(nextChar());
+            if (!isDigit(peekChar())) {
+                throw error("Invalid decimal format");
+            }
+            while (isDigit(peekChar())) {
+                sb.append(nextChar());
+            }
         }
 
         // 解析指数部分
-        if (pos < limit && (buffer[pos] == 'e' || buffer[pos] == 'E')) {
-            isDouble = true;
-            pos++;
-            if (pos < limit && (buffer[pos] == '+' || buffer[pos] == '-')) pos++;
-            if (pos >= limit || !isDigit(buffer[pos])) throw error("Invalid exponent format");
-            while (pos < limit && isDigit(buffer[pos])) pos++;
+        if (peekChar() == 'e' || peekChar() == 'E') {
+            sb.append(nextChar());
+            if (peekChar() == '+' || peekChar() == '-') {
+                sb.append(nextChar());
+            }
+            if (!isDigit(peekChar())) {
+                throw error("Invalid exponent format");
+            }
+            while (isDigit(peekChar())) {
+                sb.append(nextChar());
+            }
         }
 
-        // 修复：确保至少解析到一个数字字符
-        if (start == pos) throw error("Invalid number format");
-
-        String numStr = new String(buffer, start, pos - start);
+        String numStr = sb.toString();
         try {
-            if (isDouble) {
+            if (numStr.contains(".") || numStr.contains("e") || numStr.contains("E")) {
                 return Double.parseDouble(numStr);
             } else {
                 long longVal = Long.parseLong(numStr);
                 if (longVal <= Integer.MAX_VALUE && longVal >= Integer.MIN_VALUE) {
-                    return (int) longVal; // 自动装箱优化
+                    return (int) longVal;
                 }
                 return longVal;
             }
