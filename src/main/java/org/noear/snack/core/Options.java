@@ -1,7 +1,7 @@
 package org.noear.snack.core;
 
-import org.noear.snack.codec.Codec;
-import org.noear.snack.schema.SchemaValidator;
+import org.noear.snack.format.Codec;
+import org.noear.snack.extensions.SchemaValidator;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -27,6 +27,13 @@ public final class Options {
 
     // 输出配置
     private final String _indent;
+
+
+    private Set<Class<?>> allowedClasses = new HashSet<>();
+
+    public void allowClass(Class<?> clazz) {
+        allowedClasses.add(clazz);
+    }
 
     private Options(Builder builder) {
         // 合并特性开关

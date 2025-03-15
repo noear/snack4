@@ -1,10 +1,10 @@
 // file: JsonSchemaValidator.java
-package org.noear.snack.schema;
+package org.noear.snack.extensions;
 
 import org.noear.snack.ONode;
-import org.noear.snack.schema.rule.EnumRule;
-import org.noear.snack.schema.rule.TypeRule;
-import org.noear.snack.schema.rule.ValidationRule;
+import org.noear.snack.extensions.rule.EnumRule;
+import org.noear.snack.extensions.rule.TypeRule;
+import org.noear.snack.extensions.rule.ValidationRule;
 import org.noear.snack.core.PathTracker;
 import org.noear.snack.exception.SchemaException;
 

@@ -1,4 +1,4 @@
-package org.noear.snack.schema.rule;
+package org.noear.snack.extensions.rule;
 
 
 import org.noear.snack.ONode;

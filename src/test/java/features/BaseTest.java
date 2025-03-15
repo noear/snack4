@@ -2,9 +2,9 @@ package features;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.*;
-import org.noear.snack.codec.JsonReader;
+import org.noear.snack.format.JsonReader;
 import org.noear.snack.exception.SchemaException;
-import org.noear.snack.schema.SchemaValidator;
+import org.noear.snack.extensions.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;

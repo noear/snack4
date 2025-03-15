@@ -1,4 +1,4 @@
-package org.noear.snack.codec;
+package org.noear.snack.format;
 
 import org.noear.snack.ONode;
 import org.noear.snack.core.Feature;
@@ -15,11 +15,12 @@ import java.util.Map;
 public class JsonReader {
     private static final int BUFFER_SIZE = 8192;
     private final Reader reader;
+    private long line = 1;
+    private long column = 0;
+
     private final char[] buffer = new char[BUFFER_SIZE];
     private int bufferPosition;
     private int bufferLimit;
-    private long line = 1;
-    private long column = 0;
 
     private final Options opts;
 

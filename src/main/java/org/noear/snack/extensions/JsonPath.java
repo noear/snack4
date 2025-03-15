@@ -1,4 +1,6 @@
-package org.noear.snack;
+package org.noear.snack.extensions;
+
+import org.noear.snack.ONode;
 
 import java.util.List;
 import java.util.Map;

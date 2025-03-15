@@ -1,4 +1,4 @@
-package org.noear.snack.codec;
+package org.noear.snack.format;
 
 import org.noear.snack.ONode;
 import org.noear.snack.core.Options;

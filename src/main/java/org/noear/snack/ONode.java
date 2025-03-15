@@ -1,10 +1,10 @@
 package org.noear.snack;
 
-import org.noear.snack.codec.BeanCodec;
-import org.noear.snack.codec.JsonReader;
-import org.noear.snack.codec.JsonWriter;
+import org.noear.snack.format.BeanCodec;
+import org.noear.snack.format.JsonReader;
+import org.noear.snack.format.JsonWriter;
 import org.noear.snack.core.Options;
-import org.noear.snack.schema.SchemaValidator;
+import org.noear.snack.extensions.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
