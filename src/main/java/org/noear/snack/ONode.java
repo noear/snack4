@@ -3,7 +3,7 @@ package org.noear.snack;
 import org.noear.snack.codec.BeanCodec;
 import org.noear.snack.codec.JsonParser;
 import org.noear.snack.codec.JsonSerializer;
-import org.noear.snack.schema.SchemaValidator;
+import org.noear.snack.schema.validator.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -62,7 +62,7 @@ public final class ONode {
 
     @SuppressWarnings("unchecked")
     public Map<String, ONode> getObject() { return (Map<String, ONode>) value; }
-    public ONode getOrNewObject() {
+    public ONode newObject() {
         if (value == null) {
             value = new HashMap<>();
         }
@@ -70,7 +70,7 @@ public final class ONode {
         return this;
     }
 
-    public ONode getOrNewArray() {
+    public ONode newArray() {
         if (value == null) {
             value = new ArrayList<>();
         }
