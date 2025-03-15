@@ -1,7 +1,5 @@
 package org.noear.snack;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -13,16 +11,10 @@ import java.util.stream.Collectors;
  * 高性能 Java Bean 和 JSON 双向转换器
  */
 public class JsonBeanCodec {
-    private static final Map<Class<?>, Map<String, MethodHandle>> FIELD_HANDLE_CACHE = new ConcurrentHashMap<>();
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final Map<Class<?>, Map<String, Field>> FIELD_CACHE = new ConcurrentHashMap<>();
 
-    /**
-     * 将 ONode 转为指定类型的 Java Bean
-     */
     public static <T> T toBean(ONode node, Class<T> clazz) {
-        if (node == null || clazz == null) {
-            return null;
-        }
+        if (node == null || clazz == null) return null;
         try {
             return convertNodeToBean(node, clazz);
         } catch (Throwable e) {
@@ -30,13 +22,8 @@ public class JsonBeanCodec {
         }
     }
 
-    /**
-     * 将 Java Bean 转为 ONode
-     */
     public static ONode toNode(Object bean) {
-        if (bean == null) {
-            return new ONode(null);
-        }
+        if (bean == null) return new ONode(null);
         try {
             return convertBeanToNode(bean);
         } catch (Throwable e) {
@@ -44,28 +31,32 @@ public class JsonBeanCodec {
         }
     }
 
-    private static <T> T convertNodeToBean(ONode node, Class<T> clazz) throws Throwable {
+    private static <T> T convertNodeToBean(ONode node, Class<T> clazz) throws Exception {
         T bean = clazz.getDeclaredConstructor().newInstance();
-        Map<String, MethodHandle> fieldHandles = getFieldHandles(clazz);
-        for (Map.Entry<String, MethodHandle> entry : fieldHandles.entrySet()) {
+        Map<String, Field> fields = getFields(clazz);
+        for (Map.Entry<String, Field> entry : fields.entrySet()) {
             String fieldName = entry.getKey();
+            Field field = entry.getValue();
+            field.setAccessible(true);
+
             if (node.hasKey(fieldName)) {
                 ONode fieldNode = node.get(fieldName);
-                Field field = clazz.getDeclaredField(fieldName);
-                field.setAccessible(true);
                 Object value = convertValue(fieldNode, field.getGenericType());
-                entry.getValue().invoke(bean, value);
+                field.set(bean, value);
+            } else {
+                // 处理基本类型的默认值
+                setDefaultValueIfPrimitive(bean, field);
             }
         }
         return bean;
     }
 
-    private static ONode convertBeanToNode(Object bean) throws Throwable {
+    private static ONode convertBeanToNode(Object bean) throws Exception {
         ONode node = new ONode(new HashMap<>());
-        Map<String, MethodHandle> fieldHandles = getFieldHandles(bean.getClass());
-        for (Map.Entry<String, MethodHandle> entry : fieldHandles.entrySet()) {
+        Map<String, Field> fields = getFields(bean.getClass());
+        for (Map.Entry<String, Field> entry : fields.entrySet()) {
             String fieldName = entry.getKey();
-            Field field = bean.getClass().getDeclaredField(fieldName);
+            Field field = entry.getValue();
             field.setAccessible(true);
             Object value = field.get(bean);
             node.set(fieldName, convertValueToNode(value));
@@ -73,76 +64,67 @@ public class JsonBeanCodec {
         return node;
     }
 
-    private static Object convertValue(ONode node, Type type) {
-        if (node.isNull()) {
-            return null;
-        }
-        if (type instanceof Class) {
-            Class<?> clazz = (Class<?>) type;
-            if (clazz == String.class) {
-                return node.getString();
-            } else if (clazz == Integer.class || clazz == int.class) {
-                return node.getInt();
-            } else if (clazz == Long.class || clazz == long.class) {
-                return node.getLong();
-            } else if (clazz == Double.class || clazz == double.class) {
-                return node.getDouble();
-            } else if (clazz == Boolean.class || clazz == boolean.class) {
-                return node.getBoolean();
-            } else if (clazz == List.class) {
-                return convertToList(node, String.class); // 默认处理为 String 列表
-            } else if (clazz == Map.class) {
-                return convertToMap(node, String.class, String.class); // 默认处理为 String -> String 的 Map
-            } else {
-                return toBean(node, clazz);
+    private static Object convertValue(ONode node, Type targetType) {
+        if (node.isNull()) return null;
+
+        try {
+            if (targetType instanceof ParameterizedType) {
+                ParameterizedType pType = (ParameterizedType) targetType;
+                Class<?> rawType = (Class<?>) pType.getRawType();
+
+                if (List.class.isAssignableFrom(rawType)) {
+                    Type elementType = pType.getActualTypeArguments()[0];
+                    return node.getArray().stream()
+                            .map(itemNode -> convertValue(itemNode, elementType))
+                            .collect(Collectors.toList());
+                } else if (Map.class.isAssignableFrom(rawType)) {
+                    Type keyType = pType.getActualTypeArguments()[0];
+                    Type valueType = pType.getActualTypeArguments()[1];
+                    Map<Object, Object> map = new HashMap<>();
+                    node.getObject().forEach((key, valueNode) -> {
+                        Object k = convertValue(new ONode(key), keyType);
+                        Object v = convertValue(valueNode, valueType);
+                        map.put(k, v);
+                    });
+                    return map;
+                }
             }
-        } else if (type instanceof ParameterizedType) {
-            ParameterizedType pType = (ParameterizedType) type;
-            Type rawType = pType.getRawType();
-            if (rawType == List.class) {
-                Type elementType = pType.getActualTypeArguments()[0];
-                return convertToList(node, (Class<?>) elementType);
-            } else if (rawType == Map.class) {
-                Type keyType = pType.getActualTypeArguments()[0];
-                Type valueType = pType.getActualTypeArguments()[1];
-                return convertToMap(node, (Class<?>) keyType, (Class<?>) valueType);
-            }
+
+            Class<?> clazz = (Class<?>) targetType;
+            if (clazz == String.class) return node.getString();
+            if (clazz == Integer.class || clazz == int.class) return node.getInt();
+            if (clazz == Long.class || clazz == long.class) return node.getLong();
+            if (clazz == Double.class || clazz == double.class) return node.getDouble();
+            if (clazz == Boolean.class || clazz == boolean.class) return node.getBoolean();
+            if (clazz.isEnum()) return Enum.valueOf((Class<Enum>) clazz, node.getString());
+
+            // 处理嵌套对象
+            return toBean(node, clazz);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Convert error for type: " + targetType, e);
         }
-        throw new IllegalArgumentException("Unsupported type: " + type);
     }
 
     private static ONode convertValueToNode(Object value) {
-        if (value == null) {
-            return new ONode(null);
-        } else if (value instanceof String) {
-            return new ONode((String) value);
-        } else if (value instanceof Number) {
-            return new ONode((Number) value);
-        } else if (value instanceof Boolean) {
-            return new ONode((Boolean) value);
-        } else if (value instanceof List) {
-            return convertListToNode((List<?>) value);
-        } else if (value instanceof Map) {
-            return convertMapToNode((Map<?, ?>) value);
-        } else {
-            return toNode(value);
-        }
+        if (value == null) return new ONode(null);
+        if (value instanceof String) return new ONode((String) value);
+        if (value instanceof Number) return new ONode((Number) value);
+        if (value instanceof Boolean) return new ONode((Boolean) value);
+        if (value instanceof List) return convertListToNode((List<?>) value);
+        if (value instanceof Map) return convertMapToNode((Map<?, ?>) value);
+        if (value.getClass().isEnum()) return new ONode(((Enum<?>) value).name());
+        return toNode(value);
     }
 
-    private static <T> List<T> convertToList(ONode node, Class<T> elementType) {
-        return node.getArray().stream()
-                .map(item -> (T) convertValue(item, elementType))
-                .collect(Collectors.toList());
-    }
-
-    private static <K, V> Map<K, V> convertToMap(ONode node, Class<K> keyType, Class<V> valueType) {
-        Map<K, V> map = new HashMap<>();
-        for (Map.Entry<String, ONode> entry : node.getObject().entrySet()) {
-            K key = (K) convertValue(new ONode(entry.getKey()), keyType);
-            V value = (V) convertValue(entry.getValue(), valueType);
-            map.put(key, value);
+    private static void setDefaultValueIfPrimitive(Object bean, Field field) throws IllegalAccessException {
+        Class<?> type = field.getType();
+        if (type.isPrimitive()) {
+            if (type == int.class) field.setInt(bean, 0);
+            else if (type == long.class) field.setLong(bean, 0L);
+            else if (type == boolean.class) field.setBoolean(bean, false);
+            else if (type == double.class) field.setDouble(bean, 0.0);
+            // 其他基本类型类似处理
         }
-        return map;
     }
 
     private static ONode convertListToNode(List<?> list) {
@@ -153,23 +135,21 @@ public class JsonBeanCodec {
 
     private static ONode convertMapToNode(Map<?, ?> map) {
         ONode node = new ONode(new HashMap<>());
-        map.forEach((key, value) -> node.set(key.toString(), convertValueToNode(value)));
+        map.forEach((k, v) -> node.set(k.toString(), convertValueToNode(v)));
         return node;
     }
 
-    private static Map<String, MethodHandle> getFieldHandles(Class<?> clazz) {
-        return FIELD_HANDLE_CACHE.computeIfAbsent(clazz, k -> {
-            Map<String, MethodHandle> fieldHandles = new HashMap<>();
-            for (Field field : k.getDeclaredFields()) {
-                field.setAccessible(true);
-                try {
-                    MethodHandle setter = LOOKUP.unreflectSetter(field);
-                    fieldHandles.put(field.getName(), setter);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("Failed to create MethodHandle for field: " + field.getName(), e);
+    private static Map<String, Field> getFields(Class<?> clazz) {
+        return FIELD_CACHE.computeIfAbsent(clazz, k -> {
+            Map<String, Field> fields = new HashMap<>();
+            while (k != null) {
+                for (Field field : k.getDeclaredFields()) {
+                    field.setAccessible(true);
+                    fields.put(field.getName(), field);
                 }
+                k = k.getSuperclass(); // 处理继承字段
             }
-            return fieldHandles;
+            return fields;
         });
     }
 }
