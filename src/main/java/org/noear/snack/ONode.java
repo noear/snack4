@@ -1,8 +1,5 @@
 package org.noear.snack;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -114,12 +111,20 @@ public final class ONode {
         return getNumber().doubleValue();
     }
 
-    public ONode get(String key){
+    public ONode get(String key) {
         return getObject().get(key);
     }
 
-    public ONode get(int index){
+    public void set(String key, ONode value) {
+        getObject().put(key, value);
+    }
+
+    public ONode get(int index) {
         return getArray().get(index);
+    }
+
+    public void add(ONode value) {
+        getArray().add(value);
     }
 
     // Optional访问
@@ -137,95 +142,9 @@ public final class ONode {
 
     // 序列化
     public String toJsonString() {
-        try (StringWriter writer = new StringWriter()) {
-            serialize(writer);
-            return writer.toString();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return JsonSerializer.toJsonString(this);
     }
 
-    public void serialize(Writer writer) throws IOException {
-        switch (type) {
-            case TYPE_OBJECT:
-                serializeObject(writer);
-                break;
-            case TYPE_ARRAY:
-                serializeArray(writer);
-                break;
-            case TYPE_STRING:
-                writer.write('"' + escapeString(getString()) + '"');
-                break;
-            case TYPE_NUMBER:
-                writer.write(getNumber().toString());
-                break;
-            case TYPE_BOOLEAN:
-                writer.write(getBoolean() ? "true" : "false");
-                break;
-            case TYPE_NULL:
-                writer.write("null");
-                break;
-        }
-    }
-
-    private void serializeObject(Writer writer) throws IOException {
-        writer.write('{');
-        boolean first = true;
-        for (Map.Entry<String, ONode> entry : getObject().entrySet()) {
-            if (!first) writer.write(',');
-            writer.write('"' + escapeString(entry.getKey()) + "\":");
-            entry.getValue().serialize(writer);
-            first = false;
-        }
-        writer.write('}');
-    }
-
-    private void serializeArray(Writer writer) throws IOException {
-        writer.write('[');
-        boolean first = true;
-        for (ONode item : getArray()) {
-            if (!first) writer.write(',');
-            item.serialize(writer);
-            first = false;
-        }
-        writer.write(']');
-    }
-
-    private String escapeString(String s) {
-        StringBuilder sb = new StringBuilder();
-        for (char c : s.toCharArray()) {
-            switch (c) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                default:
-                    if (c < 0x20) {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
-            }
-        }
-        return sb.toString();
-    }
 
     public int size() {
         if (isArray()) {
