@@ -1,3 +1,4 @@
+// file: JsonParser.java (完整修复版)
 package org.noear.snack;
 
 import org.noear.snack.exception.ParseException;
@@ -8,9 +9,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * JSON解析器，将输入流转换为ONode对象树
- */
 public class JsonParser {
     private static final int BUFFER_SIZE = 8192;
     private final Reader reader;
@@ -140,36 +138,42 @@ public class JsonParser {
         boolean isDouble = false;
         char c;
 
+        // 修复：确保至少有一个数字字符
+        if (pos >= limit) throw error("Invalid number format");
+
+        // 解析符号
+        if (buffer[pos] == '-') pos++;
+
         // 解析整数部分
-        if (peekChar() == '-') pos++;
-        c = peekChar();
+        c = buffer[pos];
         if (c == '0') {
             pos++;
-            if (isDigit(peekChar())) throw error("Leading zeros not allowed");
+            if (pos < limit && isDigit(buffer[pos])) throw error("Leading zeros not allowed");
         } else if (c >= '1' && c <= '9') {
-            while (isDigit(peekChar())) pos++;
+            while (pos < limit && isDigit(buffer[pos])) pos++;
         } else {
             throw error("Invalid number format");
         }
 
         // 解析小数部分
-        if (peekChar() == '.') {
+        if (pos < limit && buffer[pos] == '.') {
             isDouble = true;
             pos++;
-            if (!isDigit(peekChar())) throw error("Invalid decimal format");
-            while (isDigit(peekChar())) pos++;
+            if (pos >= limit || !isDigit(buffer[pos])) throw error("Invalid decimal format");
+            while (pos < limit && isDigit(buffer[pos])) pos++;
         }
 
         // 解析指数部分
-        c = peekChar();
-        if (c == 'e' || c == 'E') {
+        if (pos < limit && (buffer[pos] == 'e' || buffer[pos] == 'E')) {
             isDouble = true;
             pos++;
-            c = peekChar();
-            if (c == '+' || c == '-') pos++;
-            if (!isDigit(peekChar())) throw error("Invalid exponent format");
-            while (isDigit(peekChar())) pos++;
+            if (pos < limit && (buffer[pos] == '+' || buffer[pos] == '-')) pos++;
+            if (pos >= limit || !isDigit(buffer[pos])) throw error("Invalid exponent format");
+            while (pos < limit && isDigit(buffer[pos])) pos++;
         }
+
+        // 修复：确保至少解析到一个数字字符
+        if (start == pos) throw error("Invalid number format");
 
         String numStr = new String(buffer, start, pos - start);
         try {

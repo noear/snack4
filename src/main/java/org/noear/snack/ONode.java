@@ -52,6 +52,17 @@ public final class ONode {
         return type == TYPE_NUMBER;
     }
 
+    public boolean isInteger() {
+        if (value instanceof Integer || value instanceof Long) {
+            return true;
+        }
+        if (value instanceof Double) {
+            double d = (Double) value;
+            return d == Math.floor(d) && !Double.isInfinite(d);
+        }
+        return false;
+    }
+
     public boolean isString() {
         return type == TYPE_STRING;
     }
@@ -101,6 +112,10 @@ public final class ONode {
 
     public ONode get(String key){
         return getObject().get(key);
+    }
+
+    public ONode get(int index){
+        return getArray().get(index);
     }
 
     // Optional访问

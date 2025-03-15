@@ -13,31 +13,25 @@ import java.io.StringReader;
  */
 public class BaseTest {
     @Test
-    public void case1() {
-        String json = "{\n" +
-                "  \"name\": \"Alice\",\n" +
-                "  \"age\": 28,\n" +
-                "  \"scores\": [95.5, 89.0, 92.3],\n" +
-                "  \"metadata\": {\n" +
-                "    \"uid\": \"\\u0041\\u0042\\u0043\",\n" +
-                "    \"active\": true\n" +
-                "  }\n" +
-                "}";
+    public void case1() throws Exception {
+        String json = "{"
+                + "\"name\": \"Alice\","
+                + "\"age\": 28,"
+                + "\"scores\": [95.5, 89.0, 92.3],"
+                + "\"metadata\": {"
+                + "  \"uid\": \"\\u0041\\u0042\\u0043\","
+                + "  \"active\": true"
+                + "}"
+                + "}";
 
-        System.out.println(json);
+        ONode node = new JsonParser(new StringReader(json)).parse();
 
-        try (Reader reader = new StringReader(json)) {
-            ONode root = new JsonParser(reader).parse();
-
-            String name = root.getObject().get("name").getString();
-            double avgScore = root.getObject().get("scores").getArray().stream()
-                    .mapToDouble(ONode::getDouble)
-                    .average()
-                    .orElse(0);
-            String uid = root.getObject().get("metadata").getObject().get("uid").getString();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // 验证解析结果
+        System.out.println(node.get("name").getString()); // Alice
+        System.out.println(node.get("age").getInt()); // 28
+        System.out.println(node.get("scores").get(0).getDouble()); // 95.5
+        System.out.println(node.get("metadata").get("uid").getString()); // ABC
+        System.out.println(node.get("metadata").get("active").getBoolean()); // true
     }
 
     @Test
