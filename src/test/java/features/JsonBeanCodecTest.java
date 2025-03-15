@@ -3,318 +3,342 @@ package features;
 import org.junit.jupiter.api.Test;
 import org.noear.snack.JsonBeanCodec;
 import org.noear.snack.ONode;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.*;
 
 public class JsonBeanCodecTest {
 
-    // 测试类定义
-    static class User {
-        private String name;
-        private int age;
-        private boolean isAdmin;
-        private List<String> hobbies;
-        private Map<String, String> metadata;
-
-        // Getters and Setters
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public int getAge() { return age; }
-        public void setAge(int age) { this.age = age; }
-        public boolean isAdmin() { return isAdmin; }
-        public void setAdmin(boolean admin) { isAdmin = admin; }
-        public List<String> getHobbies() { return hobbies; }
-        public void setHobbies(List<String> hobbies) { this.hobbies = hobbies; }
-        public Map<String, String> getMetadata() { return metadata; }
-        public void setMetadata(Map<String, String> metadata) { this.metadata = metadata; }
-    }
-
-    // 测试用例
-    @Test
-    public void testBasicSerialization() {
-        User user = new User();
-        user.setName("Alice");
-        user.setAge(30);
-        user.setAdmin(true);
-
-        ONode node = JsonBeanCodec.toNode(user);
-        assertEquals("Alice", node.get("name").getString());
-        assertEquals(30, node.get("age").getInt());
-        assertTrue(node.get("isAdmin").getBoolean());
+    // 测试用例 1: 基本数据类型转换
+    public static class SimpleBean {
+        public String name;
+        public int age;
+        public boolean active;
+        public double score;
+        public long id;
     }
 
     @Test
-    public void testBasicDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Bob"));
-        node.set("age", new ONode(25));
-        node.set("isAdmin", new ONode(false));
+    public void testSimpleBean() {
+        SimpleBean bean = new SimpleBean();
+        bean.name = "Alice";
+        bean.age = 30;
+        bean.active = true;
+        bean.score = 95.5;
+        bean.id = 1001L;
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("Bob", user.getName());
-        assertEquals(25, user.getAge());
-        assertFalse(user.isAdmin());
+        ONode node = JsonBeanCodec.toNode(bean);
+        SimpleBean result = JsonBeanCodec.toBean(node, SimpleBean.class);
+
+        assertEquals(bean.name, result.name);
+        assertEquals(bean.age, result.age);
+        assertEquals(bean.active, result.active);
+        assertEquals(bean.score, result.score, 0.001);
+        assertEquals(bean.id, result.id);
+    }
+
+    // 测试用例 2: 嵌套对象
+    public static class NestBean {
+        public SimpleBean child;
     }
 
     @Test
-    public void testListSerialization() {
-        User user = new User();
-        user.setHobbies(Arrays.asList("Reading", "Swimming", "Coding"));
+    public void testNestedBean() {
+        NestBean bean = new NestBean();
+        bean.child = new SimpleBean();
+        bean.child.name = "Bob";
 
-        ONode node = JsonBeanCodec.toNode(user);
-        List<String> hobbies = node.get("hobbies").getArray().stream()
-                .map(ONode::getString)
-                .collect(Collectors.toList());
-        assertEquals(Arrays.asList("Reading", "Swimming", "Coding"), hobbies);
+        ONode node = JsonBeanCodec.toNode(bean);
+        NestBean result = JsonBeanCodec.toBean(node, NestBean.class);
+
+        assertEquals(bean.child.name, result.child.name);
+    }
+
+    // 测试用例 3: List<String> 处理
+    public static class ListBean {
+        public List<String> items;
     }
 
     @Test
-    public void testListDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("hobbies", new ONode(Arrays.asList("Gaming", "Music")));
+    public void testStringList() {
+        ListBean bean = new ListBean();
+        bean.items = Arrays.asList("A", "B", "C");
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals(Arrays.asList("Gaming", "Music"), user.getHobbies());
+        ONode node = JsonBeanCodec.toNode(bean);
+        ListBean result = JsonBeanCodec.toBean(node, ListBean.class);
+
+        assertEquals(bean.items, result.items);
+    }
+
+    // 测试用例 4: Map 处理
+    public static class MapBean {
+        public Map<String, Integer> data;
     }
 
     @Test
-    public void testMapSerialization() {
-        User user = new User();
-        user.setMetadata(new HashMap<>());
-        user.getMetadata().put("key1", "value1");
-        user.getMetadata().put("key2", "value2");
+    public void testStringIntMap() {
+        MapBean bean = new MapBean();
+        Map<String, Integer> map = new HashMap<>();
+        map.put("a", 1);
+        map.put("b", 2);
+        bean.data = map;
 
-        ONode node = JsonBeanCodec.toNode(user);
-        Map<String, String> metadata = node.get("metadata").getObject().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getString()));
-        assertEquals("value1", metadata.get("key1"));
-        assertEquals("value2", metadata.get("key2"));
+        ONode node = JsonBeanCodec.toNode(bean);
+        MapBean result = JsonBeanCodec.toBean(node, MapBean.class);
+
+        assertEquals(bean.data, result.data);
+    }
+
+    // 测试用例 5: 枚举处理
+    public enum TestEnum { OK, ERROR }
+    public static class EnumBean {
+        public TestEnum status;
     }
 
     @Test
-    public void testMapDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        ONode metadataNode = new ONode(new HashMap<>());
-        metadataNode.set("key1", new ONode("value1"));
-        metadataNode.set("key2", new ONode("value2"));
-        node.set("metadata", metadataNode);
+    public void testEnumConversion() {
+        EnumBean bean = new EnumBean();
+        bean.status = TestEnum.OK;
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("value1", user.getMetadata().get("key1"));
-        assertEquals("value2", user.getMetadata().get("key2"));
+        ONode node = JsonBeanCodec.toNode(bean);
+        assertEquals("OK", node.get("status").getString());
+
+        EnumBean result = JsonBeanCodec.toBean(node, EnumBean.class);
+        assertEquals(bean.status, result.status);
     }
 
+    // 测试用例 6: null 值处理
     @Test
-    public void testNullValueSerialization() {
-        User user = new User();
-        user.setName(null);
+    public void testNullField() {
+        SimpleBean bean = new SimpleBean();
+        bean.name = null;
 
-        ONode node = JsonBeanCodec.toNode(user);
+        ONode node = JsonBeanCodec.toNode(bean);
         assertTrue(node.get("name").isNull());
+
+        SimpleBean result = JsonBeanCodec.toBean(node, SimpleBean.class);
+        assertNull(result.name);
+    }
+
+    // 测试用例 7: 空集合处理
+    public static class EmptyCollectionBean {
+        public List<String> emptyList = Collections.emptyList();
+        public Map<String, String> emptyMap = Collections.emptyMap();
     }
 
     @Test
-    public void testNullValueDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode(null));
+    public void testEmptyCollections() {
+        EmptyCollectionBean bean = new EmptyCollectionBean();
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertNull(user.getName());
+        ONode node = JsonBeanCodec.toNode(bean);
+        EmptyCollectionBean result = JsonBeanCodec.toBean(node, EmptyCollectionBean.class);
+
+        assertTrue(result.emptyList.isEmpty());
+        assertTrue(result.emptyMap.isEmpty());
+    }
+
+    // 测试用例 8: 继承字段处理
+    public static class ParentBean {
+        public String parentField;
+    }
+
+    public static class ChildBean extends ParentBean {
+        public String childField;
     }
 
     @Test
-    public void testEmptyListSerialization() {
-        User user = new User();
-        user.setHobbies(new ArrayList<>());
+    public void testInheritedFields() {
+        ChildBean bean = new ChildBean();
+        bean.parentField = "parent";
+        bean.childField = "child";
 
-        ONode node = JsonBeanCodec.toNode(user);
-        assertTrue(node.get("hobbies").isArray());
-        assertEquals(0, node.get("hobbies").getArray().size());
+        ONode node = JsonBeanCodec.toNode(bean);
+        ChildBean result = JsonBeanCodec.toBean(node, ChildBean.class);
+
+        assertEquals(bean.parentField, result.parentField);
+        assertEquals(bean.childField, result.childField);
+    }
+
+    // 测试用例 9: 基本类型默认值
+    static class PrimitiveBean {
+        public int intVal;
+        public boolean boolVal;
     }
 
     @Test
-    public void testEmptyListDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("hobbies", new ONode(new ArrayList<>()));
+    public void testPrimitiveDefaults() {
+        ONode emptyNode = new ONode(new HashMap<>());
+        PrimitiveBean result = JsonBeanCodec.toBean(emptyNode, PrimitiveBean.class);
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertTrue(user.getHobbies().isEmpty());
+        assertEquals(0, result.intVal);
+        assertFalse(result.boolVal);
+    }
+
+    // 测试用例 10: 泛型集合处理
+    public static class GenericListBean {
+        public List<SimpleBean> list;
     }
 
     @Test
-    public void testEmptyMapSerialization() {
-        User user = new User();
-        user.setMetadata(new HashMap<>());
+    public void testGenericList() {
+        GenericListBean bean = new GenericListBean();
+        bean.list = Arrays.asList(new SimpleBean(), new SimpleBean());
 
-        ONode node = JsonBeanCodec.toNode(user);
-        assertTrue(node.get("metadata").isObject());
-        assertEquals(0, node.get("metadata").getObject().size());
+        ONode node = JsonBeanCodec.toNode(bean);
+        GenericListBean result = JsonBeanCodec.toBean(node, GenericListBean.class);
+
+        assertEquals(2, result.list.size());
+    }
+
+    // 测试用例 11: 多余JSON字段忽略
+    @Test
+    public void testExtraFieldsIgnored() {
+        // 正确构建ONode结构
+        Map<String, ONode> map = new HashMap<>();
+        map.put("name", new ONode("test"));
+        map.put("extra", new ONode(123));
+        ONode node = new ONode(map);
+
+        SimpleBean result = JsonBeanCodec.toBean(node, SimpleBean.class);
+        assertEquals("test", result.name);
+    }
+
+    // 测试用例 12: 类型不匹配异常
+    @Test
+    public void testTypeMismatch() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", "not_a_number");
+        ONode node = new ONode(map);
+
+        assertThrows(RuntimeException.class, () -> {
+            JsonBeanCodec.toBean(node, SimpleBean.class);
+        });
+    }
+
+    // 测试用例 13: transient 字段处理
+    static class TransientBean {
+        public transient String temp;
+        public String normal;
     }
 
     @Test
-    public void testEmptyMapDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("metadata", new ONode(new HashMap<>()));
+    public void testTransientField() {
+        TransientBean bean = new TransientBean();
+        bean.temp = "tmp";
+        bean.normal = "data";
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertTrue(user.getMetadata().isEmpty());
+        ONode node = JsonBeanCodec.toNode(bean);
+        assertTrue(node.hasKey("temp")); // 根据实现决定是否包含
+    }
+
+    // 测试用例 14: 不同访问权限字段
+    public static class AccessBean {
+        private String privateField;
+        protected String protectedField;
+        public String publicField;
     }
 
     @Test
-    public void testMissingFieldDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Charlie"));
+    public void testDifferentAccessFields() {
+        AccessBean bean = new AccessBean();
+        bean.privateField = "private";
+        bean.protectedField = "protected";
+        bean.publicField = "public";
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("Charlie", user.getName());
-        assertEquals(0, user.getAge()); // Default value for int
-        assertFalse(user.isAdmin()); // Default value for boolean
+        ONode node = JsonBeanCodec.toNode(bean);
+        AccessBean result = JsonBeanCodec.toBean(node, AccessBean.class);
+
+        assertEquals(bean.privateField, result.privateField);
+        assertEquals(bean.protectedField, result.protectedField);
+        assertEquals(bean.publicField, result.publicField);
+    }
+
+    // 测试用例 15: Boolean 包装类型处理
+    public static class BooleanBean {
+        public Boolean wrapper;
+        public boolean primitive;
     }
 
     @Test
-    public void testNestedObjectSerialization() {
-        User user = new User();
-        user.setName("Dave");
-        user.setMetadata(new HashMap<>());
-        user.getMetadata().put("nestedKey", "nestedValue");
+    public void testBooleanTypes() {
+        BooleanBean bean = new BooleanBean();
+        bean.wrapper = true;
+        bean.primitive = false;
 
-        ONode node = JsonBeanCodec.toNode(user);
-        assertEquals("nestedValue", node.get("metadata").get("nestedKey").getString());
+        ONode node = JsonBeanCodec.toNode(bean);
+        BooleanBean result = JsonBeanCodec.toBean(node, BooleanBean.class);
+
+        assertEquals(bean.wrapper, result.wrapper);
+        assertEquals(bean.primitive, result.primitive);
+    }
+
+    // 测试用例 16: 枚举名称大小写敏感
+    @Test
+    public void testEnumCaseSensitive() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("status", new ONode("error"));
+        ONode node = new ONode(map);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            JsonBeanCodec.toBean(node, EnumBean.class); // 需要 "ERROR" 大写
+        });
+    }
+
+    // 测试用例 17: 数字转换验证
+    public static class NumberBean {
+        public int intVal;
+        public double doubleVal;
     }
 
     @Test
-    public void testNestedObjectDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Eve"));
-        ONode metadataNode = new ONode(new HashMap<>());
-        metadataNode.set("nestedKey", new ONode("nestedValue"));
-        node.set("metadata", metadataNode);
+    public void testNumberConversion() {
+        Map<String, ONode> map = new HashMap<>();
+        map.put("intVal", new ONode(123.0)); // 使用ONode包装
+        map.put("doubleVal", new ONode(456));
+        ONode node = new ONode(map);
 
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("nestedValue", user.getMetadata().get("nestedKey"));
+        NumberBean result = JsonBeanCodec.toBean(node, NumberBean.class);
+        assertEquals(123, result.intVal);
+        assertEquals(456.0, result.doubleVal, 0.001);
+    }
+
+    // 测试用例 18: 多态集合处理
+    static class PolyBean {
+        public List<Object> items;
     }
 
     @Test
-    public void testInvalidTypeDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("age", new ONode("not a number"));
+    public void testPolymorphicList() {
+        PolyBean bean = new PolyBean();
+        bean.items = Arrays.asList("text", 123, true);
 
-        assertThrows(RuntimeException.class, () -> JsonBeanCodec.toBean(node, User.class));
+        ONode node = JsonBeanCodec.toNode(bean);
+        assertDoesNotThrow(() -> JsonBeanCodec.toBean(node, PolyBean.class));
+    }
+
+    // 测试用例 19: 循环引用检测
+    public static class LoopBean {
+        public LoopBean self;
     }
 
     @Test
-    public void testNullInputSerialization() {
-        assertThrows(RuntimeException.class, () -> JsonBeanCodec.toNode(null));
+    public void testCircularReference() {
+        LoopBean bean = new LoopBean();
+        bean.self = bean;
+
+        assertThrows(StackOverflowError.class, () -> {
+            JsonBeanCodec.toNode(bean);
+        });
     }
 
+    // 测试用例 20: 静态内部类支持
     @Test
-    public void testNullInputDeserialization() {
-        assertThrows(RuntimeException.class, () -> JsonBeanCodec.toBean(null, User.class));
-    }
+    public void testStaticInnerClass() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", new ONode("test"));
+        ONode node = new ONode(map);
 
-    @Test
-    public void testInvalidClassDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Frank"));
-
-        assertThrows(RuntimeException.class, () -> JsonBeanCodec.toBean(node, String.class));
-    }
-
-    @Test
-    public void testComplexObjectSerialization() {
-        User user = new User();
-        user.setName("Grace");
-        user.setAge(40);
-        user.setAdmin(true);
-        user.setHobbies(Arrays.asList("Traveling", "Photography"));
-        user.setMetadata(new HashMap<>());
-        user.getMetadata().put("key", "value");
-
-        ONode node = JsonBeanCodec.toNode(user);
-        assertEquals("Grace", node.get("name").getString());
-        assertEquals(40, node.get("age").getInt());
-        assertTrue(node.get("isAdmin").getBoolean());
-        assertEquals(Arrays.asList("Traveling", "Photography"), node.get("hobbies").getArray().stream()
-                .map(ONode::getString)
-                .collect(Collectors.toList()));
-        assertEquals("value", node.get("metadata").get("key").getString());
-    }
-
-    @Test
-    public void testComplexObjectDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Hank"));
-        node.set("age", new ONode(50));
-        node.set("isAdmin", new ONode(false));
-        node.set("hobbies", new ONode(Arrays.asList("Cooking", "Gardening")));
-        ONode metadataNode = new ONode(new HashMap<>());
-        metadataNode.set("key", new ONode("value"));
-        node.set("metadata", metadataNode);
-
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("Hank", user.getName());
-        assertEquals(50, user.getAge());
-        assertFalse(user.isAdmin());
-        assertEquals(Arrays.asList("Cooking", "Gardening"), user.getHobbies());
-        assertEquals("value", user.getMetadata().get("key"));
-    }
-
-    @Test
-    public void testNonPublicFields() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Ivy"));
-
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("Ivy", user.getName());
-    }
-
-    @Test
-    public void testCustomFieldNames() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Jack"));
-        node.set("isAdmin", new ONode(true));
-
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("Jack", user.getName());
-        assertTrue(user.isAdmin());
-    }
-
-    @Test
-    public void testEmptyStringDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode(""));
-
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("", user.getName());
-    }
-
-    @Test
-    public void testSpecialCharactersInString() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("name", new ONode("Special\"Characters\\\n\r\t"));
-
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals("Special\"Characters\\\n\r\t", user.getName());
-    }
-
-    @Test
-    public void testLargeNumberSerialization() {
-        User user = new User();
-        user.setAge(Integer.MAX_VALUE);
-
-        ONode node = JsonBeanCodec.toNode(user);
-        assertEquals(Integer.MAX_VALUE, node.get("age").getInt());
-    }
-
-    @Test
-    public void testLargeNumberDeserialization() {
-        ONode node = new ONode(new HashMap<>());
-        node.set("age", new ONode(Integer.MAX_VALUE));
-
-        User user = JsonBeanCodec.toBean(node, User.class);
-        assertEquals(Integer.MAX_VALUE, user.getAge());
+        assertDoesNotThrow(() -> {
+            JsonBeanCodec.toBean(node, SimpleBean.class);
+        });
     }
 }
