@@ -15,21 +15,21 @@ class JsonParserComplexTest2 {
     @Test
     void testParseDeeplyNestedObject() throws Exception {
         String json = "{\"a\": {\"b\": {\"c\": {\"d\": {\"e\": {\"f\": {\"g\": 42}}}}}}}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertEquals(42, node.get("a").get("b").get("c").get("d").get("e").get("f").get("g").getInt());
     }
 
     @Test
     void testParseDeeplyNestedArray() throws Exception {
         String json = "[[[[[[[42]]]]]]]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertEquals(42, node.get(0).get(0).get(0).get(0).get(0).get(0).get(0).getInt());
     }
 
     @Test
     void testParseMixedNestedTypes() throws Exception {
         String json = "{\"a\": [{\"b\": 1}, {\"c\": [2, 3]}]}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertEquals(1, node.get("a").get(0).get("b").getInt());
         assertTrue(node.get("a").get(1).get("c").isArray());
         assertEquals(2, node.get("a").get(1).get("c").get(0).getInt());
@@ -44,7 +44,7 @@ class JsonParserComplexTest2 {
             if (i < 999) json.append(", ");
         }
         json.append("}}}");
-        ONode node = new JsonReader(new StringReader(json.toString())).parse();
+        ONode node = new JsonReader(new StringReader(json.toString())).read();
         assertEquals(999, node.get("a").get("b").get("key999").getInt());
     }
 
@@ -56,7 +56,7 @@ class JsonParserComplexTest2 {
             if (i < 999) json.append(", ");
         }
         json.append("]]");
-        ONode node = new JsonReader(new StringReader(json.toString())).parse();
+        ONode node = new JsonReader(new StringReader(json.toString())).read();
 
         // 验证外层数组
         assertTrue(node.isArray());
@@ -76,7 +76,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithMixedTypes() throws Exception {
         String json = "{\"string\": \"Hello\", \"number\": 42, \"float\": 3.14, \"boolean\": true, \"null\": null, \"array\": [1, 2, 3], \"object\": {\"key\": \"value\"}}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertEquals("Hello", node.get("string").getString());
         assertEquals(42, node.get("number").getInt());
         assertEquals(3.14, node.get("float").getDouble());
@@ -91,7 +91,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithMixedTypes() throws Exception {
         String json = "[1, \"two\", true, null, {\"key\": \"value\"}]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(5, node.size());
         assertEquals(1, node.get(0).getInt());
@@ -105,7 +105,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithEmptyArray() throws Exception {
         String json = "{\"array\": []}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.get("array").isArray());
         assertEquals(0, node.get("array").size());
     }
@@ -113,7 +113,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithEmptyObject() throws Exception {
         String json = "{\"object\": {}}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.get("object").isObject());
         assertEquals(0, node.get("object").size());
     }
@@ -121,7 +121,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithEmptyObject() throws Exception {
         String json = "[{}]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(1, node.size());
         assertTrue(node.get(0).isObject());
@@ -131,7 +131,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithEmptyArray() throws Exception {
         String json = "[[]]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(1, node.size());
         assertTrue(node.get(0).isArray());
@@ -141,7 +141,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithNestedEmptyArrays() throws Exception {
         String json = "{\"a\": [], \"b\": [[]], \"c\": [[[]]]}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.get("a").isArray());
         assertEquals(0, node.get("a").size());
         assertTrue(node.get("b").isArray());
@@ -159,7 +159,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithNestedEmptyObjects() throws Exception {
         String json = "{\"a\": {}, \"b\": {\"c\": {}}, \"d\": {\"e\": {\"f\": {}}}}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.get("a").isObject());
         assertEquals(0, node.get("a").size());
         assertTrue(node.get("b").isObject());
@@ -177,7 +177,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithNestedMixedTypes() throws Exception {
         String json = "[1, {\"a\": [2, {\"b\": 3}]}, [4, {\"c\": 5}]]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(3, node.size());
         assertEquals(1, node.get(0).getInt());
@@ -192,7 +192,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithNestedMixedTypes() throws Exception {
         String json = "{\"a\": [1, {\"b\": 2}], \"c\": {\"d\": [3, {\"e\": 4}]}}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isObject());
         assertEquals(2, node.size());
         assertTrue(node.get("a").isArray());
@@ -206,7 +206,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithNestedArrays() throws Exception {
         String json = "[[1, 2], [3, 4], [5, 6]]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(3, node.size());
         assertEquals(1, node.get(0).get(0).getInt());
@@ -220,7 +220,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithNestedArrays() throws Exception {
         String json = "{\"a\": [1, 2], \"b\": [3, 4], \"c\": [5, 6]}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isObject());
         assertEquals(3, node.size());
         assertEquals(1, node.get("a").get(0).getInt());
@@ -234,7 +234,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithNestedObjects() throws Exception {
         String json = "[{\"a\": 1}, {\"b\": 2}, {\"c\": 3}]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(3, node.size());
         assertEquals(1, node.get(0).get("a").getInt());
@@ -245,7 +245,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithNestedObjects() throws Exception {
         String json = "{\"a\": {\"b\": 1}, \"c\": {\"d\": 2}, \"e\": {\"f\": 3}}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isObject());
         assertEquals(3, node.size());
         assertEquals(1, node.get("a").get("b").getInt());
@@ -256,7 +256,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithMixedNestedTypes() throws Exception {
         String json = "[1, {\"a\": 2}, [3, {\"b\": 4}]]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(3, node.size());
         assertEquals(1, node.get(0).getInt());
@@ -268,7 +268,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithMixedNestedTypes() throws Exception {
         String json = "{\"a\": 1, \"b\": {\"c\": 2}, \"d\": [3, {\"e\": 4}]}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isObject());
         assertEquals(3, node.size());
         assertEquals(1, node.get("a").getInt());
@@ -280,7 +280,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseArrayWithDeeplyNestedMixedTypes() throws Exception {
         String json = "[1, {\"a\": [2, {\"b\": [3, {\"c\": 4}]}]}]";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isArray());
         assertEquals(2, node.size());
         assertEquals(1, node.get(0).getInt());
@@ -292,7 +292,7 @@ class JsonParserComplexTest2 {
     @Test
     void testParseObjectWithDeeplyNestedMixedTypes() throws Exception {
         String json = "{\"a\": 1, \"b\": {\"c\": [2, {\"d\": [3, {\"e\": 4}]}]}}";
-        ONode node = new JsonReader(new StringReader(json)).parse();
+        ONode node = new JsonReader(new StringReader(json)).read();
         assertTrue(node.isObject());
         assertEquals(2, node.size());
         assertEquals(1, node.get("a").getInt());

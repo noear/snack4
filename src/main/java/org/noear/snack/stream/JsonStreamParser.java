@@ -26,7 +26,7 @@ public class JsonStreamParser {
     }
 
     public void parse(Handler handler) throws IOException {
-        ONode root = parser.parse();
+        ONode root = parser.read();
         traverse(root, handler);
     }
 

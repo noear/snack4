@@ -33,15 +33,15 @@ public class JsonReader {
     }
 
     // 新增带 Options 的快捷方法
-    public static ONode parse(String json) throws IOException {
-        return parse(json, Options.def());
+    public static ONode read(String json) throws IOException {
+        return read(json, Options.def());
     }
 
-    public static ONode parse(String json, Options opts) throws IOException {
-        return new JsonReader(new StringReader(json), opts).parse();
+    public static ONode read(String json, Options opts) throws IOException {
+        return new JsonReader(new StringReader(json), opts).read();
     }
 
-    public ONode parse() throws IOException {
+    public ONode read() throws IOException {
         fillBuffer();
         ONode node = parseValue();
         skipWhitespace();

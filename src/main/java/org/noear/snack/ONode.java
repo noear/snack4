@@ -46,23 +46,56 @@ public final class ONode {
     }
 
     // Getters and Setters
-    public boolean isNull() { return type == TYPE_NULL; }
-    public boolean isBoolean() { return type == TYPE_BOOLEAN; }
-    public boolean isNumber() { return type == TYPE_NUMBER; }
-    public boolean isString() { return type == TYPE_STRING; }
-    public boolean isArray() { return type == TYPE_ARRAY; }
-    public boolean isObject() { return type == TYPE_OBJECT; }
+    public boolean isNull() {
+        return type == TYPE_NULL;
+    }
 
-    public Object getValue() { return value; }
-    public Boolean getBoolean() { return (Boolean) value; }
-    public Number getNumber() { return (Number) value; }
-    public String getString() { return (String) value; }
+    public boolean isBoolean() {
+        return type == TYPE_BOOLEAN;
+    }
+
+    public boolean isNumber() {
+        return type == TYPE_NUMBER;
+    }
+
+    public boolean isString() {
+        return type == TYPE_STRING;
+    }
+
+    public boolean isArray() {
+        return type == TYPE_ARRAY;
+    }
+
+    public boolean isObject() {
+        return type == TYPE_OBJECT;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public Boolean getBoolean() {
+        return (Boolean) value;
+    }
+
+    public Number getNumber() {
+        return (Number) value;
+    }
+
+    public String getString() {
+        return (String) value;
+    }
 
     @SuppressWarnings("unchecked")
-    public List<ONode> getArray() { return (List<ONode>) value; }
+    public List<ONode> getArray() {
+        return (List<ONode>) value;
+    }
 
     @SuppressWarnings("unchecked")
-    public Map<String, ONode> getObject() { return (Map<String, ONode>) value; }
+    public Map<String, ONode> getObject() {
+        return (Map<String, ONode>) value;
+    }
+
     public ONode newObject() {
         if (value == null) {
             value = new HashMap<>();
@@ -79,19 +112,37 @@ public final class ONode {
         return this;
     }
 
-    public int getInt() { return getNumber().intValue(); }
-    public long getLong() { return getNumber().longValue(); }
-    public double getDouble() { return getNumber().doubleValue(); }
+    public int getInt() {
+        return getNumber().intValue();
+    }
+
+    public long getLong() {
+        return getNumber().longValue();
+    }
+
+    public double getDouble() {
+        return getNumber().doubleValue();
+    }
 
     public void setValue(Object value) {
         this.value = value;
     }
 
-    public ONode get(String key) { return getObject().get(key); }
-    public void set(String key, ONode value) { getObject().put(key, value); }
+    public ONode get(String key) {
+        return getObject().get(key);
+    }
 
-    public ONode get(int index) { return getArray().get(index); }
-    public void add(ONode value) { getArray().add(value); }
+    public void set(String key, ONode value) {
+        getObject().put(key, value);
+    }
+
+    public ONode get(int index) {
+        return getArray().get(index);
+    }
+
+    public void add(ONode value) {
+        getArray().add(value);
+    }
 
     public Optional<ONode> getOptional(String key) {
         return isObject() ? Optional.ofNullable(getObject().get(key)) : Optional.empty();
@@ -121,7 +172,9 @@ public final class ONode {
         return reset(null);
     }
 
-    public int getType() { return type; }
+    public int getType() {
+        return type;
+    }
 
     public boolean hasKey(String key) {
         return isObject() && getObject().containsKey(key);
@@ -129,13 +182,20 @@ public final class ONode {
 
     public static String typeToString(int type) {
         switch (type) {
-            case TYPE_NULL: return "null";
-            case TYPE_BOOLEAN: return "boolean";
-            case TYPE_NUMBER: return "number";
-            case TYPE_STRING: return "string";
-            case TYPE_ARRAY: return "array";
-            case TYPE_OBJECT: return "object";
-            default: return "unknown";
+            case TYPE_NULL:
+                return "null";
+            case TYPE_BOOLEAN:
+                return "boolean";
+            case TYPE_NUMBER:
+                return "number";
+            case TYPE_STRING:
+                return "string";
+            case TYPE_ARRAY:
+                return "array";
+            case TYPE_OBJECT:
+                return "object";
+            default:
+                return "unknown";
         }
     }
 
@@ -143,10 +203,10 @@ public final class ONode {
 
     // 添加带 Options 的静态方法
     public static ONode load(String json, Options opts) throws IOException {
-        return new JsonReader(new StringReader(json), opts).parse();
+        return new JsonReader(new StringReader(json), opts).read();
     }
 
-    public String toJson(Options opts) {
+    public String toJson(Options opts) throws IOException {
         return JsonWriter.serialize(this, opts);
     }
 
@@ -155,7 +215,7 @@ public final class ONode {
         return load(json, Options.def());
     }
 
-    public String toJson() {
+    public String toJson() throws IOException {
         return toJson(Options.def());
     }
 

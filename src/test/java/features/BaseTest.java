@@ -25,7 +25,7 @@ public class BaseTest {
                 + "}"
                 + "}";
 
-        ONode node =  JsonReader.parse(json);
+        ONode node =  JsonReader.read(json);
 
         // 验证解析结果
         System.out.println(node.get("name").getString()); // Alice
@@ -52,10 +52,10 @@ public class BaseTest {
 
         // 数据校验
         JsonReader parser = new JsonReader(new StringReader(schemaJson));
-        ONode schemaNode = parser.parse();
+        ONode schemaNode = parser.read();
         SchemaValidator validator = new SchemaValidator(schemaNode);
 
-        ONode data = new JsonReader(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).parse();
+        ONode data = new JsonReader(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).read();
         try {
             validator.validate(data);
         } catch (SchemaException e) {
