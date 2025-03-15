@@ -1,8 +1,9 @@
 package org.noear.snack;
 
 import java.io.IOException;
-
-// 流式解析接口
+/**
+ * 流式处理回调接口
+ */
 public interface JsonStreamHandler {
     void startObject() throws IOException;
     void endObject() throws IOException;

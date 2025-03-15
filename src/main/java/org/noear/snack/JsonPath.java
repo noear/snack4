@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * JSON路径查询工具类
+ */
 public class JsonPath {
     private static final Pattern PATH_PATTERN = Pattern.compile(
             "\\$|(?<=\\.|\\[)([^\\]\\[.]+)(?=\\.|\\[|$)|\\[\\s*'?([^'\\]]+)'?\\s*\\]"

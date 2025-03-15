@@ -3,7 +3,9 @@ package org.noear.snack;
 import java.util.LinkedList;
 import java.util.Queue;
 
-// 内存池实现（简化版）
+/**
+ * 对象池，用于ONode对象复用管理
+ */
 public class ONodePool {
     private static final int DEFAULT_MAX_POOL_SIZE = 100;
     private final Queue<ONode> pool = new LinkedList<>();
@@ -17,11 +19,20 @@ public class ONodePool {
         this.maxSize = maxSize;
     }
 
+    /**
+     * 从池中获取对象实例
+     * @param value 初始值
+     * @return 复用或新建的ONode实例
+     */
     public ONode acquire(Object value) {
         ONode node = pool.poll();
         return (node != null) ? node.reset(value) : new ONode(value);
     }
 
+    /**
+     * 释放对象到池中
+     * @param node 要释放的实例
+     */
     public void release(ONode node) {
         if (pool.size() < maxSize) {
             pool.offer(node.clear());

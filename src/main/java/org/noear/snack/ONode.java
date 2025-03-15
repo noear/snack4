@@ -7,10 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * JSON节点抽象，支持多种数据类型操作
+ */
 public final class ONode {
     private Object value;
     private int type;
 
+    /**
+     * 节点类型常量
+     */
     public static final int TYPE_NULL = 0;
     public static final int TYPE_BOOLEAN = 1;
     public static final int TYPE_NUMBER = 2;

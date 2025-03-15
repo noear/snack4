@@ -24,6 +24,8 @@ public class BaseTest {
                 "  }\n" +
                 "}";
 
+        System.out.println(json);
+
         try (Reader reader = new StringReader(json)) {
             ONode root = new JsonParser(reader).parse();
 
@@ -49,6 +51,9 @@ public class BaseTest {
                 + "  \"age\": {\"type\": \"integer\", \"minimum\": 0}"
                 + "}"
                 + "}";
+
+
+        System.out.println(schemaJson);
 
         // 数据校验
         JsonParser parser = new JsonParser(new StringReader(schemaJson));

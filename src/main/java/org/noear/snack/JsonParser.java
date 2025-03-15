@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * JSON解析器，将输入流转换为ONode对象树
+ */
 public class JsonParser {
     private static final int BUFFER_SIZE = 8192;
     private final Reader reader;

@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
 
+/**
+ * 流式JSON解析器
+ */
 public class JsonStreamParser {
     public interface Handler {
         void startObject() throws IOException;

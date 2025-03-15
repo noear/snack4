@@ -1,7 +1,7 @@
 package org.noear.snack.exception;
 
 /**
- * @author noear 2025/3/15 created
+ * 解析异常
  */
 public class ParseException extends RuntimeException {
     public ParseException(String message) {

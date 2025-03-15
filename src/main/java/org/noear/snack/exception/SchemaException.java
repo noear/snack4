@@ -1,7 +1,7 @@
 package org.noear.snack.exception;
 
 /**
- * @author noear 2025/3/15 created
+ * 模式验证异常
  */
 public class SchemaException extends RuntimeException {
     public SchemaException(String message) {
