@@ -51,8 +51,8 @@ public class JsonBeanCodec {
             String fieldName = entry.getKey();
             if (node.hasKey(fieldName)) {
                 ONode fieldNode = node.get(fieldName);
-                Object value = convertValue(fieldNode, entry.getValue().type().returnType());
-                entry.getValue().invoke(bean, value);
+                Object value = convertValue(fieldNode, entry.getValue().type().parameterType(1)); // 获取字段类型
+                entry.getValue().invoke(bean, value); // 设置字段值
             }
         }
         return bean;
