@@ -63,7 +63,9 @@ public class JsonBeanCodec {
         Map<String, MethodHandle> fieldHandles = getFieldHandles(bean.getClass());
         for (Map.Entry<String, MethodHandle> entry : fieldHandles.entrySet()) {
             String fieldName = entry.getKey();
-            Object value = entry.getValue().invoke(bean);
+            Field field = bean.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            Object value = field.get(bean);
             node.set(fieldName, convertValueToNode(value));
         }
         return node;
@@ -160,7 +162,6 @@ public class JsonBeanCodec {
                 field.setAccessible(true);
                 try {
                     MethodHandle setter = LOOKUP.unreflectSetter(field);
-                    MethodHandle getter = LOOKUP.unreflectGetter(field);
                     fieldHandles.put(field.getName(), setter);
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("Failed to create MethodHandle for field: " + field.getName(), e);
