@@ -33,11 +33,11 @@ public class ONodePool {
 
     /**
      * 释放对象到池中
-     * @param node 要释放的实例
+     * @param releasedNode 要释放的实例
      */
-    public void release(ONode node) {
+    public void release(ONode releasedNode) {
         if (pool.size() < maxSize) {
-            pool.offer(node.clear());
+            pool.offer(releasedNode.clear());
         }
     }
 }

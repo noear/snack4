@@ -1,7 +1,7 @@
 package org.noear.snack.core;
 
 import org.noear.snack.codec.Codec;
-import org.noear.snack.schema.validator.SchemaValidator;
+import org.noear.snack.schema.SchemaValidator;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -15,7 +15,7 @@ public final class Options {
     private static final Options DEFAULT = new Builder().build();
 
     // 特性开关（使用位掩码存储）
-    private final int _features;
+    private final int enabledFeatures;
 
     // 通用配置
     private final DateFormat _dateFormat;
@@ -36,7 +36,7 @@ public final class Options {
                 features |= feat.mask();
             }
         }
-        this._features = features;
+        this.enabledFeatures = features;
 
         // 通用配置
         this._dateFormat = builder.dateFormat;
@@ -51,8 +51,8 @@ public final class Options {
     }
 
     /** 是否启用指定特性 */
-    public boolean hasFeature(Feature feature) {
-        return (_features & feature.mask()) != 0;
+    public boolean isFeatureEnabled(Feature feature) {
+        return (enabledFeatures & feature.mask()) != 0;
     }
 
     /** 获取日期格式 */
@@ -87,11 +87,13 @@ public final class Options {
 
     /** 选项建造者 */
     public static class Builder {
+        private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         // 特性开关存储
         private final EnumMap<Feature, Boolean> features = new EnumMap<>(Feature.class);
 
         // 通用配置
-        private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        private DateFormat dateFormat = DEFAULT_DATE_FORMAT;
         private final Map<Class<?>, Codec<?>> codecRegistry = new HashMap<>();
         private SchemaValidator schemaValidator;
 

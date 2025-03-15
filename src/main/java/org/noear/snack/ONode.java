@@ -4,7 +4,7 @@ import org.noear.snack.codec.BeanCodec;
 import org.noear.snack.codec.JsonReader;
 import org.noear.snack.codec.JsonWriter;
 import org.noear.snack.core.Options;
-import org.noear.snack.schema.validator.SchemaValidator;
+import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -32,10 +32,10 @@ public final class ONode {
 
     public ONode(Object value) {
         this.value = value;
-        this.type = determineType(value);
+        this.type = resolveType(value);
     }
 
-    private int determineType(Object value) {
+    private int resolveType(Object value) {
         if (value == null) return TYPE_NULL;
         if (value instanceof Boolean) return TYPE_BOOLEAN;
         if (value instanceof Number) return TYPE_NUMBER;
@@ -48,6 +48,12 @@ public final class ONode {
     // Getters and Setters
     public boolean isNull() {
         return type == TYPE_NULL;
+    }
+
+    public boolean isNullOrEmpty() {
+        return type == TYPE_NULL ||
+                (type == TYPE_OBJECT && getObject().isEmpty()) ||
+                (type == TYPE_ARRAY && getArray().isEmpty());
     }
 
     public boolean isBoolean() {
@@ -162,7 +168,7 @@ public final class ONode {
 
     public ONode reset(Object value) {
         this.value = value;
-        this.type = determineType(value);
+        this.type = resolveType(value);
         return this;
     }
 

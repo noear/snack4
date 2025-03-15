@@ -16,8 +16,8 @@ public class JsonReader {
     private static final int BUFFER_SIZE = 8192;
     private final Reader reader;
     private final char[] buffer = new char[BUFFER_SIZE];
-    private int pos;
-    private int limit;
+    private int bufferPosition;
+    private int bufferLimit;
     private long line = 1;
     private long column = 0;
 
@@ -45,16 +45,16 @@ public class JsonReader {
         fillBuffer();
         ONode node = parseValue();
         skipWhitespace();
-        if (pos < limit) throw error("Unexpected data after json root");
+        if (bufferPosition < bufferLimit) throw error("Unexpected data after json root");
         return node;
     }
 
     private ONode parseValue() throws IOException {
         skipWhitespace();
         char c = nextChar();
-        pos--; // 回退进行类型判断
+        bufferPosition--; // 回退进行类型判断
 
-        if (opts.hasFeature(Feature.Input_AllowComment)) {
+        if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
             skipComments();
         }
 
@@ -71,7 +71,7 @@ public class JsonReader {
     private void skipComments() throws IOException {
         char c = peekChar();
         if (c == '/') {
-            pos++;
+            bufferPosition++;
             char next = peekChar();
             if (next == '/') {
                 skipLineComment();
@@ -82,18 +82,18 @@ public class JsonReader {
     }
 
     private void skipLineComment() throws IOException {
-        while (pos < limit && buffer[pos] != '\n') {
-            pos++;
+        while (bufferPosition < bufferLimit && buffer[bufferPosition] != '\n') {
+            bufferPosition++;
         }
     }
 
     private void skipBlockComment() throws IOException {
-        pos++;
+        bufferPosition++;
         while (true) {
-            if (pos >= limit && !fillBuffer()) break;
-            char c = buffer[pos++];
+            if (bufferPosition >= bufferLimit && !fillBuffer()) break;
+            char c = buffer[bufferPosition++];
             if (c == '*' && peekChar() == '/') {
-                pos++;
+                bufferPosition++;
                 break;
             }
         }
@@ -105,7 +105,7 @@ public class JsonReader {
         while (true) {
             skipWhitespace();
             if (peekChar() == '}') {
-                pos++;
+                bufferPosition++;
                 break;
             }
 
@@ -120,7 +120,7 @@ public class JsonReader {
 
             skipWhitespace();
             if (peekChar() == ',') {
-                pos++;
+                bufferPosition++;
                 skipWhitespace();
                 if (peekChar() == '}') throw error("Trailing comma in object");
             } else if (peekChar() == '}') {
@@ -138,7 +138,7 @@ public class JsonReader {
         while (true) {
             skipWhitespace();
             if (peekChar() == ']') {
-                pos++;
+                bufferPosition++;
                 break;
             }
 
@@ -146,7 +146,7 @@ public class JsonReader {
 
             skipWhitespace();
             if (peekChar() == ',') {
-                pos++;
+                bufferPosition++;
                 skipWhitespace();
                 if (peekChar() == ']') throw error("Trailing comma in array");
             } else if (peekChar() == ']') {
@@ -202,7 +202,7 @@ public class JsonReader {
         // 处理负数
         if (c == '-') {
             sb.append(c);
-            pos++;
+            bufferPosition++;
         }
 
         // 解析整数部分
@@ -278,14 +278,14 @@ public class JsonReader {
     }
 
     private void skipWhitespace() throws IOException {
-        while (pos < limit || fillBuffer()) {
-            char c = buffer[pos];
+        while (bufferPosition < bufferLimit || fillBuffer()) {
+            char c = buffer[bufferPosition];
             if (c == '\n') {
                 line++;
                 column = 0;
             } else if (c == '\r') {
                 // Handle CRLF
-                if (peekChar(1) == '\n') pos++;
+                if (peekChar(1) == '\n') bufferPosition++;
                 line++;
                 column = 0;
             } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
@@ -293,16 +293,16 @@ public class JsonReader {
             } else {
                 break;
             }
-            pos++;
+            bufferPosition++;
             column++;
         }
     }
 
     private char nextChar() throws IOException {
-        if (pos >= limit && !fillBuffer()) {
+        if (bufferPosition >= bufferLimit && !fillBuffer()) {
             throw error("Unexpected end of input");
         }
-        char c = buffer[pos++];
+        char c = buffer[bufferPosition++];
         column++;
         return c;
     }
@@ -312,17 +312,17 @@ public class JsonReader {
     }
 
     private char peekChar(int offset) throws IOException {
-        if (pos + offset >= limit && !fillBuffer()) {
+        if (bufferPosition + offset >= bufferLimit && !fillBuffer()) {
             return 0;
         }
-        return (pos + offset < limit) ? buffer[pos + offset] : 0;
+        return (bufferPosition + offset < bufferLimit) ? buffer[bufferPosition + offset] : 0;
     }
 
     private boolean fillBuffer() throws IOException {
-        if (pos < limit) return true;
-        limit = reader.read(buffer);
-        pos = 0;
-        return limit > 0;
+        if (bufferPosition < bufferLimit) return true;
+        bufferLimit = reader.read(buffer);
+        bufferPosition = 0;
+        return bufferLimit > 0;
     }
 
     private boolean isDigit(char c) {

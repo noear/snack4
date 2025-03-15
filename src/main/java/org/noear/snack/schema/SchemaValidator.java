@@ -1,5 +1,5 @@
 // file: JsonSchemaValidator.java
-package org.noear.snack.schema.validator;
+package org.noear.snack.schema;
 
 import org.noear.snack.ONode;
 import org.noear.snack.schema.rule.EnumRule;
@@ -59,7 +59,7 @@ public class SchemaValidator {
 
         // 处理数值范围校验
         if (dataNode.isNumber()) {
-            validateNumberRange(schemaNode, dataNode, path);
+            validateNumericConstraints(schemaNode, dataNode, path);
         }
 
         // 处理字符串格式校验
@@ -179,7 +179,7 @@ public class SchemaValidator {
     }
 
     // 数值范围校验（完整实现）
-    private void validateNumberRange(ONode schemaNode, ONode dataNode, PathTracker path) throws SchemaException {
+    private void validateNumericConstraints(ONode schemaNode, ONode dataNode, PathTracker path) throws SchemaException {
         double value = dataNode.getDouble();
 
         if (schemaNode.hasKey("minimum")) {

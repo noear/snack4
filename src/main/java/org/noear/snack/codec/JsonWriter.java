@@ -54,21 +54,21 @@ public class JsonWriter {
         writer.write('{');
         boolean first = true;
         for (Map.Entry<String, ONode> entry : map.entrySet()) {
-            if (opts.hasFeature(Feature.Output_SkipNullValue) && entry.getValue().isNull()) {
+            if (opts.isFeatureEnabled(Feature.Output_SkipNullValue) && entry.getValue().isNull()) {
                 continue;
             }
 
             if (!first) writer.write(',');
-            newLine();
+            writeIndentation();
 
-            String key = opts.hasFeature(Feature.Output_UseUnderlineStyle) ?
+            String key = opts.isFeatureEnabled(Feature.Output_UseUnderlineStyle) ?
                     toUnderlineName(entry.getKey()) : entry.getKey();
             writeString(key);
             writer.write(':');
             write(entry.getValue());
             first = false;
         }
-        newLine();
+        writeIndentation();
         writer.write('}');
     }
 
@@ -77,16 +77,16 @@ public class JsonWriter {
         boolean first = true;
         for (ONode item : list) {
             if (!first) writer.write(',');
-            newLine();
+            writeIndentation();
             write(item);
             first = false;
         }
-        newLine();
+        writeIndentation();
         writer.write(']');
     }
 
-    private void newLine() throws IOException {
-        if (opts.hasFeature(Feature.Output_PrettyFormat)) {
+    private void writeIndentation() throws IOException {
+        if (opts.isFeatureEnabled(Feature.Output_PrettyFormat)) {
             writer.write('\n');
             for (int i = 0; i < depth; i++) {
                 writer.write(opts.getIndent());
@@ -95,7 +95,7 @@ public class JsonWriter {
     }
 
     private void writeNumber(Number num) throws IOException {
-        if (opts.hasFeature(Feature.UseBigNumberMode) && num instanceof Double) {
+        if (opts.isFeatureEnabled(Feature.UseBigNumberMode) && num instanceof Double) {
             writer.write('"' + num.toString() + '"');
         } else {
             writer.write(num.toString());

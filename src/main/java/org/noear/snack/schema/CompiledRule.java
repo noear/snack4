@@ -1,4 +1,4 @@
-package org.noear.snack.schema.validator;
+package org.noear.snack.schema;
 
 import org.noear.snack.ONode;
 import org.noear.snack.exception.SchemaException;

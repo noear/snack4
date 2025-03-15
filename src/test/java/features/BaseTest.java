@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.noear.snack.*;
 import org.noear.snack.codec.JsonReader;
 import org.noear.snack.exception.SchemaException;
-import org.noear.snack.schema.validator.SchemaValidator;
+import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;

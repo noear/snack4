@@ -21,9 +21,9 @@ public class PathTracker {
     }
 
     /** 进入数组索引 */
-    public void enterIndex(int index) {
+    public void enterIndex(int arrayIndex) {
         String current = stack.peek();
-        stack.push(current + "[" + index + "]");
+        stack.push(current + "[" + arrayIndex + "]");
     }
 
     /** 获取当前路径 */

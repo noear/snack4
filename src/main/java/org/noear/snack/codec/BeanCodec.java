@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 public class BeanCodec {
     private static final Map<Class<?>, Map<String, Field>> FIELD_CACHE = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<>();
 
     // 序列化：对象转ONode
     public static ONode serialize(Object bean) {
