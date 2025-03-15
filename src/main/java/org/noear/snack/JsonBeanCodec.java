@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * Java Bean 和 ONode 双向转换器
  */
-public class BeanNodeConverter {
+public class JsonBeanCodec {
     private static final Map<Class<?>, List<Field>> FIELD_CACHE = new ConcurrentHashMap<>();
 
     /**
