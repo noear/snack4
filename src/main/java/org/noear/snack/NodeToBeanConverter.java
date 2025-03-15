@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * 将 Java Bean 转为 ONode 的转换器
  */
-public class NodeConverter {
+public class NodeToBeanConverter {
 
     /**
      * 将 Java Bean 转为 ONode

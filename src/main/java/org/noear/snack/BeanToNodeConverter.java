@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * 将 ONode 转为 Java Bean 的转换器
  */
-public class BeanConverter {
+public class BeanToNodeConverter {
 
     /**
      * 将 ONode 转为指定类型的 Java Bean
