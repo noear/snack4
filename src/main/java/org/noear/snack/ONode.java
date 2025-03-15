@@ -9,12 +9,18 @@ public final class ONode {
     private Object value;
     private int type;
 
+    public static final ONode NULL = new ONode();
+
     public static final int TYPE_NULL = 0;
     public static final int TYPE_BOOLEAN = 1;
     public static final int TYPE_NUMBER = 2;
     public static final int TYPE_STRING = 3;
     public static final int TYPE_ARRAY = 4;
     public static final int TYPE_OBJECT = 5;
+
+    public ONode() {
+        this.type = TYPE_NULL;
+    }
 
     public ONode(Object value) {
         this.value = value;
@@ -49,10 +55,29 @@ public final class ONode {
 
     @SuppressWarnings("unchecked")
     public Map<String, ONode> getObject() { return (Map<String, ONode>) value; }
+    public ONode getOrNewObject() {
+        if (value == null) {
+            value = new HashMap<>();
+        }
+
+        return this;
+    }
+
+    public ONode getOrNewArray() {
+        if (value == null) {
+            value = new ArrayList<>();
+        }
+
+        return this;
+    }
 
     public int getInt() { return getNumber().intValue(); }
     public long getLong() { return getNumber().longValue(); }
     public double getDouble() { return getNumber().doubleValue(); }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
 
     public ONode get(String key) { return getObject().get(key); }
     public void set(String key, ONode value) { getObject().put(key, value); }
