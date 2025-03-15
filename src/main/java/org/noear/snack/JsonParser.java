@@ -198,7 +198,7 @@ public class JsonParser {
     }
 
     private ONode parseKeyword(String expect, Object value) throws IOException {
-        for (int i = 1; i < expect.length(); i++) {
+        for (int i = 0; i < expect.length(); i++) {
             char c = nextChar();
             if (c != expect.charAt(i)) {
                 throw error("Unexpected keyword: expected '" + expect + "'");
