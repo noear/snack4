@@ -1,4 +1,4 @@
-package org.noear.snack;
+package org.noear.snack.core;
 
 import org.noear.snack.codec.Codec;
 import org.noear.snack.schema.validator.SchemaValidator;

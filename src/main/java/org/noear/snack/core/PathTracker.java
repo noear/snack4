@@ -1,4 +1,4 @@
-package org.noear.snack.util;
+package org.noear.snack.core;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

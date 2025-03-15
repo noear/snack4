@@ -3,7 +3,7 @@ package org.noear.snack.schema.validator;
 import org.noear.snack.ONode;
 import org.noear.snack.exception.SchemaException;
 import org.noear.snack.schema.rule.ValidationRule;
-import org.noear.snack.util.PathTracker;
+import org.noear.snack.core.PathTracker;
 
 import java.util.List;
 

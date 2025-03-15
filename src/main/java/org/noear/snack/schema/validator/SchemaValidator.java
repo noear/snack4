@@ -5,7 +5,7 @@ import org.noear.snack.ONode;
 import org.noear.snack.schema.rule.EnumRule;
 import org.noear.snack.schema.rule.TypeRule;
 import org.noear.snack.schema.rule.ValidationRule;
-import org.noear.snack.util.PathTracker;
+import org.noear.snack.core.PathTracker;
 import org.noear.snack.exception.SchemaException;
 
 import java.util.*;

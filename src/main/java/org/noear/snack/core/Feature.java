@@ -1,4 +1,4 @@
-package org.noear.snack;
+package org.noear.snack.core;
 
 /**
  * JSON 特性枚举（按读写方向分类）
