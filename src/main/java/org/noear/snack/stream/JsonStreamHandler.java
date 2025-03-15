@@ -1,4 +1,6 @@
-package org.noear.snack;
+package org.noear.snack.stream;
+
+import org.noear.snack.ONode;
 
 import java.io.IOException;
 /**

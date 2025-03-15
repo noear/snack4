@@ -1,7 +1,8 @@
 // file: JsonSchemaValidator.java
-package org.noear.snack;
+package org.noear.snack.schema;
 
-import org.noear.snack.core.PathTracker;
+import org.noear.snack.ONode;
+import org.noear.snack.util.PathTracker;
 import org.noear.snack.exception.SchemaException;
 
 import java.util.*;
@@ -9,11 +10,11 @@ import java.util.*;
 /**
  * JSON模式验证器，支持JSON Schema规范
  */
-public class JsonSchemaValidator {
+public class SchemaValidator {
     private final ONode schema;
     private final Map<String, CompiledRule> compiledRules;
 
-    public JsonSchemaValidator(ONode schema) {
+    public SchemaValidator(ONode schema) {
         if (!schema.isObject()) {
             throw new IllegalArgumentException("Schema must be a JSON object");
         }

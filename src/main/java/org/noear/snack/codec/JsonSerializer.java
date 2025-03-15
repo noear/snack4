@@ -1,4 +1,6 @@
-package org.noear.snack;
+package org.noear.snack.codec;
+
+import org.noear.snack.ONode;
 
 import java.io.IOException;
 import java.io.StringWriter;

@@ -2,10 +2,11 @@ package features;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.*;
+import org.noear.snack.codec.JsonParser;
 import org.noear.snack.exception.SchemaException;
+import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 
 /**
@@ -52,7 +53,7 @@ public class BaseTest {
         // 数据校验
         JsonParser parser = new JsonParser(new StringReader(schemaJson));
         ONode schemaNode = parser.parse();
-        JsonSchemaValidator validator = new JsonSchemaValidator(schemaNode);
+        SchemaValidator validator = new SchemaValidator(schemaNode);
 
         ONode data = new JsonParser(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).parse();
         try {

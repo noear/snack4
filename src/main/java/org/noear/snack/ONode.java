@@ -1,5 +1,12 @@
 package org.noear.snack;
 
+import org.noear.snack.codec.BeanCodec;
+import org.noear.snack.codec.JsonParser;
+import org.noear.snack.codec.JsonSerializer;
+import org.noear.snack.schema.SchemaValidator;
+
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 
 /**
@@ -133,5 +140,23 @@ public final class ONode {
             case TYPE_OBJECT: return "object";
             default: return "unknown";
         }
+    }
+
+    /// /////////////
+
+    public static ONode load(String json) throws IOException {
+        return new JsonParser(new StringReader(json)).parse();
+    }
+
+    public String toJson() {
+        return JsonSerializer.toJsonString(this);
+    }
+
+    public <T> T toBean(Class<T> clazz) {
+        return BeanCodec.deserialize(this, clazz);
+    }
+
+    public void validate(SchemaValidator schema) {
+        schema.validate(this);
     }
 }

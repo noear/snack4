@@ -1,16 +1,18 @@
-package org.noear.snack;
+package org.noear.snack.codec;
+
+import org.noear.snack.ONode;
 
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class JsonBeanCodec {
+public class BeanCodec {
     private static final Map<Class<?>, Map<String, Field>> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<>();
 
     // 序列化：对象转ONode
-    public static ONode toNode(Object bean) {
+    public static ONode serialize(Object bean) {
         if (bean == null) {
             return new ONode(null);
         }
@@ -28,7 +30,7 @@ public class JsonBeanCodec {
     }
 
     // 反序列化：ONode转对象
-    public static <T> T toBean(ONode node, Class<T> clazz) {
+    public static <T> T deserialize(ONode node, Class<T> clazz) {
         if (node == null || clazz == null) {
             return null;
         }

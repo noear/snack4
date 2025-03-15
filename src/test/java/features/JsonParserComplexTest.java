@@ -1,8 +1,7 @@
 package features;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.JsonParser;
-import org.noear.snack.ONode;
+import org.noear.snack.codec.JsonParser;
 import org.noear.snack.exception.ParseException;
 
 import java.io.StringReader;

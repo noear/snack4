@@ -1,4 +1,7 @@
-package org.noear.snack;
+package org.noear.snack.stream;
+
+import org.noear.snack.ONode;
+import org.noear.snack.codec.JsonParser;
 
 import java.io.IOException;
 import java.io.Reader;

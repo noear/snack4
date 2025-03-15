@@ -1,4 +1,6 @@
-package org.noear.snack;
+package org.noear.snack.util;
+
+import org.noear.snack.ONode;
 
 import java.util.LinkedList;
 import java.util.Queue;
