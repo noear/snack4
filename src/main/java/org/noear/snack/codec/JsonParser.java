@@ -1,10 +1,13 @@
 package org.noear.snack.codec;
 
 import org.noear.snack.ONode;
+import org.noear.snack.core.Feature;
+import org.noear.snack.core.Options;
 import org.noear.snack.exception.ParseException;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,8 +21,24 @@ public class JsonParser {
     private long line = 1;
     private long column = 0;
 
+    private final Options opts;
+
     public JsonParser(Reader reader) {
+        this(reader, Options.def());
+    }
+
+    public JsonParser(Reader reader, Options opts) {
         this.reader = reader;
+        this.opts = opts != null ? opts : Options.def();
+    }
+
+    // 新增带 Options 的快捷方法
+    public static ONode parse(String json) throws IOException {
+        return parse(json, Options.def());
+    }
+
+    public static ONode parse(String json, Options opts) throws IOException {
+        return new JsonParser(new StringReader(json), opts).parse();
     }
 
     public ONode parse() throws IOException {
@@ -35,6 +54,10 @@ public class JsonParser {
         char c = nextChar();
         pos--; // 回退进行类型判断
 
+        if (opts.hasFeature(Feature.Input_AllowComment)) {
+            skipComments();
+        }
+
         if (c == '{') return parseObject();
         if (c == '[') return parseArray();
         if (c == '"') return new ONode(parseString());
@@ -43,6 +66,37 @@ public class JsonParser {
         if (c == 'f') return parseKeyword("false", false);
         if (c == 'n') return parseKeyword("null", null);
         throw error("Unexpected character: " + c);
+    }
+
+    private void skipComments() throws IOException {
+        char c = peekChar();
+        if (c == '/') {
+            pos++;
+            char next = peekChar();
+            if (next == '/') {
+                skipLineComment();
+            } else if (next == '*') {
+                skipBlockComment();
+            }
+        }
+    }
+
+    private void skipLineComment() throws IOException {
+        while (pos < limit && buffer[pos] != '\n') {
+            pos++;
+        }
+    }
+
+    private void skipBlockComment() throws IOException {
+        pos++;
+        while (true) {
+            if (pos >= limit && !fillBuffer()) break;
+            char c = buffer[pos++];
+            if (c == '*' && peekChar() == '/') {
+                pos++;
+                break;
+            }
+        }
     }
 
     private ONode parseObject() throws IOException {

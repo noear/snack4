@@ -22,8 +22,8 @@ public class JsonStreamParser {
 
     private final JsonParser parser;
 
-    public JsonStreamParser(Reader reader) {
-        this.parser = new JsonParser(reader);
+    public JsonStreamParser(JsonParser parser) {
+        this.parser = parser;
     }
 
     public void parse(Handler handler) throws IOException {

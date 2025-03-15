@@ -25,7 +25,7 @@ public class BaseTest {
                 + "}"
                 + "}";
 
-        ONode node = new JsonParser(new StringReader(json)).parse();
+        ONode node =  JsonParser.parse(json);
 
         // 验证解析结果
         System.out.println(node.get("name").getString()); // Alice

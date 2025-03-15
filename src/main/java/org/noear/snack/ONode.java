@@ -3,6 +3,7 @@ package org.noear.snack;
 import org.noear.snack.codec.BeanCodec;
 import org.noear.snack.codec.JsonParser;
 import org.noear.snack.codec.JsonSerializer;
+import org.noear.snack.core.Options;
 import org.noear.snack.schema.validator.SchemaValidator;
 
 import java.io.IOException;
@@ -102,10 +103,6 @@ public final class ONode {
         return (index >= 0 && index < arr.size()) ? Optional.of(arr.get(index)) : Optional.empty();
     }
 
-    public String toJsonString() {
-        return JsonSerializer.toJsonString(this);
-    }
-
     public int size() {
         if (isArray()) return getArray().size();
         if (isObject()) return getObject().size();
@@ -144,16 +141,30 @@ public final class ONode {
 
     /// /////////////
 
+    // 添加带 Options 的静态方法
+    public static ONode load(String json, Options opts) throws IOException {
+        return new JsonParser(new StringReader(json), opts).parse();
+    }
+
+    public String toJson(Options opts) {
+        return JsonSerializer.serialize(this, opts);
+    }
+
+    // 保持原有方法兼容性
     public static ONode load(String json) throws IOException {
-        return new JsonParser(new StringReader(json)).parse();
+        return load(json, Options.def());
     }
 
     public String toJson() {
-        return JsonSerializer.toJsonString(this);
+        return toJson(Options.def());
+    }
+
+    public <T> T toBean(Class<T> clazz, Options opts) {
+        return BeanCodec.deserialize(this, clazz, opts);
     }
 
     public <T> T toBean(Class<T> clazz) {
-        return BeanCodec.deserialize(this, clazz);
+        return toBean(clazz, Options.def());
     }
 
     public void validate(SchemaValidator schema) {

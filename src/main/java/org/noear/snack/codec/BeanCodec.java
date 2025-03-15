@@ -1,6 +1,7 @@
 package org.noear.snack.codec;
 
 import org.noear.snack.ONode;
+import org.noear.snack.core.Options;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -10,25 +11,18 @@ import java.util.stream.Collectors;
 public class BeanCodec {
     private static final Map<Class<?>, Map<String, Field>> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Constructor<?>> CONSTRUCTOR_CACHE = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Codec<?>> CODEC_REGISTRY = new ConcurrentHashMap<>();
-
-    // 注册自定义编解码器
-    public static <T> void registerCodec(Class<T> clazz, Codec<T> codec) {
-        CODEC_REGISTRY.put(clazz, codec);
-    }
-
-    // 移除自定义编解码器
-    public static void unregisterCodec(Class<?> clazz) {
-        CODEC_REGISTRY.remove(clazz);
-    }
 
     // 序列化：对象转ONode
     public static ONode serialize(Object bean) {
+        return serialize(bean, Options.def());
+    }
+
+    public static ONode serialize(Object bean, Options opts) {
         if (bean == null) {
             return new ONode(null);
         }
         try {
-            return convertBeanToNode(bean, new IdentityHashMap<>());
+            return convertBeanToNode(bean, new IdentityHashMap<>(), opts);
         } catch (Throwable e) {
             if (e instanceof StackOverflowError) {
                 throw (StackOverflowError) e;
@@ -42,11 +36,15 @@ public class BeanCodec {
 
     // 反序列化：ONode转对象
     public static <T> T deserialize(ONode node, Class<T> clazz) {
+        return deserialize(node,clazz, Options.def());
+    }
+
+    public static <T> T deserialize(ONode node, Class<T> clazz, Options opts) {
         if (node == null || clazz == null) {
             return null;
         }
         try {
-            return convertNodeToBean(node, clazz, new IdentityHashMap<>());
+            return convertNodeToBean(node, clazz, new IdentityHashMap<>(), opts);
         } catch (Throwable e) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -58,13 +56,13 @@ public class BeanCodec {
     //-- 私有方法 --//
 
     // 对象转ONode核心逻辑
-    private static ONode convertBeanToNode(Object bean, Map<Object, Object> visited) throws Exception {
+    private static ONode convertBeanToNode(Object bean, Map<Object, Object> visited, Options opts) throws Exception {
         if (bean == null) {
             return new ONode(null);
         }
 
         // 优先使用自定义编解码器
-        Codec<Object> codec = (Codec<Object>) CODEC_REGISTRY.get(bean.getClass());
+        Codec<Object> codec = (Codec<Object>) opts.getCodecRegistry().get(bean.getClass());
         if (codec != null) {
             ONode node = new ONode();
             codec.encode(node, bean);
@@ -83,7 +81,7 @@ public class BeanCodec {
         for (Field field : getFields(clazz).values()) {
             field.setAccessible(true);
             Object value = field.get(bean);
-            ONode fieldNode = convertValueToNode(value, visited);
+            ONode fieldNode = convertValueToNode(value, visited, opts);
             node.set(field.getName(), fieldNode);
         }
 
@@ -91,13 +89,13 @@ public class BeanCodec {
     }
 
     // 值转ONode处理
-    private static ONode convertValueToNode(Object value, Map<Object, Object> visited) throws Exception {
+    private static ONode convertValueToNode(Object value, Map<Object, Object> visited, Options opts) throws Exception {
         if (value == null) {
             return new ONode(null);
         }
 
         // 优先使用自定义编解码器
-        Codec<Object> codec = (Codec<Object>) CODEC_REGISTRY.get(value.getClass());
+        Codec<Object> codec = (Codec<Object>) opts.getCodecRegistry().get(value.getClass());
         if (codec != null) {
             ONode node = new ONode();
             codec.encode(node, value);
@@ -115,29 +113,29 @@ public class BeanCodec {
         } else if (value instanceof Enum) {
             return new ONode(((Enum<?>) value).name());
         } else if (value instanceof Collection) {
-            return convertCollectionToNode((Collection<?>) value, visited);
+            return convertCollectionToNode((Collection<?>) value, visited, opts);
         } else if (value instanceof Map) {
-            return convertMapToNode((Map<?, ?>) value, visited);
+            return convertMapToNode((Map<?, ?>) value, visited, opts);
         } else {
-            return convertBeanToNode(value, visited);
+            return convertBeanToNode(value, visited, opts);
         }
     }
 
     // 处理集合类型
-    private static ONode convertCollectionToNode(Collection<?> collection, Map<Object, Object> visited) throws Exception {
+    private static ONode convertCollectionToNode(Collection<?> collection, Map<Object, Object> visited, Options opts) throws Exception {
         ONode arrayNode = new ONode(new ArrayList<>());
         for (Object item : collection) {
-            arrayNode.add(convertValueToNode(item, visited));
+            arrayNode.add(convertValueToNode(item, visited, opts));
         }
         return arrayNode;
     }
 
     // 处理Map类型
-    private static ONode convertMapToNode(Map<?, ?> map, Map<Object, Object> visited) throws Exception {
+    private static ONode convertMapToNode(Map<?, ?> map, Map<Object, Object> visited, Options opts) throws Exception {
         ONode objNode = new ONode(new LinkedHashMap<>());
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             String key = entry.getKey().toString();
-            ONode valueNode = convertValueToNode(entry.getValue(), visited);
+            ONode valueNode = convertValueToNode(entry.getValue(), visited, opts);
             objNode.set(key, valueNode);
         }
         return objNode;
@@ -146,9 +144,9 @@ public class BeanCodec {
     //-- 反序列化逻辑 --//
 
     @SuppressWarnings("unchecked")
-    private static <T> T convertNodeToBean(ONode node, Class<T> clazz, Map<Object, Object> visited) throws Exception {
+    private static <T> T convertNodeToBean(ONode node, Class<T> clazz, Map<Object, Object> visited, Options opts) throws Exception {
         // 优先使用自定义编解码器
-        Codec<T> codec = (Codec<T>) CODEC_REGISTRY.get(clazz);
+        Codec<T> codec = (Codec<T>) opts.getCodecRegistry().get(clazz);
         if (codec != null) {
             return codec.decode(node);
         }
@@ -162,7 +160,7 @@ public class BeanCodec {
             ONode fieldNode = node.get(fieldName);
 
             if (fieldNode != null && !fieldNode.isNull()) {
-                Object value = convertValue(fieldNode, field.getGenericType(), visited);
+                Object value = convertValue(fieldNode, field.getGenericType(), visited, opts);
                 field.set(bean, value);
             } else {
                 setPrimitiveDefault(field, bean);
@@ -172,7 +170,7 @@ public class BeanCodec {
     }
 
     // 类型转换核心
-    private static Object convertValue(ONode node, Type targetType, Map<Object, Object> visited) throws Exception {
+    private static Object convertValue(ONode node, Type targetType, Map<Object, Object> visited, Options opts) throws Exception {
         if (node.isNull()) {
             return null;
         }
@@ -183,10 +181,10 @@ public class BeanCodec {
             Type rawType = pType.getRawType();
 
             if (List.class.isAssignableFrom((Class<?>) rawType)) {
-                return convertToList(node, pType.getActualTypeArguments()[0], visited);
+                return convertToList(node, pType.getActualTypeArguments()[0], visited, opts);
             } else if (Map.class.isAssignableFrom((Class<?>) rawType)) {
                 Type[] typeArgs = pType.getActualTypeArguments();
-                return convertToMap(node, typeArgs[0], typeArgs[1], visited);
+                return convertToMap(node, typeArgs[0], typeArgs[1], visited, opts);
             }
         }
 
@@ -194,7 +192,7 @@ public class BeanCodec {
         Class<?> clazz = (Class<?>) (targetType instanceof Class ? targetType : ((ParameterizedType) targetType).getRawType());
 
         // 优先使用自定义编解码器
-        Codec<?> codec = CODEC_REGISTRY.get(clazz);
+        Codec<?> codec = opts.getCodecRegistry().get(clazz);
         if (codec != null) {
             return codec.decode(node);
         }
@@ -208,7 +206,7 @@ public class BeanCodec {
         if (clazz == Object.class) return node.getValue();
 
         // 处理嵌套对象
-        return convertNodeToBean(node, clazz, visited);
+        return convertNodeToBean(node, clazz, visited, opts);
     }
 
     //-- 辅助方法 --//
@@ -229,21 +227,21 @@ public class BeanCodec {
     }
 
     // 处理List泛型
-    private static List<?> convertToList(ONode node, Type elementType, Map<Object, Object> visited) throws Exception {
+    private static List<?> convertToList(ONode node, Type elementType, Map<Object, Object> visited, Options opts) throws Exception {
         List<Object> list = new ArrayList<>();
         for (ONode itemNode : node.getArray()) {
-            list.add(convertValue(itemNode, elementType, visited));
+            list.add(convertValue(itemNode, elementType, visited, opts));
         }
         return list;
     }
 
     // 处理Map泛型
-    private static Map<?, ?> convertToMap(ONode node, Type keyType, Type valueType, Map<Object, Object> visited) throws Exception {
+    private static Map<?, ?> convertToMap(ONode node, Type keyType, Type valueType, Map<Object, Object> visited, Options opts) throws Exception {
         Map<Object, Object> map = new LinkedHashMap<>();
 
         for (Map.Entry<String, ONode> kv : node.getObject().entrySet()) {
             Object k = convertKey(kv.getKey(), keyType);
-            Object v = convertValue(kv.getValue(), valueType, visited);
+            Object v = convertValue(kv.getValue(), valueType, visited, opts);
             map.put(k, v);
         }
 
