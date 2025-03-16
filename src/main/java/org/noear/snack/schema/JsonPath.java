@@ -17,8 +17,11 @@ public class JsonPath {
         FUNCTIONS.put("count", node -> new ONode(node.isArray() ? node.size() : 1));
         FUNCTIONS.put("sum", node -> {
             if (!node.isArray()) throw new PathResolutionException("sum() requires an array");
-            double sum = node.getArray().stream().mapToDouble(ONode::getDouble).sum();
-            return new ONode(sum);
+            double sum = node.getArray().stream()
+                    .filter(o -> o.isNumber())
+                    .mapToDouble(n -> n.getDouble()) // 安全获取数值
+                    .sum();
+            return new ONode(sum); // 返回数值类型节点
         });
     }
 
@@ -64,19 +67,21 @@ public class JsonPath {
             if (index < path.length() && path.charAt(index) == '.') {
                 index++;
                 currentNodes = resolveRecursive(currentNodes);
+                // 递归后继续处理后续路径（例如 $..price）
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
-                    currentNodes = resolveKey(currentNodes, false); // 递归后的键访问（宽松模式）
+                    currentNodes = resolveKey(currentNodes, false); // 宽松模式
                 }
             } else {
-                currentNodes = resolveKey(currentNodes, true); // 普通键访问（严格模式）
+                currentNodes = resolveKey(currentNodes, true); // 严格模式
             }
             return currentNodes;
         }
 
         // 处理 '[...]'
         private List<ONode> handleBracket(List<ONode> nodes) {
-            index++;
+            index++; // 跳过'['
             String segment = parseSegment(']');
+            // 确保跳过闭合的']'
             if (index < path.length() && path.charAt(index) == ']') {
                 index++;
             }
@@ -112,7 +117,7 @@ public class JsonPath {
                 }
                 return child != null ? Collections.singletonList(child) : Collections.emptyList();
             }
-            return Collections.emptyList();
+            return Collections.emptyList(); // 非对象节点直接跳过
         }
 
         // 处理通配符 *
