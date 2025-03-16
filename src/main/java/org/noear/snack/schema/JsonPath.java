@@ -33,12 +33,13 @@ public class JsonPath {
 
         PathParser(String path) {
             this.path = path;
-            this.index = 1; // 跳过 $
+            this.index = 0; // 起始位置为 $ 符号
         }
 
-        // 核心解析逻辑
         ONode evaluate(ONode root) {
             List<ONode> currentNodes = Collections.singletonList(root);
+            index++; // 跳过 $
+
             while (index < path.length()) {
                 char ch = path.charAt(index);
                 if (ch == '.') {
@@ -56,10 +57,65 @@ public class JsonPath {
                     throw new PathResolutionException("Invalid syntax at index " + index);
                 }
             }
+
             return currentNodes.size() == 1 ? currentNodes.get(0) : new ONode(currentNodes);
         }
 
-        // 处理递归搜索 `..`
+        // 处理键名（如 "store", "bicycle"）
+        private List<ONode> resolveKey(List<ONode> nodes) {
+            String key = parseSegment();
+            if (key.endsWith("()")) {
+                String funcName = key.substring(0, key.length() - 2);
+                return nodes.stream()
+                        .map(n -> resolveFunction(n, funcName))
+                        .collect(Collectors.toList());
+            }
+            return nodes.stream()
+                    .map(n -> getChild(n, key))
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+        }
+
+        // 处理索引（如 [0], [*], [?()]）
+        private List<ONode> resolveIndex(List<ONode> nodes) {
+            String segment = parseSegment().replace("]", "");
+            if (segment.equals("*")) {
+                return resolveWildcard(nodes);
+            } else if (segment.startsWith("?")) {
+                return resolveFilter(nodes, segment.substring(1));
+            } else {
+                return resolveExactIndex(nodes, segment);
+            }
+        }
+
+        // 处理通配符 *
+        private List<ONode> resolveWildcard(List<ONode> nodes) {
+            return nodes.stream()
+                    .map(n -> {
+                        if (n.isArray()) return n.getArray();
+                        else if (n.isObject()) return new ArrayList<>(n.getObject().values());
+                        else return Collections.<ONode>emptyList();
+                    })
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+        }
+
+        // 处理精确索引（如 [0], [-1]）
+        private List<ONode> resolveExactIndex(List<ONode> nodes, String indexStr) {
+            return nodes.stream()
+                    .filter(ONode::isArray)
+                    .map(arr -> {
+                        int idx = Integer.parseInt(indexStr);
+                        if (idx < 0) idx += arr.size();
+                        if (idx < 0 || idx >= arr.size()) {
+                            throw new PathResolutionException("Index out of bounds: " + idx);
+                        }
+                        return arr.get(idx);
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes) {
             List<ONode> results = new ArrayList<>();
             for (ONode node : nodes) {
@@ -78,61 +134,7 @@ public class JsonPath {
             }
         }
 
-        // 处理键访问 `.key`
-        private List<ONode> resolveKey(List<ONode> nodes) {
-            String key = parseSegment();
-            if (key.endsWith("()")) {
-                return nodes.stream()
-                        .map(n -> resolveFunction(n, key.substring(0, key.length() - 2)))
-                        .collect(Collectors.toList());
-            }
-            return nodes.stream()
-                    .map(n -> getNodeByKey(n, key))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-        }
-
-        // 处理索引 `[0]` 或过滤器 `[?()]`
-        private List<ONode> resolveIndex(List<ONode> nodes) {
-            String segment = parseSegment().replace("]", "");
-            if ("*".equals(segment)) {
-                return resolveWildcard(nodes);
-            } else if (segment.startsWith("?")) {
-                return resolveFilter(nodes, segment.substring(1));
-            } else {
-                return resolveIndex(nodes, segment);
-            }
-        }
-
-        // 处理通配符 `*`
-        private List<ONode> resolveWildcard(List<ONode> nodes) {
-            return nodes.stream()
-                    .map(n -> n.isArray() ? n.getArray() : n.isObject() ? new ArrayList<>(n.getObject().values()) : null)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
-        }
-
-        // 处理过滤器 `[?(@.price > 10)]`
-        private List<ONode> resolveFilter(List<ONode> nodes, String filter) {
-            return nodes.stream()
-                    .filter(n -> evaluateFilter(n, filter))
-                    .collect(Collectors.toList());
-        }
-
-        // 处理数组索引 `[0]`
-        private List<ONode> resolveIndex(List<ONode> nodes, String indexStr) {
-            return nodes.stream()
-                    .filter(n -> n.isArray())
-                    .map(n -> {
-                        int idx = Integer.parseInt(indexStr);
-                        if (idx < 0) idx += n.size();
-                        if (idx < 0 || idx >= n.size()) throw new PathResolutionException("Index out of bounds");
-                        return n.get(idx);
-                    })
-                    .collect(Collectors.toList());
-        }
-
-        // 辅助方法：解析路径段
+        // 解析路径段（如 "store", "book[0]"）
         private String parseSegment() {
             StringBuilder sb = new StringBuilder();
             while (index < path.length()) {
@@ -144,25 +146,35 @@ public class JsonPath {
             return sb.toString();
         }
 
-        // 辅助方法：处理键访问
-        private List<ONode> getNodeByKey(ONode node, String key) {
-            if (!node.isObject()) throw new PathResolutionException("Not an object at key " + key);
-            ONode child = node.get(key);
-            return child != null ? Collections.singletonList(child) : Collections.emptyList();
+        // 获取子节点
+        private List<ONode> getChild(ONode node, String key) {
+            if (node.isObject()) {
+                ONode child = node.get(key);
+                return child != null ? Collections.singletonList(child) : Collections.emptyList();
+            } else {
+                throw new PathResolutionException("Not an object at key '" + key + "'");
+            }
         }
 
-        // 辅助方法：处理函数调用
+        // 处理函数调用（如 count()）
         private ONode resolveFunction(ONode node, String funcName) {
             Function<ONode, ONode> func = FUNCTIONS.get(funcName);
             if (func == null) throw new PathResolutionException("Unknown function: " + funcName);
             return func.apply(node);
         }
 
-        // 辅助方法：过滤器逻辑
+        // 处理过滤器（如 [?(@.price > 10)]）
+        private List<ONode> resolveFilter(List<ONode> nodes, String filter) {
+            return nodes.stream()
+                    .filter(n -> evaluateFilter(n, filter))
+                    .collect(Collectors.toList());
+        }
+
         private boolean evaluateFilter(ONode node, String filter) {
+            // 简化版过滤器实现（支持 @.key OP value）
             if (filter.startsWith("@.")) {
                 String[] parts = filter.substring(2).split("\\s+");
-                if (parts.length == 3) {
+                if (parts.length >= 3) {
                     String key = parts[0];
                     String op = parts[1];
                     String value = parts[2].replaceAll("['\"]", "");
@@ -172,11 +184,11 @@ public class JsonPath {
                         case "==": return target.getString().equals(value);
                         case ">": return target.getDouble() > Double.parseDouble(value);
                         case "<": return target.getDouble() < Double.parseDouble(value);
-                        // 其他操作符类似处理
+                        // 扩展其他操作符...
                     }
                 }
             }
-            throw new PathResolutionException("Invalid filter: " + filter);
+            throw new PathResolutionException("Unsupported filter: " + filter);
         }
     }
 }
