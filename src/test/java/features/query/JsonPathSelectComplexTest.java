@@ -5,7 +5,7 @@ import org.noear.snack.core.JsonPath;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class JsonPathComplexTest {
+public class JsonPathSelectComplexTest {
 
     private static final String JSON = "{\n" +
             "  \"store\": {\n" +
