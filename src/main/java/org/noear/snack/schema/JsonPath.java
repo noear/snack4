@@ -1,6 +1,7 @@
 package org.noear.snack.schema;
 
 import org.noear.snack.ONode;
+import org.noear.snack.exception.PathResolutionException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -213,12 +214,6 @@ public class JsonPath {
                 }
             }
             throw new PathResolutionException("Invalid filter syntax: " + filter);
-        }
-    }
-
-    public static class PathResolutionException extends RuntimeException {
-        public PathResolutionException(String message) {
-            super(message);
         }
     }
 }
