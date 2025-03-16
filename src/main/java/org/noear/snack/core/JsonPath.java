@@ -16,7 +16,6 @@ public class JsonPath {
     static {
         FUNCTIONS.put("count", node -> new ONode(node.isArray() ? node.size() : 1));
         FUNCTIONS.put("sum", node -> {
-            // 允许对数组字段求和（如 $.prices.sum()）
             if (!node.isArray()) throw new PathResolutionException("sum() requires an array");
             double sum = node.getArray().stream()
                     .filter(ONode::isNumber)
@@ -31,21 +30,23 @@ public class JsonPath {
      */
     public static ONode select(ONode root, String path) {
         if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
-        return new PathParser(path).evaluate(root);
+        return new PathParser(path).select(root);
     }
 
     /**
      * 根据 jsonpath 删除
      */
     public static void delete(ONode root, String path) {
-       //从 root 身上，匹配 path  的节点
+        if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
+        new PathParser(path).delete(root);
     }
 
     /**
      * 根据 jsonpath 生成
      */
     public static void create(ONode root, String path) {
-        //为 root 构建，匹配 path 的结构
+        if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
+        new PathParser(path).create(root);
     }
 
     private static class PathParser {
@@ -58,7 +59,7 @@ public class JsonPath {
         }
 
         // 主解析逻辑
-        ONode evaluate(ONode root) {
+        ONode select(ONode root) {
             List<ONode> currentNodes = Collections.singletonList(root);
             index++;
 
@@ -79,13 +80,70 @@ public class JsonPath {
             return currentNodes.size() == 1 ? currentNodes.get(0) : new ONode(currentNodes);
         }
 
+        // 删除节点
+        void delete(ONode root) {
+            List<ONode> currentNodes = Collections.singletonList(root);
+            index++;
+
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+
+                char ch = path.charAt(index);
+                if (ch == '.') {
+                    currentNodes = handleDot(currentNodes);
+                } else if (ch == '[') {
+                    currentNodes = handleBracket(currentNodes);
+                } else {
+                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
+                }
+            }
+
+            if (currentNodes.size() == 1) {
+                ONode node = currentNodes.get(0);
+                if (node.isObject()) {
+                    node.getObject().remove(path.substring(path.lastIndexOf('.') + 1));
+                } else if (node.isArray()) {
+                    node.getArray().remove(Integer.parseInt(path.substring(path.lastIndexOf('[') + 1, path.lastIndexOf(']'))));
+                }
+            }
+        }
+
+        // 创建节点
+        void create(ONode root) {
+            List<ONode> currentNodes = Collections.singletonList(root);
+            index++;
+
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+
+                char ch = path.charAt(index);
+                if (ch == '.') {
+                    currentNodes = handleDot(currentNodes);
+                } else if (ch == '[') {
+                    currentNodes = handleBracket(currentNodes);
+                } else {
+                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
+                }
+            }
+
+            if (currentNodes.size() == 1) {
+                ONode node = currentNodes.get(0);
+                if (node.isObject()) {
+                    node.set(path.substring(path.lastIndexOf('.') + 1), new ONode());
+                } else if (node.isArray()) {
+                    node.add(new ONode());
+                }
+            }
+        }
+
         // 处理 '.' 或 '..'，返回新的节点集合
         private List<ONode> handleDot(List<ONode> currentNodes) {
             index++;
             if (index < path.length() && path.charAt(index) == '.') {
                 index++;
                 currentNodes = resolveRecursive(currentNodes);
-                // 递归后继续处理后续路径（例如 $..price）
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
                     currentNodes = resolveKey(currentNodes, false);
                 }
@@ -99,7 +157,6 @@ public class JsonPath {
         private List<ONode> handleBracket(List<ONode> nodes) {
             index++; // 跳过'['
             String segment = parseSegment(']');
-            // 跳过所有连续的 ]
             while (index < path.length() && path.charAt(index) == ']') {
                 index++;
             }
@@ -172,7 +229,6 @@ public class JsonPath {
 
             List<ONode> results = tmp;
 
-            // 递归后继续处理后续路径（如 .book[?(@.isbn)]）
             while (index < path.length()) {
                 skipWhitespace();
                 if (index >= path.length()) break;
@@ -196,7 +252,6 @@ public class JsonPath {
             } else if (node.isObject()) {
                 node.getObject().values().forEach(n -> collectRecursive(n, results));
             }
-            // 所有节点（包括叶子节点）都添加到结果中
             results.add(node);
         }
 
@@ -217,11 +272,9 @@ public class JsonPath {
             if (filter.startsWith("@.")) {
                 String[] parts = filter.substring(2).split("\\s+", 2);
                 String keyPath = parts[0];
-                // 存在性检查（如 [?(@.isbn)]）
                 if (parts.length == 1) {
                     return resolveNestedPath(node, keyPath) != null;
                 }
-                // 处理其他比较操作（如 @.price > 10）
                 String opValue = parts[1];
                 String[] opParts = opValue.split("\\s+", 2);
                 if (opParts.length < 2) return false;
@@ -229,7 +282,6 @@ public class JsonPath {
                 String value = opParts[1].replaceAll("['\"]", "");
                 ONode target = resolveNestedPath(node, keyPath);
                 if (target == null) return false;
-                // 数值或字符串比较
                 if (target.isNumber()) {
                     return compareNumber(op, target.getDouble(), Double.parseDouble(value));
                 } else if (target.isString()) {
@@ -300,15 +352,6 @@ public class JsonPath {
                 if (ch == t) return true;
             }
             return ch == '.' || ch == '[' || ch == ']';
-        }
-
-        // 获取子节点
-        private List<ONode> getChild(ONode node, String key) {
-            if (node.isObject()) {
-                ONode child = node.get(key);
-                return child != null ? Collections.singletonList(child) : Collections.emptyList();
-            }
-            throw new PathResolutionException("Node is not an object at key '" + key + "'");
         }
 
         // 跳过空白字符

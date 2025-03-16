@@ -1,6 +1,7 @@
 package org.noear.snack;
 
 import org.noear.snack.core.*;
+import org.noear.snack.core.JsonPath;
 import org.noear.snack.schema.SchemaValidator;
 
 import java.io.StringReader;

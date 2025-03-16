@@ -5,11 +5,14 @@ import org.noear.snack.*;
 import org.noear.snack.core.BeanCodec;
 import org.noear.snack.core.JsonReader;
 import org.noear.snack.exception.SchemaException;
+import org.noear.snack.core.JsonPath;
 import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author noear 2025/3/15 created
@@ -78,5 +81,22 @@ public class BaseTest {
         Properties deserializedProperties = BeanCodec.deserialize(node, Properties.class);
         System.out.println(deserializedProperties.getProperty("order.item[0].user")); // 输出: 1
         assert "1".equals(deserializedProperties.getProperty("order.item[0].user"));
+    }
+
+    @Test
+    public void testDeleteNode() {
+        ONode root = ONode.loadJson("{}");
+        JsonPath.delete(root, "$.store.book[0]");
+        ONode result = JsonPath.select(root, "$.store.book[0]");
+        assertNull(result);
+    }
+
+    @Test
+    public void testCreateNode() {
+        ONode root = ONode.loadJson("{}");
+        JsonPath.create(root, "$.store.newNode");
+        ONode result = JsonPath.select(root, "$.store.newNode");
+        assertNotNull(result);
+        assertTrue(result.isObject());
     }
 }
