@@ -11,7 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class JsonReader {
-    // 新增带 Options 的快捷方法
     public static ONode read(String json) throws IOException {
         return read(json, Options.def());
     }
@@ -23,8 +22,6 @@ public class JsonReader {
     public static ONode read(Reader reader, Options opts) throws IOException {
         return new JsonReader(reader, opts).read();
     }
-
-    /// ////////
 
     private final Options opts;
     private final ParserState state;
@@ -62,7 +59,9 @@ public class JsonReader {
 
         if (c == '{') return parseObject();
         if (c == '[') return parseArray();
-        if (c == '"') return new ONode(parseString());
+        if (c == '"' || (opts.isFeatureEnabled(Feature.Input_AllowSingleQuotes) && c == '\'')) {
+            return new ONode(parseString());
+        }
         if (c == '-' || (c >= '0' && c <= '9')) return new ONode(parseNumber());
         if (c == 't') return parseKeyword("true", true);
         if (c == 'f') return parseKeyword("false", false);
@@ -80,9 +79,11 @@ public class JsonReader {
                 break;
             }
 
-            // 修复：允许空键
-            String key = parseString();
-            if (key.isEmpty()) throw state.error("Empty key in object");
+            String key = parseKey();
+
+            if (key.isEmpty()) {
+                throw new ParseException("Empty key is not allowed");
+            }
 
             state.skipWhitespace();
             state.expect(':');
@@ -101,6 +102,26 @@ public class JsonReader {
             }
         }
         return new ONode(map);
+    }
+
+    private String parseKey() throws IOException {
+        if (opts.isFeatureEnabled(Feature.Input_AllowUnquotedFieldNames)) {
+            return parseUnquotedString();
+        } else {
+            return parseString();
+        }
+    }
+
+    private String parseUnquotedString() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        while (true) {
+            char c = state.peekChar();
+            if (c == ':' || c == ',' || c == '}' || c == ']' || Character.isWhitespace(c)) {
+                break;
+            }
+            sb.append(state.nextChar());
+        }
+        return sb.toString();
     }
 
     private ONode parseArray() throws IOException {
@@ -130,20 +151,23 @@ public class JsonReader {
     }
 
     private String parseString() throws IOException {
-        state.expect('"');
+        char quoteChar = state.nextChar();
+        if (quoteChar != '"' && !(opts.isFeatureEnabled(Feature.Input_AllowSingleQuotes) && quoteChar == '\'')) {
+            throw state.error("Expected string to start with a quote");
+        }
+
         StringBuilder sb = new StringBuilder();
         while (true) {
             char c = state.nextChar();
-            if (c == '"') break;
+            if (c == quoteChar) break;
 
             if (c == '\\') {
                 c = state.nextChar();
                 switch (c) {
                     case '"':
-                        sb.append('"');
-                        break;
+                    case '\'':
                     case '\\':
-                        sb.append('\\');
+                        sb.append(c);
                         break;
                     case '/':
                         sb.append('/');
@@ -265,7 +289,6 @@ public class JsonReader {
         return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 
-
     static class ParserState {
         private static final int BUFFER_SIZE = 8192;
         private final Reader reader;
@@ -279,7 +302,6 @@ public class JsonReader {
         public ParserState(Reader reader) {
             this.reader = reader;
         }
-
 
         private char nextChar() throws IOException {
             if (bufferPosition >= bufferLimit && !fillBuffer()) {
@@ -326,7 +348,6 @@ public class JsonReader {
                     line++;
                     column = 0;
                 } else if (c == '\r') {
-                    // Handle CRLF
                     if (peekChar(1) == '\n') bufferPosition++;
                     line++;
                     column = 0;
@@ -353,7 +374,6 @@ public class JsonReader {
             }
         }
 
-        // 修改后的 skipLineComment
         private void skipLineComment() throws IOException {
             while (true) {
                 if (bufferPosition >= bufferLimit && !fillBuffer()) break;
@@ -369,7 +389,6 @@ public class JsonReader {
             }
         }
 
-        // 修改后的 skipBlockComment
         private void skipBlockComment() throws IOException {
             bufferPosition++; // 跳过起始的 '/'
             boolean closed = false;
@@ -378,7 +397,6 @@ public class JsonReader {
                     break;
                 }
                 char c = buffer[bufferPosition++];
-                // 更新行号和列号
                 if (c == '\n') {
                     line++;
                     column = 0;

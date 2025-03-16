@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class JsonWriter {
     public static String serialize(ONode node, Options opts) throws IOException {
-        StringWriter writer = new java.io.StringWriter();
+        StringWriter writer = new StringWriter();
         new JsonWriter(opts, writer).write(node);
         return writer.toString();
     }
@@ -23,7 +23,6 @@ public class JsonWriter {
         this.opts = opts != null ? opts : Options.def();
         this.writer = writer;
     }
-
 
     public void write(ONode node) throws IOException {
         switch (node.getType()) {
@@ -63,6 +62,9 @@ public class JsonWriter {
                     toUnderlineName(entry.getKey()) : entry.getKey();
             writeString(key);
             writer.write(':');
+            if (opts.isFeatureEnabled(Feature.Output_PrettyFormat)) {
+                writer.write(' ');
+            }
             write(entry.getValue());
             first = false;
         }
@@ -101,9 +103,10 @@ public class JsonWriter {
     }
 
     private void writeString(String s) throws IOException {
-        writer.write('"');
+        char quoteChar = opts.isFeatureEnabled(Feature.Output_UseSingleQuotes) ? '\'' : '"';
+        writer.write(quoteChar);
         writer.write(escapeString(s, opts));
-        writer.write('"');
+        writer.write(quoteChar);
     }
 
     private static String escapeString(String s, Options opts) {
@@ -112,6 +115,9 @@ public class JsonWriter {
             switch (c) {
                 case '"':
                     sb.append("\\\"");
+                    break;
+                case '\'':
+                    sb.append("\\'");
                     break;
                 case '\\':
                     sb.append("\\\\");
@@ -132,7 +138,7 @@ public class JsonWriter {
                     sb.append("\\t");
                     break;
                 default:
-                    if (c < 0x20) {
+                    if (c < 0x20 || (opts.isFeatureEnabled(Feature.EscapeNonAscii) && c > 0x7F)) {
                         sb.append(String.format("\\u%04x", (int) c));
                     } else {
                         sb.append(c);
@@ -143,7 +149,18 @@ public class JsonWriter {
     }
 
     private String toUnderlineName(String camelName) {
-        // 实现驼峰转下划线逻辑
-        return camelName;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < camelName.length(); i++) {
+            char c = camelName.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if (i > 0) {
+                    sb.append('_');
+                }
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }
