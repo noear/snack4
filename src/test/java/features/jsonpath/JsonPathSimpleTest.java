@@ -1,15 +1,9 @@
-package features;
+package features.jsonpath;
 
 import org.noear.snack.ONode;
 import org.noear.snack.schema.JsonPath;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.*;
-import org.noear.snack.ONode;
-import org.noear.snack.schema.JsonPath;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonPathSimpleTest {

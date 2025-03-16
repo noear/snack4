@@ -75,21 +75,24 @@ public class JsonPath {
 
         private ONode resolveKey(ONode node) {
             String key = parseSegment();
+            if (key.endsWith("()")) {
+                return resolveFunction(node, key.substring(0, key.length() - 2));
+            }
             return getNodeByKey(node, key);
         }
 
         private ONode resolveIndex(ONode node) {
-            StringBuilder indexStr = new StringBuilder();
-            while (index < path.length()) {
-                char ch = path.charAt(index);
-                if (ch == ']') {
-                    index++; // 跳过 ]
-                    break;
-                }
-                indexStr.append(ch);
-                index++;
+            String indexStr = parseSegment();
+            if (indexStr.endsWith("]")) {
+                indexStr = indexStr.substring(0, indexStr.length() - 1); // 去掉末尾的 ]
             }
-            return getNodeByIndex(node, indexStr.toString());
+            if ("*".equals(indexStr)) {
+                return resolveWildcard(node);
+            }
+            if (indexStr.startsWith("?")) {
+                return resolveFilter(node, indexStr.substring(1));
+            }
+            return getNodeByIndex(node, indexStr);
         }
 
         private ONode resolveWildcard(ONode node) {
@@ -160,6 +163,56 @@ public class JsonPath {
             } catch (NumberFormatException e) {
                 throw new PathResolutionException("Invalid array index: " + indexStr);
             }
+        }
+
+        private ONode resolveFunction(ONode node, String functionName) {
+            Function<ONode, ONode> function = FUNCTIONS.get(functionName);
+            if (function == null) {
+                throw new PathResolutionException("Unknown function: " + functionName);
+            }
+            return function.apply(node);
+        }
+
+        private ONode resolveFilter(ONode node, String filter) {
+            if (!node.isArray()) throw new PathResolutionException("Filter can only be used on arrays");
+            List<ONode> results = new ArrayList<>();
+            for (ONode item : node.getArray()) {
+                if (evaluateFilter(item, filter)) {
+                    results.add(item);
+                }
+            }
+            return new ONode(results);
+        }
+
+        private boolean evaluateFilter(ONode node, String filter) {
+            // 简单的过滤器实现，支持基本的条件表达式
+            if (filter.startsWith("@.")) {
+                String[] parts = filter.substring(2).split(" ");
+                if (parts.length == 3) {
+                    String key = parts[0];
+                    String operator = parts[1];
+                    String value = parts[2].replaceAll("['\"]", ""); // 去掉引号
+                    ONode target = node.get(key);
+                    if (target == null) return false;
+                    switch (operator) {
+                        case "==":
+                            return target.getString().equals(value);
+                        case ">":
+                            return target.getDouble() > Double.parseDouble(value);
+                        case "<":
+                            return target.getDouble() < Double.parseDouble(value);
+                        case ">=":
+                            return target.getDouble() >= Double.parseDouble(value);
+                        case "<=":
+                            return target.getDouble() <= Double.parseDouble(value);
+                        case "!=":
+                            return !target.getString().equals(value);
+                        default:
+                            throw new PathResolutionException("Unsupported operator: " + operator);
+                    }
+                }
+            }
+            throw new PathResolutionException("Invalid filter syntax: " + filter);
         }
     }
 

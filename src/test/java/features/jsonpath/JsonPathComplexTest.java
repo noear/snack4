@@ -1,4 +1,4 @@
-package features;
+package features.jsonpath;
 
 import org.noear.snack.ONode;
 import org.noear.snack.schema.JsonPath;

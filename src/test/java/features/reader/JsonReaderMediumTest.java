@@ -1,4 +1,4 @@
-package features;
+package features.reader;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.core.JsonReader;
@@ -8,7 +8,7 @@ import java.io.StringReader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class JsonParserMediumTest {
+class JsonReaderMediumTest {
 
     @Test
     void testParseObjectWithMultipleKeys() throws Exception {

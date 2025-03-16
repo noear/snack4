@@ -1,4 +1,4 @@
-package features;
+package features.baencodec;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.core.BeanCodec;

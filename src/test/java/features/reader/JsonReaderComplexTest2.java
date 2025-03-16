@@ -1,4 +1,4 @@
-package features;
+package features.reader;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.core.JsonReader;
@@ -8,7 +8,7 @@ import java.io.StringReader;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class JsonParserComplexTest2 {
+class JsonReaderComplexTest2 {
 
     // ========================= 复杂测试用例（30 个） =========================
 
