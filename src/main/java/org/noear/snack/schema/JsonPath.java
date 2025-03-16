@@ -151,14 +151,24 @@ public class JsonPath {
 
         // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes) {
-            final List<ONode> results = new ArrayList<>();
-            nodes.forEach(node -> collectRecursive(node, results));
+            List<ONode> tmp = new ArrayList<>();
+            nodes.forEach(node -> collectRecursive(node, tmp));
+
+            List<ONode> results = tmp;
+
             // 递归后继续处理后续路径（例如 .book[?(@.isbn)]）
-            if (index < path.length()) {
-                if (path.charAt(index) == '[') {
-                    return handleBracket(results);
-                } else if (path.charAt(index) == '.') {
-                    return handleDot(results);
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+                char ch = path.charAt(index);
+                if (ch == '.' || ch == '[') {
+                    if (ch == '.') {
+                        results = handleDot(results);
+                    } else if (ch == '[') {
+                        results = handleBracket(results);
+                    }
+                } else {
+                    break;
                 }
             }
             return results;
@@ -190,44 +200,54 @@ public class JsonPath {
         private boolean evaluateFilter(ONode node, String filter) {
             if (filter.startsWith("@.")) {
                 String[] parts = filter.substring(2).split("\\s+");
-                if (parts.length >= 3) {
-                    String key = parts[0];
-                    String op = parts[1];
-                    String value = parts[2].replaceAll("['\"]", "");
-                    // 支持嵌套路径（如 @.author.name）
-                    ONode target = node;
-                    for (String k : key.split("\\.")) {
-                        target = target.get(k);
-                        if (target == null) return false;
-                    }
-                    // 类型安全比较
-                    if (target.isString()) {
-                        return compareString(op, target.getString(), value);
-                    } else if (target.isNumber()) {
-                        return compareNumber(op, target.getDouble(), Double.parseDouble(value));
-                    }
+                String keyPath = parts[0];
+                // 存在性检查（如 [?(@.isbn)]）
+                if (parts.length == 1) {
+                    return resolveNestedPath(node, keyPath) != null;
                 }
+                // 其他比较逻辑（如 @.price > 10）
+                // ...
             }
             return false;
         }
 
+        private ONode resolveNestedPath(ONode node, String keyPath) {
+            String[] keys = keyPath.split("\\.");
+            ONode current = node;
+            for (String key : keys) {
+                current = current.get(key);
+                if (current == null) return null;
+            }
+            return current;
+        }
+
         private boolean compareString(String op, String a, String b) {
             switch (op) {
-                case "==": return a.equals(b);
-                case "!=": return !a.equals(b);
-                default: throw new PathResolutionException("Unsupported operator for string: " + op);
+                case "==":
+                    return a.equals(b);
+                case "!=":
+                    return !a.equals(b);
+                default:
+                    throw new PathResolutionException("Unsupported operator for string: " + op);
             }
         }
 
         private boolean compareNumber(String op, double a, double b) {
             switch (op) {
-                case "==": return a == b;
-                case "!=": return a != b;
-                case ">": return a > b;
-                case "<": return a < b;
-                case ">=": return a >= b;
-                case "<=": return a <= b;
-                default: throw new PathResolutionException("Unsupported operator for number: " + op);
+                case "==":
+                    return a == b;
+                case "!=":
+                    return a != b;
+                case ">":
+                    return a > b;
+                case "<":
+                    return a < b;
+                case ">=":
+                    return a >= b;
+                case "<=":
+                    return a <= b;
+                default:
+                    throw new PathResolutionException("Unsupported operator for number: " + op);
             }
         }
 
