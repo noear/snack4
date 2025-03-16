@@ -14,6 +14,8 @@ public final class ONode {
     private Object value;
     private int type;
 
+    public transient JsonSource source;
+
     public ONode() {
         this.type = JsonTypes.TYPE_NULL;
     }
@@ -118,6 +120,10 @@ public final class ONode {
         return getObject().get(key);
     }
 
+    public void remove(String key) {
+        getObject().remove(key);
+    }
+
     public ONode set(String key, Object value) {
         ONode oNode;
         if (value instanceof ONode) {
@@ -148,6 +154,15 @@ public final class ONode {
             return getArray().get(pos);
         } else {
             return getArray().get(index);
+        }
+    }
+
+    public void remove(int index) {
+        if (index < 0) {
+            int pos = getArray().size() + index;
+             getArray().remove(pos);
+        } else {
+             getArray().remove(index);
         }
     }
 
@@ -198,10 +213,14 @@ public final class ONode {
         return this;
     }
 
-    public ONode clear() {
-        if (isObject()) ((Map<?, ?>) value).clear();
-        if (isArray()) ((List<?>) value).clear();
-        return reset(null);
+    public void clear() {
+        if (isObject()) {
+            ((Map<?, ?>) value).clear();
+        } else if (isArray()) {
+            ((List<?>) value).clear();
+        } else {
+            reset(null);
+        }
     }
 
     public int getType() {

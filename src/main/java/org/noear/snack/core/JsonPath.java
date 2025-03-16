@@ -53,6 +53,7 @@ public class JsonPath {
         private final String path;
         private int index;
         private boolean isCreateMode;
+        private boolean isDeleteMode;
 
         PathParser(String path) {
             this.path = path;
@@ -83,6 +84,7 @@ public class JsonPath {
 
         // 删除节点
         void delete(ONode root) {
+            isDeleteMode = true;
             List<ONode> currentNodes = Collections.singletonList(root);
             index++;
 
@@ -101,11 +103,18 @@ public class JsonPath {
             }
 
             if (currentNodes.size() == 1) {
-                ONode node = currentNodes.get(0);
-                if (node.isObject()) {
-                    node.getObject().remove(path.substring(path.lastIndexOf('.') + 1));
-                } else if (node.isArray()) {
-                    node.getArray().remove(Integer.parseInt(path.substring(path.lastIndexOf('[') + 1, path.lastIndexOf(']'))));
+                for (ONode n : currentNodes) {
+                    if (n.source != null) {
+                        if (n.source.key != null) {
+                            if ("*".equals(n.source.key)) {
+                                n.source.parent.clear();
+                            } else {
+                                n.source.parent.remove(n.source.key);
+                            }
+                        } else {
+                            n.source.parent.remove(n.source.index);
+                        }
+                    }
                 }
             }
         }
@@ -150,7 +159,7 @@ public class JsonPath {
                     currentNodes = resolveKey(currentNodes, false);
                 }
             } else {
-                currentNodes = resolveKey(currentNodes, true);
+                currentNodes = resolveKey(currentNodes, false);
             }
             return currentNodes;
         }
@@ -200,6 +209,8 @@ public class JsonPath {
                     } else if (strict) {
                         throw new PathResolutionException("Missing key '" + key + "'");
                     }
+                } else {
+                    child.source = new JsonSource(node,key,0);
                 }
                 return child != null ? Collections.singletonList(child) : Collections.emptyList();
             }
@@ -210,9 +221,20 @@ public class JsonPath {
         private List<ONode> resolveWildcard(List<ONode> nodes) {
             return nodes.stream()
                     .map(n -> {
-                        if (n.isArray()) return n.getArray();
-                        else if (n.isObject()) return new ArrayList<>(n.getObject().values());
-                        else return Collections.<ONode>emptyList();
+                        List<ONode> childs;
+                        if (n.isArray()) childs = n.getArray();
+                        else if (n.isObject()) childs = new ArrayList<>(n.getObject().values());
+                        else childs = Collections.<ONode>emptyList();
+
+                        if (isDeleteMode) {
+                            JsonSource source = new JsonSource(n, "*", 0);
+                            for (ONode child : childs) {
+                                child.source = source;
+                            }
+                        }
+
+                        return childs;
+
                     })
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
@@ -244,7 +266,10 @@ public class JsonPath {
                                 throw new PathResolutionException("Index out of bounds: " + idx);
                             }
                         }
-                        return arr.get(idx);
+                        ONode rst = arr.get(idx);
+                        rst.source = new JsonSource(arr,null,idx);
+
+                        return rst;
                     })
                     .collect(Collectors.toList());
         }
