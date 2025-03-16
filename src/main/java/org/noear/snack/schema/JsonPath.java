@@ -39,7 +39,7 @@ public class JsonPath {
         // 主解析逻辑
         ONode evaluate(ONode root) {
             List<ONode> currentNodes = Collections.singletonList(root);
-            index++; // 跳过初始的 $
+            index++;
 
             while (index < path.length()) {
                 skipWhitespace();
@@ -47,7 +47,7 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    currentNodes = handleDot(currentNodes); // 接收返回值
+                    currentNodes = handleDot(currentNodes);
                 } else if (ch == '[') {
                     currentNodes = handleBracket(currentNodes);
                 } else {
@@ -64,21 +64,19 @@ public class JsonPath {
             if (index < path.length() && path.charAt(index) == '.') {
                 index++;
                 currentNodes = resolveRecursive(currentNodes);
-                // 递归搜索后继续处理后续路径（例如 $..price）
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
-                    currentNodes = resolveKey(currentNodes);
+                    currentNodes = resolveKey(currentNodes, false); // 递归后的键访问（宽松模式）
                 }
             } else {
-                currentNodes = resolveKey(currentNodes);
+                currentNodes = resolveKey(currentNodes, true); // 普通键访问（严格模式）
             }
-            return currentNodes; // 返回更新后的节点集合
+            return currentNodes;
         }
 
         // 处理 '[...]'
         private List<ONode> handleBracket(List<ONode> nodes) {
-            index++; // 跳过'['
+            index++;
             String segment = parseSegment(']');
-            // 确保跳过闭合的']'
             if (index < path.length() && path.charAt(index) == ']') {
                 index++;
             }
@@ -92,7 +90,7 @@ public class JsonPath {
         }
 
         // 解析键名或函数调用（如 "store" 或 "count()"）
-        private List<ONode> resolveKey(List<ONode> nodes) {
+        private List<ONode> resolveKey(List<ONode> nodes, boolean strict) {
             String key = parseSegment('.', '[');
             if (key.endsWith("()")) {
                 String funcName = key.substring(0, key.length() - 2);
@@ -101,9 +99,20 @@ public class JsonPath {
                         .collect(Collectors.toList());
             }
             return nodes.stream()
-                    .map(n -> getChild(n, key))
+                    .map(n -> getChild(n, key, strict))
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
+        }
+
+        private List<ONode> getChild(ONode node, String key, boolean strict) {
+            if (node.isObject()) {
+                ONode child = node.get(key);
+                if (strict && child == null) {
+                    throw new PathResolutionException("Missing key '" + key + "'");
+                }
+                return child != null ? Collections.singletonList(child) : Collections.emptyList();
+            }
+            return Collections.emptyList();
         }
 
         // 处理通配符 *
@@ -153,7 +162,13 @@ public class JsonPath {
         // 处理过滤器（如 [?(@.price > 10)]）
         private List<ONode> resolveFilter(List<ONode> nodes, String filter) {
             return nodes.stream()
-                    .filter(n -> evaluateFilter(n, filter))
+                    .filter(n -> {
+                        try {
+                            return evaluateFilter(n, filter);
+                        } catch (Exception e) {
+                            return false; // 静默跳过异常
+                        }
+                    })
                     .collect(Collectors.toList());
         }
 
