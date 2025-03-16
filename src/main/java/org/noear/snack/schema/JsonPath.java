@@ -69,10 +69,10 @@ public class JsonPath {
                 currentNodes = resolveRecursive(currentNodes);
                 // 递归后继续处理后续路径（例如 $..price）
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
-                    currentNodes = resolveKey(currentNodes, false); // 宽松模式
+                    currentNodes = resolveKey(currentNodes, false);
                 }
             } else {
-                currentNodes = resolveKey(currentNodes, true); // 严格模式
+                currentNodes = resolveKey(currentNodes, true);
             }
             return currentNodes;
         }
@@ -149,8 +149,11 @@ public class JsonPath {
 
         // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes) {
-            List<ONode> results = new ArrayList<>();
+            final List<ONode> results = new ArrayList<>();
             nodes.forEach(node -> collectRecursive(node, results));
+            if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
+                return resolveKey(results, false);
+            }
             return results;
         }
 
@@ -159,9 +162,9 @@ public class JsonPath {
                 node.getArray().forEach(n -> collectRecursive(n, results));
             } else if (node.isObject()) {
                 node.getObject().values().forEach(n -> collectRecursive(n, results));
-            } else {
-                results.add(node);
             }
+            // 所有节点（包括叶子节点）都添加到结果中
+            results.add(node);
         }
 
         // 处理过滤器（如 [?(@.price > 10)]）
