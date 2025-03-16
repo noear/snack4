@@ -201,10 +201,8 @@ public class BeanCodec {
         if (clazz == Properties.class) {
             return (T) convertNodeToProperties(node);
         }
-
-        Constructor<T> constructor = clazz.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        T bean = constructor.newInstance();
+        
+        T bean = ReflectionUtil.newInstance(clazz);
 
         for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
             ONode fieldNode = node.get(field.getAliasName());
