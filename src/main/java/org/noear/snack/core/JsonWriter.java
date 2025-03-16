@@ -53,13 +53,16 @@ public class JsonWriter {
 
     private void writeObject(Map<String, ONode> map) throws IOException {
         writer.write('{');
+        depth++;
         boolean first = true;
         for (Map.Entry<String, ONode> entry : map.entrySet()) {
             if (opts.isFeatureEnabled(Feature.Output_SkipNullValue) && entry.getValue().isNull()) {
                 continue;
             }
 
-            if (!first) writer.write(',');
+            if (!first) {
+                writer.write(',');
+            }
             writeIndentation();
 
             String key = opts.isFeatureEnabled(Feature.Output_UseUnderlineStyle) ?
@@ -72,19 +75,24 @@ public class JsonWriter {
             write(entry.getValue());
             first = false;
         }
+        depth--;
         writeIndentation();
         writer.write('}');
     }
 
     private void writeArray(List<ONode> list) throws IOException {
         writer.write('[');
+        depth++;
         boolean first = true;
         for (ONode item : list) {
-            if (!first) writer.write(',');
+            if (!first) {
+                writer.write(',');
+            }
             writeIndentation();
             write(item);
             first = false;
         }
+        depth--;
         writeIndentation();
         writer.write(']');
     }
