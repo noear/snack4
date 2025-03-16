@@ -1,4 +1,4 @@
-package org.noear.snack.schema;
+package org.noear.snack.core;
 
 import org.noear.snack.ONode;
 import org.noear.snack.exception.PathResolutionException;

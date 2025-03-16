@@ -1,7 +1,7 @@
 package features.jsonpath;
 
 import org.noear.snack.ONode;
-import org.noear.snack.schema.JsonPath;
+import org.noear.snack.core.JsonPath;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
