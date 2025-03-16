@@ -33,79 +33,83 @@ public class JsonPath {
 
         PathParser(String path) {
             this.path = path;
-            this.index = 0;
+            this.index = 0; // 起始位置为 $ 符号
         }
 
-        // 主解析逻辑：按步骤分割路径并处理
         ONode evaluate(ONode root) {
             List<ONode> currentNodes = Collections.singletonList(root);
-            index++; // 跳过初始的 $
+            index++; // 跳过 $
 
             while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    index++;
-                    if (index < path.length() && path.charAt(index) == '.') {
-                        index++;
-                        currentNodes = resolveRecursive(currentNodes);
-                    } else {
-                        currentNodes = resolveKey(currentNodes);
-                    }
+                    handleDot(currentNodes);
                 } else if (ch == '[') {
-                    index++;
-                    currentNodes = resolveIndex(currentNodes);
+                    currentNodes = handleBracket(currentNodes);
                 } else {
-                    throw new PathResolutionException("Invalid syntax at index " + index);
+                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
                 }
             }
+
             return currentNodes.size() == 1 ? currentNodes.get(0) : new ONode(currentNodes);
         }
 
-        // 处理键名或函数调用（如 `store` 或 `count()`）
-        private List<ONode> resolveKey(List<ONode> nodes) {
-            String key = parseSegment();
-            boolean isFunction = key.endsWith("()");
-            if (isFunction) {
-                String funcName = key.substring(0, key.length() - 2);
-                return nodes.stream()
-                        .map(node -> resolveFunction(node, funcName))
-                        .collect(Collectors.toList());
+        // 处理 '.' 或 '..'
+        private void handleDot(List<ONode> currentNodes) {
+            index++;
+            if (index < path.length() && path.charAt(index) == '.') {
+                index++;
+                currentNodes = resolveRecursive(currentNodes);
+            } else {
+                currentNodes = resolveKey(currentNodes);
             }
-            return nodes.stream()
-                    .map(node -> getChild(node, key))
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
         }
 
-        // 处理数组索引、通配符或过滤器（如 `[0]`, `[*]`, `[?()]`）
-        private List<ONode> resolveIndex(List<ONode> nodes) {
-            String segment = parseSegment().replace("]", "");
-            if ("*".equals(segment)) {
+        // 处理 '[...]'
+        private List<ONode> handleBracket(List<ONode> nodes) {
+            index++;
+            String segment = parseSegment(']');
+            if (segment.equals("*")) {
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
                 return resolveFilter(nodes, segment.substring(1));
             } else {
-                return resolveExactIndex(nodes, segment);
+                return resolveIndex(nodes, segment);
             }
         }
 
-        // 通配符逻辑：返回数组或对象的所有子元素
+        // 解析键名或函数调用（如 "store" 或 "count()"）
+        private List<ONode> resolveKey(List<ONode> nodes) {
+            String key = parseSegment('.', '[');
+            if (key.endsWith("()")) {
+                String funcName = key.substring(0, key.length() - 2);
+                return nodes.stream()
+                        .map(n -> FUNCTIONS.get(funcName).apply(n))
+                        .collect(Collectors.toList());
+            }
+            return nodes.stream()
+                    .map(n -> getChild(n, key))
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+        }
+
+        // 处理通配符 *
         private List<ONode> resolveWildcard(List<ONode> nodes) {
             return nodes.stream()
-                    .map(node -> {
-                        if (node.isArray()) {
-                            return node.getArray();
-                        } else if (node.isObject()) {
-                            return new ArrayList<>(node.getObject().values());
-                        }
-                        return Collections.<ONode>emptyList();
+                    .map(n -> {
+                        if (n.isArray()) return n.getArray();
+                        else if (n.isObject()) return new ArrayList<>(n.getObject().values());
+                        else return Collections.<ONode>emptyList();
                     })
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
         }
 
-        // 精确索引：支持负数（如 `[-1]`）
-        private List<ONode> resolveExactIndex(List<ONode> nodes, String indexStr) {
+        // 处理精确索引（支持负数）
+        private List<ONode> resolveIndex(List<ONode> nodes, String indexStr) {
             return nodes.stream()
                     .filter(ONode::isArray)
                     .map(arr -> {
@@ -119,7 +123,7 @@ public class JsonPath {
                     .collect(Collectors.toList());
         }
 
-        // 递归搜索：收集所有层级的节点
+        // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes) {
             List<ONode> results = new ArrayList<>();
             nodes.forEach(node -> collectRecursive(node, results));
@@ -136,35 +140,7 @@ public class JsonPath {
             }
         }
 
-        // 解析路径段（如 `book` 或 `0`）
-        private String parseSegment() {
-            StringBuilder sb = new StringBuilder();
-            while (index < path.length()) {
-                char ch = path.charAt(index);
-                if (ch == '.' || ch == '[' || ch == ']') break;
-                sb.append(ch);
-                index++;
-            }
-            return sb.toString();
-        }
-
-        // 获取子节点（属性访问）
-        private List<ONode> getChild(ONode node, String key) {
-            if (node.isObject()) {
-                ONode child = node.get(key);
-                return child != null ? Collections.singletonList(child) : Collections.emptyList();
-            }
-            throw new PathResolutionException("Not an object at key '" + key + "'");
-        }
-
-        // 处理函数调用（如 `count()`）
-        private ONode resolveFunction(ONode node, String funcName) {
-            Function<ONode, ONode> func = FUNCTIONS.get(funcName);
-            if (func == null) throw new PathResolutionException("Unknown function: " + funcName);
-            return func.apply(node);
-        }
-
-        // 过滤器逻辑（如 `[?(@.price > 10)]`）
+        // 处理过滤器（如 [?(@.price > 10)]）
         private List<ONode> resolveFilter(List<ONode> nodes, String filter) {
             return nodes.stream()
                     .filter(n -> evaluateFilter(n, filter))
@@ -187,11 +163,49 @@ public class JsonPath {
                         case ">=": return target.getDouble() >= Double.parseDouble(value);
                         case "<=": return target.getDouble() <= Double.parseDouble(value);
                         case "!=": return !target.getString().equals(value);
+                        case "contains":
+                            return target.isArray() && target.getArray().stream()
+                                    .anyMatch(e -> e.getString().equals(value));
                         default: throw new PathResolutionException("Unsupported operator: " + op);
                     }
                 }
             }
             throw new PathResolutionException("Invalid filter: " + filter);
+        }
+
+        // 解析路径段（支持终止符列表）
+        private String parseSegment(char... terminators) {
+            StringBuilder sb = new StringBuilder();
+            while (index < path.length()) {
+                char ch = path.charAt(index);
+                if (isTerminator(ch, terminators)) break;
+                sb.append(ch);
+                index++;
+            }
+            return sb.toString().trim();
+        }
+
+        private boolean isTerminator(char ch, char[] terminators) {
+            for (char t : terminators) {
+                if (ch == t) return true;
+            }
+            return ch == '.' || ch == '[' || ch == ']';
+        }
+
+        // 获取子节点
+        private List<ONode> getChild(ONode node, String key) {
+            if (node.isObject()) {
+                ONode child = node.get(key);
+                return child != null ? Collections.singletonList(child) : Collections.emptyList();
+            }
+            throw new PathResolutionException("Node is not an object at key '" + key + "'");
+        }
+
+        // 跳过空白字符
+        private void skipWhitespace() {
+            while (index < path.length() && Character.isWhitespace(path.charAt(index))) {
+                index++;
+            }
         }
     }
 }
