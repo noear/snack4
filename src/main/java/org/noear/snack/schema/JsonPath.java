@@ -79,11 +79,17 @@ public class JsonPath {
         }
 
         private ONode resolveIndex(ONode node) {
-            String indexStr = parseSegment();
-            if (indexStr.endsWith("]")) {
-                indexStr = indexStr.substring(0, indexStr.length() - 1); // 去掉末尾的 ]
+            StringBuilder indexStr = new StringBuilder();
+            while (index < path.length()) {
+                char ch = path.charAt(index);
+                if (ch == ']') {
+                    index++; // 跳过 ]
+                    break;
+                }
+                indexStr.append(ch);
+                index++;
             }
-            return getNodeByIndex(node, indexStr);
+            return getNodeByIndex(node, indexStr.toString());
         }
 
         private ONode resolveWildcard(ONode node) {
