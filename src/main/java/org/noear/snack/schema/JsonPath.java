@@ -36,9 +36,10 @@ public class JsonPath {
             this.index = 0; // 起始位置为 $ 符号
         }
 
+        // 主解析逻辑
         ONode evaluate(ONode root) {
             List<ONode> currentNodes = Collections.singletonList(root);
-            index++; // 跳过 $
+            index++; // 跳过初始的 $
 
             while (index < path.length()) {
                 skipWhitespace();
@@ -46,7 +47,7 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    handleDot(currentNodes);
+                    currentNodes = handleDot(currentNodes); // 接收返回值
                 } else if (ch == '[') {
                     currentNodes = handleBracket(currentNodes);
                 } else {
@@ -57,21 +58,30 @@ public class JsonPath {
             return currentNodes.size() == 1 ? currentNodes.get(0) : new ONode(currentNodes);
         }
 
-        // 处理 '.' 或 '..'
-        private void handleDot(List<ONode> currentNodes) {
+        // 处理 '.' 或 '..'，返回新的节点集合
+        private List<ONode> handleDot(List<ONode> currentNodes) {
             index++;
             if (index < path.length() && path.charAt(index) == '.') {
                 index++;
                 currentNodes = resolveRecursive(currentNodes);
+                // 递归搜索后继续处理后续路径（例如 $..price）
+                if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
+                    currentNodes = resolveKey(currentNodes);
+                }
             } else {
                 currentNodes = resolveKey(currentNodes);
             }
+            return currentNodes; // 返回更新后的节点集合
         }
 
         // 处理 '[...]'
         private List<ONode> handleBracket(List<ONode> nodes) {
-            index++;
+            index++; // 跳过'['
             String segment = parseSegment(']');
+            // 确保跳过闭合的']'
+            if (index < path.length() && path.charAt(index) == ']') {
+                index++;
+            }
             if (segment.equals("*")) {
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
@@ -156,21 +166,38 @@ public class JsonPath {
                     String value = parts[2].replaceAll("['\"]", "");
                     ONode target = node.get(key);
                     if (target == null) return false;
-                    switch (op) {
-                        case "==": return target.getString().equals(value);
-                        case ">": return target.getDouble() > Double.parseDouble(value);
-                        case "<": return target.getDouble() < Double.parseDouble(value);
-                        case ">=": return target.getDouble() >= Double.parseDouble(value);
-                        case "<=": return target.getDouble() <= Double.parseDouble(value);
-                        case "!=": return !target.getString().equals(value);
-                        case "contains":
-                            return target.isArray() && target.getArray().stream()
-                                    .anyMatch(e -> e.getString().equals(value));
-                        default: throw new PathResolutionException("Unsupported operator: " + op);
+
+                    // 根据类型安全比较
+                    if (target.isString()) {
+                        String targetValue = target.getString();
+                        return compareString(op, targetValue, value);
+                    } else if (target.isNumber()) {
+                        double targetValue = target.getDouble();
+                        return compareNumber(op, targetValue, Double.parseDouble(value));
                     }
                 }
             }
             throw new PathResolutionException("Invalid filter: " + filter);
+        }
+
+        private boolean compareString(String op, String a, String b) {
+            switch (op) {
+                case "==": return a.equals(b);
+                case "!=": return !a.equals(b);
+                default: throw new PathResolutionException("Unsupported operator for string: " + op);
+            }
+        }
+
+        private boolean compareNumber(String op, double a, double b) {
+            switch (op) {
+                case "==": return a == b;
+                case "!=": return a != b;
+                case ">": return a > b;
+                case "<": return a < b;
+                case ">=": return a >= b;
+                case "<=": return a <= b;
+                default: throw new PathResolutionException("Unsupported operator for number: " + op);
+            }
         }
 
         // 解析路径段（支持终止符列表）
