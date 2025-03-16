@@ -7,7 +7,6 @@ import org.noear.snack.core.Options;
 import org.noear.snack.schema.SchemaValidator;
 
 import java.io.StringReader;
-import java.text.ParseException;
 import java.util.*;
 
 /**
@@ -142,11 +141,22 @@ public final class ONode {
     }
 
     public ONode set(String key, Object value) {
-        return set(key, new ONode(value));
+        ONode oNode;
+        if (value instanceof ONode) {
+            oNode = (ONode) value;
+        } else if (value instanceof Collection) {
+            oNode = BeanCodec.serialize(value);
+        } else if (value instanceof Map) {
+            oNode = BeanCodec.serialize(value);
+        } else {
+            oNode = new ONode(value);
+        }
+
+        return set0(key, oNode);
     }
 
-    public ONode set(String key, ONode value) {
-        if(type == TYPE_NULL){
+    private ONode set0(String key, ONode value) {
+        if (type == TYPE_NULL) {
             newObject();
         }
 
@@ -159,12 +169,23 @@ public final class ONode {
     }
 
     public ONode add(Object value) {
-        add(new ONode(value));
+        ONode oNode;
+        if (value instanceof ONode) {
+            oNode = (ONode) value;
+        } else if (value instanceof Collection) {
+            oNode = BeanCodec.serialize(value);
+        } else if (value instanceof Map) {
+            oNode = BeanCodec.serialize(value);
+        } else {
+            oNode = new ONode(value);
+        }
+
+        add0(oNode);
         return this;
     }
 
-    public ONode add(ONode value) {
-        if(type == TYPE_NULL){
+    private ONode add0(ONode value) {
+        if (type == TYPE_NULL) {
             newArray();
         }
 
@@ -229,8 +250,16 @@ public final class ONode {
 
     /// /////////////
 
+    public static ONode loadBean(Object bean, Options opts) {
+        return BeanCodec.serialize(bean, opts);
+    }
+
+    public static ONode loadBean(Object bean) {
+        return BeanCodec.serialize(bean, Options.def());
+    }
+
     // 添加带 Options 的静态方法
-    public static ONode load(String json, Options opts) {
+    public static ONode loadJson(String json, Options opts) {
         try {
             return new JsonReader(new StringReader(json), opts).read();
         } catch (RuntimeException ex) {
@@ -238,6 +267,12 @@ public final class ONode {
         } catch (Throwable ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+
+    // 保持原有方法兼容性
+    public static ONode loadJson(String json) {
+        return loadJson(json, Options.def());
     }
 
     public String toJson(Options opts) {
@@ -248,11 +283,6 @@ public final class ONode {
         } catch (Throwable ex) {
             throw new RuntimeException(ex);
         }
-    }
-
-    // 保持原有方法兼容性
-    public static ONode load(String json) {
-        return load(json, Options.def());
     }
 
     public String toJson() {
