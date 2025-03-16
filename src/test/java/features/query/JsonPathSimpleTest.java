@@ -1,4 +1,4 @@
-package features.jsonpath;
+package features.query;
 
 import org.noear.snack.ONode;
 import org.noear.snack.exception.PathResolutionException;

@@ -11,23 +11,16 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class JsonReader {
-    private static final int BUFFER_SIZE = 8192;
-    private final Reader reader;
-    private long line = 1;
-    private long column = 0;
-
-    private final char[] buffer = new char[BUFFER_SIZE];
-    private int bufferPosition;
-    private int bufferLimit;
 
     private final Options opts;
+    private final ParserState state;
 
     public JsonReader(Reader reader) {
         this(reader, Options.def());
     }
 
     public JsonReader(Reader reader, Options opts) {
-        this.reader = reader;
+        this.state = new ParserState(reader);
         this.opts = opts != null ? opts : Options.def();
     }
 
@@ -41,17 +34,17 @@ public class JsonReader {
     }
 
     public ONode read() throws IOException {
-        fillBuffer();
+        state.fillBuffer();
         ONode node = parseValue();
-        skipWhitespace();
-        if (bufferPosition < bufferLimit) throw error("Unexpected data after json root");
+        state.skipWhitespace();
+        if (state.bufferPosition < state.bufferLimit) throw state.error("Unexpected data after json root");
         return node;
     }
 
     private ONode parseValue() throws IOException {
-        skipWhitespace();
-        char c = nextChar();
-        bufferPosition--; // 回退进行类型判断
+        state.skipWhitespace();
+        char c = state.nextChar();
+        state.bufferPosition--; // 回退进行类型判断
 
         if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
             skipComments();
@@ -64,14 +57,14 @@ public class JsonReader {
         if (c == 't') return parseKeyword("true", true);
         if (c == 'f') return parseKeyword("false", false);
         if (c == 'n') return parseKeyword("null", null);
-        throw error("Unexpected character: " + c);
+        throw state.error("Unexpected character: " + c);
     }
 
     private void skipComments() throws IOException {
-        char c = peekChar();
+        char c = state.peekChar();
         if (c == '/') {
-            bufferPosition++;
-            char next = peekChar();
+            state.bufferPosition++;
+            char next = state.peekChar();
             if (next == '/') {
                 skipLineComment();
             } else if (next == '*') {
@@ -81,18 +74,18 @@ public class JsonReader {
     }
 
     private void skipLineComment() throws IOException {
-        while (bufferPosition < bufferLimit && buffer[bufferPosition] != '\n') {
-            bufferPosition++;
+        while (state.bufferPosition < state.bufferLimit && state.buffer[state.bufferPosition] != '\n') {
+            state.bufferPosition++;
         }
     }
 
     private void skipBlockComment() throws IOException {
-        bufferPosition++;
+        state.bufferPosition++;
         while (true) {
-            if (bufferPosition >= bufferLimit && !fillBuffer()) break;
-            char c = buffer[bufferPosition++];
-            if (c == '*' && peekChar() == '/') {
-                bufferPosition++;
+            if (state.bufferPosition >= state.bufferLimit && !state.fillBuffer()) break;
+            char c = state.buffer[state.bufferPosition++];
+            if (c == '*' && state.peekChar() == '/') {
+                state.bufferPosition++;
                 break;
             }
         }
@@ -102,30 +95,30 @@ public class JsonReader {
         Map<String, ONode> map = new LinkedHashMap<>();
         expect('{');
         while (true) {
-            skipWhitespace();
-            if (peekChar() == '}') {
-                bufferPosition++;
+            state.skipWhitespace();
+            if (state.peekChar() == '}') {
+                state.bufferPosition++;
                 break;
             }
 
             // 修复：允许空键
             String key = parseString();
-            if (key.isEmpty()) throw error("Empty key in object");
+            if (key.isEmpty()) throw state.error("Empty key in object");
 
-            skipWhitespace();
+            state.skipWhitespace();
             expect(':');
             ONode value = parseValue();
             map.put(key, value);
 
-            skipWhitespace();
-            if (peekChar() == ',') {
-                bufferPosition++;
-                skipWhitespace();
-                if (peekChar() == '}') throw error("Trailing comma in object");
-            } else if (peekChar() == '}') {
+            state.skipWhitespace();
+            if (state.peekChar() == ',') {
+                state.bufferPosition++;
+                state.skipWhitespace();
+                if (state.peekChar() == '}') throw state.error("Trailing comma in object");
+            } else if (state.peekChar() == '}') {
                 // Continue to closing
             } else {
-                throw error("Expected ',' or '}'");
+                throw state.error("Expected ',' or '}'");
             }
         }
         return new ONode(map);
@@ -135,23 +128,23 @@ public class JsonReader {
         ArrayList<ONode> list = new ArrayList<>();
         expect('[');
         while (true) {
-            skipWhitespace();
-            if (peekChar() == ']') {
-                bufferPosition++;
+            state.skipWhitespace();
+            if (state.peekChar() == ']') {
+                state.bufferPosition++;
                 break;
             }
 
             list.add(parseValue());
 
-            skipWhitespace();
-            if (peekChar() == ',') {
-                bufferPosition++;
-                skipWhitespace();
-                if (peekChar() == ']') throw error("Trailing comma in array");
-            } else if (peekChar() == ']') {
+            state.skipWhitespace();
+            if (state.peekChar() == ',') {
+                state.bufferPosition++;
+                state.skipWhitespace();
+                if (state.peekChar() == ']') throw state.error("Trailing comma in array");
+            } else if (state.peekChar() == ']') {
                 // Continue to closing
             } else {
-                throw error("Expected ',' or ']'");
+                throw state.error("Expected ',' or ']'");
             }
         }
         return new ONode(list);
@@ -161,33 +154,49 @@ public class JsonReader {
         expect('"');
         StringBuilder sb = new StringBuilder();
         while (true) {
-            char c = nextChar();
+            char c = state.nextChar();
             if (c == '"') break;
 
             if (c == '\\') {
-                c = nextChar();
+                c = state.nextChar();
                 switch (c) {
-                    case '"': sb.append('"'); break;
-                    case '\\': sb.append('\\'); break;
-                    case '/': sb.append('/'); break;
-                    case 'b': sb.append('\b'); break;
-                    case 'f': sb.append('\f'); break;
-                    case 'n': sb.append('\n'); break;
-                    case 'r': sb.append('\r'); break;
-                    case 't': sb.append('\t'); break;
+                    case '"':
+                        sb.append('"');
+                        break;
+                    case '\\':
+                        sb.append('\\');
+                        break;
+                    case '/':
+                        sb.append('/');
+                        break;
+                    case 'b':
+                        sb.append('\b');
+                        break;
+                    case 'f':
+                        sb.append('\f');
+                        break;
+                    case 'n':
+                        sb.append('\n');
+                        break;
+                    case 'r':
+                        sb.append('\r');
+                        break;
+                    case 't':
+                        sb.append('\t');
+                        break;
                     case 'u':
                         char[] hex = new char[4];
                         for (int i = 0; i < 4; i++) {
-                            hex[i] = nextChar();
-                            if (!isHex(hex[i])) throw error("Invalid Unicode escape");
+                            hex[i] = state.nextChar();
+                            if (!isHex(hex[i])) throw state.error("Invalid Unicode escape");
                         }
                         sb.append((char) Integer.parseInt(new String(hex), 16));
                         break;
                     default:
-                        throw error("Invalid escape character: \\" + c);
+                        throw state.error("Invalid escape character: \\" + c);
                 }
             } else {
-                if (c < 0x20) throw error("Unescaped control character: 0x" + Integer.toHexString(c));
+                if (c < 0x20) throw state.error("Unescaped control character: 0x" + Integer.toHexString(c));
                 sb.append(c);
             }
         }
@@ -196,50 +205,50 @@ public class JsonReader {
 
     private Number parseNumber() throws IOException {
         StringBuilder sb = new StringBuilder();
-        char c = peekChar();
+        char c = state.peekChar();
 
         // 处理负数
         if (c == '-') {
             sb.append(c);
-            bufferPosition++;
+            state.bufferPosition++;
         }
 
         // 解析整数部分
-        if (peekChar() == '0') {
-            sb.append(nextChar());
-            if (isDigit(peekChar())) {
-                throw error("Leading zeros not allowed");
+        if (state.peekChar() == '0') {
+            sb.append(state.nextChar());
+            if (isDigit(state.peekChar())) {
+                throw state.error("Leading zeros not allowed");
             }
-        } else if (isDigit(peekChar())) {
-            while (isDigit(peekChar())) {
-                sb.append(nextChar());
+        } else if (isDigit(state.peekChar())) {
+            while (isDigit(state.peekChar())) {
+                sb.append(state.nextChar());
             }
         } else {
-            throw error("Invalid number format");
+            throw state.error("Invalid number format");
         }
 
         // 解析小数部分
-        if (peekChar() == '.') {
-            sb.append(nextChar());
-            if (!isDigit(peekChar())) {
-                throw error("Invalid decimal format");
+        if (state.peekChar() == '.') {
+            sb.append(state.nextChar());
+            if (!isDigit(state.peekChar())) {
+                throw state.error("Invalid decimal format");
             }
-            while (isDigit(peekChar())) {
-                sb.append(nextChar());
+            while (isDigit(state.peekChar())) {
+                sb.append(state.nextChar());
             }
         }
 
         // 解析指数部分
-        if (peekChar() == 'e' || peekChar() == 'E') {
-            sb.append(nextChar());
-            if (peekChar() == '+' || peekChar() == '-') {
-                sb.append(nextChar());
+        if (state.peekChar() == 'e' || state.peekChar() == 'E') {
+            sb.append(state.nextChar());
+            if (state.peekChar() == '+' || state.peekChar() == '-') {
+                sb.append(state.nextChar());
             }
-            if (!isDigit(peekChar())) {
-                throw error("Invalid exponent format");
+            if (!isDigit(state.peekChar())) {
+                throw state.error("Invalid exponent format");
             }
-            while (isDigit(peekChar())) {
-                sb.append(nextChar());
+            while (isDigit(state.peekChar())) {
+                sb.append(state.nextChar());
             }
         }
 
@@ -255,74 +264,27 @@ public class JsonReader {
                 return longVal;
             }
         } catch (NumberFormatException e) {
-            throw error("Invalid number: " + numStr);
+            throw state.error("Invalid number: " + numStr);
         }
     }
 
     private ONode parseKeyword(String expect, Object value) throws IOException {
         for (int i = 0; i < expect.length(); i++) {
-            char c = nextChar();
+            char c = state.nextChar();
             if (c != expect.charAt(i)) {
-                throw error("Unexpected keyword: expected '" + expect + "'");
+                throw state.error("Unexpected keyword: expected '" + expect + "'");
             }
         }
         return new ONode(value);
     }
 
     private void expect(char expected) throws IOException {
-        char c = nextChar();
+        char c = state.nextChar();
         if (c != expected) {
-            throw error("Expected '" + expected + "' but found '" + c + "'");
+            throw state.error("Expected '" + expected + "' but found '" + c + "'");
         }
     }
 
-    private void skipWhitespace() throws IOException {
-        while (bufferPosition < bufferLimit || fillBuffer()) {
-            char c = buffer[bufferPosition];
-            if (c == '\n') {
-                line++;
-                column = 0;
-            } else if (c == '\r') {
-                // Handle CRLF
-                if (peekChar(1) == '\n') bufferPosition++;
-                line++;
-                column = 0;
-            } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
-                // Continue
-            } else {
-                break;
-            }
-            bufferPosition++;
-            column++;
-        }
-    }
-
-    private char nextChar() throws IOException {
-        if (bufferPosition >= bufferLimit && !fillBuffer()) {
-            throw error("Unexpected end of input");
-        }
-        char c = buffer[bufferPosition++];
-        column++;
-        return c;
-    }
-
-    private char peekChar() throws IOException {
-        return peekChar(0);
-    }
-
-    private char peekChar(int offset) throws IOException {
-        if (bufferPosition + offset >= bufferLimit && !fillBuffer()) {
-            return 0;
-        }
-        return (bufferPosition + offset < bufferLimit) ? buffer[bufferPosition + offset] : 0;
-    }
-
-    private boolean fillBuffer() throws IOException {
-        if (bufferPosition < bufferLimit) return true;
-        bufferLimit = reader.read(buffer);
-        bufferPosition = 0;
-        return bufferLimit > 0;
-    }
 
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
@@ -332,7 +294,72 @@ public class JsonReader {
         return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 
-    private ParseException error(String message) {
-        return new ParseException(message + " at line " + line + " column " + column);
+
+    static class ParserState {
+        private static final int BUFFER_SIZE = 8192;
+        private final Reader reader;
+        private long line = 1;
+        private long column = 0;
+
+        private final char[] buffer = new char[BUFFER_SIZE];
+        private int bufferPosition;
+        private int bufferLimit;
+
+        public ParserState(Reader reader) {
+            this.reader = reader;
+        }
+
+
+        private void skipWhitespace() throws IOException {
+            while (bufferPosition < bufferLimit || fillBuffer()) {
+                char c = buffer[bufferPosition];
+                if (c == '\n') {
+                    line++;
+                    column = 0;
+                } else if (c == '\r') {
+                    // Handle CRLF
+                    if (peekChar(1) == '\n') bufferPosition++;
+                    line++;
+                    column = 0;
+                } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+                    // Continue
+                } else {
+                    break;
+                }
+                bufferPosition++;
+                column++;
+            }
+        }
+
+        private char nextChar() throws IOException {
+            if (bufferPosition >= bufferLimit && !fillBuffer()) {
+                throw error("Unexpected end of input");
+            }
+            char c = buffer[bufferPosition++];
+            column++;
+            return c;
+        }
+
+        private char peekChar() throws IOException {
+            return peekChar(0);
+        }
+
+        private char peekChar(int offset) throws IOException {
+            if (bufferPosition + offset >= bufferLimit && !fillBuffer()) {
+                return 0;
+            }
+            return (bufferPosition + offset < bufferLimit) ? buffer[bufferPosition + offset] : 0;
+        }
+
+        private boolean fillBuffer() throws IOException {
+            if (bufferPosition < bufferLimit) return true;
+            bufferLimit = reader.read(buffer);
+            bufferPosition = 0;
+            return bufferLimit > 0;
+        }
+
+        private ParseException error(String message) {
+            return new ParseException(message + " at line " + line + " column " + column);
+        }
     }
 }
