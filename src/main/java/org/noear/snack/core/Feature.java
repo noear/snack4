@@ -53,6 +53,8 @@ public enum Feature {
      */
     Input_UnwrapJsonString(false),
 
+    Input_AllowBackslashEscapingAnyCharacter(false),
+
 
     //-----------------------------
     // 输出特性（序列化）

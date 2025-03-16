@@ -6,6 +6,8 @@ import org.noear.snack.exception.ParseException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -205,7 +207,11 @@ public class JsonReader {
                         sb.append((char) Integer.parseInt(new String(hex), 16));
                         break;
                     default:
-                        throw state.error("Invalid escape character: \\" + c);
+                        if (opts.isFeatureEnabled(Feature.Input_AllowBackslashEscapingAnyCharacter)) {
+                            sb.append("\\").append(c);
+                        } else {
+                            throw state.error("Invalid escape character: \\" + c);
+                        }
                 }
             } else {
                 if (c < 0x20) throw state.error("Unescaped control character: 0x" + Integer.toHexString(c));
@@ -239,7 +245,7 @@ public class JsonReader {
             while (isDigit(state.peekChar())) {
                 sb.append(state.nextChar());
             }
-        } else {
+        } else if (sb.length() == 0) {
             throw state.error("Invalid number format");
         }
 
@@ -270,14 +276,34 @@ public class JsonReader {
 
         String numStr = sb.toString();
         try {
-            if (numStr.contains(".") || numStr.contains("e") || numStr.contains("E")) {
+            char postfix = numStr.charAt(numStr.length() - 1);
+
+            if (postfix == 'M') {
+                return new BigDecimal(numStr);
+            } else if (postfix == 'D') {
                 return Double.parseDouble(numStr);
+            } else if (postfix == 'F') {
+                return Float.parseFloat(numStr);
+            } else if (postfix == 'L') {
+                return Long.parseLong(numStr);
             } else {
-                long longVal = Long.parseLong(numStr);
-                if (longVal <= Integer.MAX_VALUE && longVal >= Integer.MIN_VALUE) {
-                    return (int) longVal;
+                if (numStr.indexOf('.') >= 0 || numStr.indexOf('e') >= 0 || numStr.indexOf('E') >= 0) {
+                    if (numStr.length() > 19) {
+                        return new BigDecimal(numStr);
+                    } else {
+                        return Double.parseDouble(numStr);
+                    }
+                } else {
+                    if (numStr.length() > 19) {
+                        return new BigInteger(numStr);
+                    } else {
+                        long longVal = Long.parseLong(numStr);
+                        if (longVal <= Integer.MAX_VALUE && longVal >= Integer.MIN_VALUE) {
+                            return (int) longVal;
+                        }
+                        return longVal;
+                    }
                 }
-                return longVal;
             }
         } catch (NumberFormatException e) {
             throw state.error("Invalid number: " + numStr);

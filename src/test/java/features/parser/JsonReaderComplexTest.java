@@ -1,7 +1,9 @@
 package features.parser;
 
 import org.junit.jupiter.api.Test;
+import org.noear.snack.core.Feature;
 import org.noear.snack.core.JsonReader;
+import org.noear.snack.core.Options;
 import org.noear.snack.exception.ParseException;
 
 import java.io.StringReader;
@@ -87,7 +89,7 @@ class JsonReaderComplexTest {
     @Test
     void testParseInvalidJsonInvalidObject() {
         String json = "{name: \"Alice\"}";
-        assertThrows(ParseException.class, () -> new JsonReader(new StringReader(json)).read());
+        assertThrows(ParseException.class, () -> new JsonReader(new StringReader(json), Options.builder().disable(Feature.Input_AllowUnquotedKeys).build()).read());
     }
 
     @Test
