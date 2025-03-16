@@ -11,7 +11,12 @@ import java.util.stream.Stream;
  */
 public class ClassAsOne {
     public static void main(String[] args) throws IOException {
-        String directoryPath = System.getProperty("user.dir") + "/src/main/java/";
+        print("/src/main/java/");
+        //print("/src/test/java/features/");
+    }
+
+    public static void print(String dir) throws IOException {
+        String directoryPath = System.getProperty("user.dir") + dir;
 
         try (Stream<Path> paths = Files.walk(Paths.get(directoryPath))) {
             paths.filter(Files::isRegularFile)
