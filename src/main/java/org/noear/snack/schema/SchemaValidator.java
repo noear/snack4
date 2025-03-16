@@ -2,6 +2,7 @@
 package org.noear.snack.schema;
 
 import org.noear.snack.ONode;
+import org.noear.snack.core.JsonTypes;
 import org.noear.snack.schema.rule.EnumRule;
 import org.noear.snack.schema.rule.TypeRule;
 import org.noear.snack.schema.rule.ValidationRule;
@@ -262,13 +263,13 @@ public class SchemaValidator {
         if (a.getType() != b.getType()) return false;
 
         switch (a.getType()) {
-            case ONode.TYPE_NULL: return true;
-            case ONode.TYPE_BOOLEAN: return a.getBoolean() == b.getBoolean();
-            case ONode.TYPE_NUMBER:
+            case JsonTypes.TYPE_NULL: return true;
+            case JsonTypes.TYPE_BOOLEAN: return a.getBoolean() == b.getBoolean();
+            case JsonTypes.TYPE_NUMBER:
                 return a.getNumber().doubleValue() == b.getNumber().doubleValue();
-            case ONode.TYPE_STRING:
+            case JsonTypes.TYPE_STRING:
                 return a.getString().equals(b.getString());
-            case ONode.TYPE_ARRAY:
+            case JsonTypes.TYPE_ARRAY:
                 List<ONode> aArr = a.getArray();
                 List<ONode> bArr = b.getArray();
                 if (aArr.size() != bArr.size()) return false;
@@ -276,7 +277,7 @@ public class SchemaValidator {
                     if (!deepEquals(aArr.get(i), bArr.get(i))) return false;
                 }
                 return true;
-            case ONode.TYPE_OBJECT:
+            case JsonTypes.TYPE_OBJECT:
                 Map<String, ONode> aObj = a.getObject();
                 Map<String, ONode> bObj = b.getObject();
                 if (aObj.size() != bObj.size()) return false;
@@ -293,7 +294,7 @@ public class SchemaValidator {
     // 异常处理
     private SchemaException typeMismatch(String expected, ONode actual, PathTracker path) {
         return new SchemaException("Expected type " + expected + " but got " +
-                TypeRule.getTypeName(actual.getType()) + " at " + path.currentPath());
+                JsonTypes.getTypeName(actual.getType()) + " at " + path.currentPath());
     }
 
     // 预编译相关实现

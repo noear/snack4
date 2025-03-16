@@ -14,54 +14,43 @@ public final class ONode {
     private int type;
 
     public ONode() {
-        this.type = Constants.TYPE_NULL;
+        this.type = JsonTypes.TYPE_NULL;
     }
 
     public ONode(Object value) {
         this.value = value;
-        this.type = resolveType(value);
-    }
-
-    private int resolveType(Object value) {
-        if (value == null) return Constants.TYPE_NULL;
-        if (value instanceof Boolean) return Constants.TYPE_BOOLEAN;
-        if (value instanceof Number) return Constants.TYPE_NUMBER;
-        if (value instanceof String) return Constants.TYPE_STRING;
-        if (value instanceof List) return Constants.TYPE_ARRAY;
-        if (value instanceof Map) return Constants.TYPE_OBJECT;
-
-        throw new IllegalArgumentException("Unsupported type");
+        this.type = JsonTypes.resolveType(value);
     }
 
     // Getters and Setters
     public boolean isNull() {
-        return type == Constants.TYPE_NULL;
+        return type == JsonTypes.TYPE_NULL;
     }
 
     public boolean isNullOrEmpty() {
-        return type == Constants.TYPE_NULL ||
-                (type == Constants.TYPE_OBJECT && getObject().isEmpty()) ||
-                (type == Constants.TYPE_ARRAY && getArray().isEmpty());
+        return type == JsonTypes.TYPE_NULL ||
+                (type == JsonTypes.TYPE_OBJECT && getObject().isEmpty()) ||
+                (type == JsonTypes.TYPE_ARRAY && getArray().isEmpty());
     }
 
     public boolean isBoolean() {
-        return type == Constants.TYPE_BOOLEAN;
+        return type == JsonTypes.TYPE_BOOLEAN;
     }
 
     public boolean isNumber() {
-        return type == Constants.TYPE_NUMBER;
+        return type == JsonTypes.TYPE_NUMBER;
     }
 
     public boolean isString() {
-        return type == Constants.TYPE_STRING;
+        return type == JsonTypes.TYPE_STRING;
     }
 
     public boolean isArray() {
-        return type == Constants.TYPE_ARRAY;
+        return type == JsonTypes.TYPE_ARRAY;
     }
 
     public boolean isObject() {
-        return type == Constants.TYPE_OBJECT;
+        return type == JsonTypes.TYPE_OBJECT;
     }
 
     public Object getValue() {
@@ -93,7 +82,7 @@ public final class ONode {
     public ONode newObject() {
         if (value == null) {
             value = new LinkedHashMap<>();
-            type = Constants.TYPE_OBJECT;
+            type = JsonTypes.TYPE_OBJECT;
         }
 
         return this;
@@ -102,7 +91,7 @@ public final class ONode {
     public ONode newArray() {
         if (value == null) {
             value = new ArrayList<>();
-            type = Constants.TYPE_ARRAY;
+            type = JsonTypes.TYPE_ARRAY;
         }
 
         return this;
@@ -144,7 +133,7 @@ public final class ONode {
     }
 
     private ONode set0(String key, ONode value) {
-        if (type == Constants.TYPE_NULL) {
+        if (type == JsonTypes.TYPE_NULL) {
             newObject();
         }
 
@@ -173,7 +162,7 @@ public final class ONode {
     }
 
     private ONode add0(ONode value) {
-        if (type == Constants.TYPE_NULL) {
+        if (type == JsonTypes.TYPE_NULL) {
             newArray();
         }
 
@@ -199,7 +188,7 @@ public final class ONode {
 
     public ONode reset(Object value) {
         this.value = value;
-        this.type = resolveType(value);
+        this.type = JsonTypes.resolveType(value);
         return this;
     }
 
