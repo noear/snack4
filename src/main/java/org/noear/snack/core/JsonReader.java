@@ -51,7 +51,7 @@ public class JsonReader {
         state.bufferPosition--; // 回退进行类型判断
 
         if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
-            skipComments();
+            state.skipComments();
         }
 
         if (c == '{') return parseObject();
@@ -62,67 +62,6 @@ public class JsonReader {
         if (c == 'f') return parseKeyword("false", false);
         if (c == 'n') return parseKeyword("null", null);
         throw state.error("Unexpected character: " + c);
-    }
-
-    private void skipComments() throws IOException {
-        char c = state.peekChar();
-        if (c == '/') {
-            state.bufferPosition++;
-            char next = state.peekChar();
-            if (next == '/') {
-                skipLineComment();
-            } else if (next == '*') {
-                skipBlockComment();
-            }
-        }
-    }
-
-    // 修改后的 skipLineComment
-    private void skipLineComment() throws IOException {
-        while (true) {
-            if (state.bufferPosition >= state.bufferLimit && !state.fillBuffer()) break;
-            char c = state.buffer[state.bufferPosition];
-            if (c == '\n') {
-                state.line++;
-                state.column = 0;
-                state.bufferPosition++;
-                break;
-            }
-            state.bufferPosition++;
-            state.column++;
-        }
-    }
-
-    // 修改后的 skipBlockComment
-    private void skipBlockComment() throws IOException {
-        state.bufferPosition++; // 跳过起始的 '/'
-        boolean closed = false;
-        while (true) {
-            if (state.bufferPosition >= state.bufferLimit && !state.fillBuffer()) {
-                break;
-            }
-            char c = state.buffer[state.bufferPosition++];
-            // 更新行号和列号
-            if (c == '\n') {
-                state.line++;
-                state.column = 0;
-            } else if (c == '\r') {
-                if (state.peekChar() == '\n') state.bufferPosition++;
-                state.line++;
-                state.column = 0;
-            } else {
-                state.column++;
-            }
-
-            if (c == '*' && state.peekChar() == '/') {
-                state.bufferPosition++;
-                closed = true;
-                break;
-            }
-        }
-        if (!closed) {
-            throw state.error("Unclosed block comment");
-        }
     }
 
     private ONode parseObject() throws IOException {
@@ -344,27 +283,6 @@ public class JsonReader {
         }
 
 
-        private void skipWhitespace() throws IOException {
-            while (bufferPosition < bufferLimit || fillBuffer()) {
-                char c = buffer[bufferPosition];
-                if (c == '\n') {
-                    line++;
-                    column = 0;
-                } else if (c == '\r') {
-                    // Handle CRLF
-                    if (peekChar(1) == '\n') bufferPosition++;
-                    line++;
-                    column = 0;
-                } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
-                    // Continue
-                } else {
-                    break;
-                }
-                bufferPosition++;
-                column++;
-            }
-        }
-
         private char nextChar() throws IOException {
             if (bufferPosition >= bufferLimit && !fillBuffer()) {
                 throw error("Unexpected end of input");
@@ -394,6 +312,88 @@ public class JsonReader {
 
         private ParseException error(String message) {
             return new ParseException(message + " at line " + line + " column " + column);
+        }
+
+        private void skipWhitespace() throws IOException {
+            while (bufferPosition < bufferLimit || fillBuffer()) {
+                char c = buffer[bufferPosition];
+                if (c == '\n') {
+                    line++;
+                    column = 0;
+                } else if (c == '\r') {
+                    // Handle CRLF
+                    if (peekChar(1) == '\n') bufferPosition++;
+                    line++;
+                    column = 0;
+                } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+                    // Continue
+                } else {
+                    break;
+                }
+                bufferPosition++;
+                column++;
+            }
+        }
+
+        private void skipComments() throws IOException {
+            char c = peekChar();
+            if (c == '/') {
+                bufferPosition++;
+                char next = peekChar();
+                if (next == '/') {
+                    skipLineComment();
+                } else if (next == '*') {
+                    skipBlockComment();
+                }
+            }
+        }
+
+        // 修改后的 skipLineComment
+        private void skipLineComment() throws IOException {
+            while (true) {
+                if (bufferPosition >= bufferLimit && !fillBuffer()) break;
+                char c = buffer[bufferPosition];
+                if (c == '\n') {
+                    line++;
+                    column = 0;
+                    bufferPosition++;
+                    break;
+                }
+                bufferPosition++;
+                column++;
+            }
+        }
+
+        // 修改后的 skipBlockComment
+        private void skipBlockComment() throws IOException {
+            bufferPosition++; // 跳过起始的 '/'
+            boolean closed = false;
+            while (true) {
+                if (bufferPosition >= bufferLimit && !fillBuffer()) {
+                    break;
+                }
+                char c = buffer[bufferPosition++];
+                // 更新行号和列号
+                if (c == '\n') {
+                    line++;
+                    column = 0;
+                } else if (c == '\r') {
+                    if (peekChar() == '\n') bufferPosition++;
+                    line++;
+                    column = 0;
+                } else {
+                    column++;
+                }
+
+                if (c == '*' && peekChar() == '/') {
+                    bufferPosition++;
+                    closed = true;
+                    break;
+                }
+            }
+            if (!closed) {
+                throw error("Unclosed block comment");
+            }
         }
     }
 }
