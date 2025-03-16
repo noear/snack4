@@ -1,6 +1,7 @@
 package features.jsonpath;
 
 import org.noear.snack.ONode;
+import org.noear.snack.exception.PathResolutionException;
 import org.noear.snack.schema.JsonPath;
 import org.junit.jupiter.api.Test;
 
@@ -239,7 +240,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testNegativeIndexOutOfBounds() {
         ONode root = ONode.load(JSON);
-        assertThrows(JsonPath.PathResolutionException.class, () -> {
+        assertThrows(PathResolutionException.class, () -> {
             JsonPath.query(root, "$.store.book[-10]");
         });
     }
@@ -247,7 +248,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testPositiveIndexOutOfBounds() {
         ONode root = ONode.load(JSON);
-        assertThrows(JsonPath.PathResolutionException.class, () -> {
+        assertThrows(PathResolutionException.class, () -> {
             JsonPath.query(root, "$.store.book[10]");
         });
     }
@@ -255,7 +256,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testNonExistentKey() {
         ONode root = ONode.load(JSON);
-        assertThrows(JsonPath.PathResolutionException.class, () -> {
+        assertThrows(PathResolutionException.class, () -> {
             JsonPath.query(root, "$.store.nonExistentKey");
         });
     }
