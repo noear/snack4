@@ -14,15 +14,24 @@ public class JsonPath {
     private static final Map<String, Function<ONode, ONode>> FUNCTIONS = new HashMap<>();
 
     static {
-        FUNCTIONS.put("count", node -> new ONode(node.isArray() ? node.size() : 1));
-        FUNCTIONS.put("sum", node -> {
-            if (!node.isArray()) throw new PathResolutionException("sum() requires an array");
-            double sum = node.getArray().stream()
-                    .filter(ONode::isNumber)
-                    .mapToDouble(ONode::getDouble)
-                    .sum();
-            return new ONode(sum);
-        });
+        // 新增数学函数
+        FUNCTIONS.put("min", JsonPathFuns::min);
+        FUNCTIONS.put("max", JsonPathFuns::max);
+        FUNCTIONS.put("avg", JsonPathFuns::avg);
+        FUNCTIONS.put("sum", JsonPathFuns::sum);
+        FUNCTIONS.put("mean", JsonPathFuns::avg); // 别名
+
+
+        FUNCTIONS.put("size", JsonPathFuns::size);
+        FUNCTIONS.put("first", JsonPathFuns::first);
+        FUNCTIONS.put("last", JsonPathFuns::last);
+
+
+        // 新增字符串函数
+        FUNCTIONS.put("length", JsonPathFuns::length);
+        FUNCTIONS.put("upper", JsonPathFuns::upper);
+        FUNCTIONS.put("lower", JsonPathFuns::lower);
+        FUNCTIONS.put("trim", JsonPathFuns::trim);
     }
 
     /**
