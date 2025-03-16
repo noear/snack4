@@ -16,12 +16,18 @@ public class JsonPath {
     static {
         FUNCTIONS.put("count", node -> new ONode(node.isArray() ? node.size() : 1));
         FUNCTIONS.put("sum", node -> {
-            if (!node.isArray()) throw new PathResolutionException("sum() requires an array");
-            double sum = node.getArray().stream()
-                    .filter(o -> o.isNumber())
-                    .mapToDouble(n -> n.getDouble()) // 安全获取数值
+            if (!node.isArray()) {
+                throw new PathResolutionException("sum() requires an array");
+            }
+            List<ONode> arr = node.getArray();
+            if (arr.isEmpty()) {
+                return new ONode(0); // 空数组返回0
+            }
+            double sum = arr.stream()
+                    .filter(o->o.isNumber())
+                    .mapToDouble(n -> n.getDouble())
                     .sum();
-            return new ONode(sum); // 返回数值类型节点
+            return new ONode(sum);
         });
     }
 
@@ -81,8 +87,8 @@ public class JsonPath {
         private List<ONode> handleBracket(List<ONode> nodes) {
             index++; // 跳过'['
             String segment = parseSegment(']');
-            // 确保跳过闭合的']'
-            if (index < path.length() && path.charAt(index) == ']') {
+            // 确保跳过所有连续的 ]
+            while (index < path.length() && path.charAt(index) == ']') {
                 index++;
             }
             if (segment.equals("*")) {
@@ -151,6 +157,7 @@ public class JsonPath {
         private List<ONode> resolveRecursive(List<ONode> nodes) {
             final List<ONode> results = new ArrayList<>();
             nodes.forEach(node -> collectRecursive(node, results));
+            // 递归后继续处理后续路径（例如 .price）
             if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
                 return resolveKey(results, false);
             }
@@ -228,6 +235,10 @@ public class JsonPath {
             StringBuilder sb = new StringBuilder();
             while (index < path.length()) {
                 char ch = path.charAt(index);
+                if (ch == ']') {
+                    index++; // 强制跳过闭合的 ]
+                    break;
+                }
                 if (isTerminator(ch, terminators)) break;
                 sb.append(ch);
                 index++;
