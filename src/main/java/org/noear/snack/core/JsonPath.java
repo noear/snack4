@@ -52,6 +52,7 @@ public class JsonPath {
     private static class PathParser {
         private final String path;
         private int index;
+        private boolean isCreateMode;
 
         PathParser(String path) {
             this.path = path;
@@ -111,6 +112,7 @@ public class JsonPath {
 
         // 创建节点
         void create(ONode root) {
+            isCreateMode = true;
             List<ONode> currentNodes = Collections.singletonList(root);
             index++;
 
@@ -185,10 +187,19 @@ public class JsonPath {
         }
 
         private List<ONode> getChild(ONode node, String key, boolean strict) {
+            if (isCreateMode) {
+                node.newObject();
+            }
+
             if (node.isObject()) {
                 ONode child = node.get(key);
-                if (strict && child == null) {
-                    throw new PathResolutionException("Missing key '" + key + "'");
+                if (child == null) {
+                    if (isCreateMode) {
+                        child = new ONode();
+                        node.set(key, child);
+                    } else if (strict) {
+                        throw new PathResolutionException("Missing key '" + key + "'");
+                    }
                 }
                 return child != null ? Collections.singletonList(child) : Collections.emptyList();
             }
@@ -210,12 +221,28 @@ public class JsonPath {
         // 处理精确索引（支持负数）
         private List<ONode> resolveIndex(List<ONode> nodes, String indexStr) {
             return nodes.stream()
-                    .filter(ONode::isArray)
+                    .filter(o -> {
+                        if (isCreateMode) {
+                            o.newArray();
+                            return true;
+                        } else {
+                            return o.isArray();
+                        }
+                    })
                     .map(arr -> {
                         int idx = Integer.parseInt(indexStr);
-                        if (idx < 0) idx += arr.size();
-                        if (idx < 0 || idx >= arr.size()) {
-                            throw new PathResolutionException("Index out of bounds: " + idx);
+
+                        if (isCreateMode) {
+                            //0 算1个，-1 算1个（至少算1个）
+                            int count = Math.max(Math.abs(idx), 1) - arr.size();
+                            for (int i = 0; i < count; i++) {
+                                arr.add(new ONode());
+                            }
+                        } else {
+                            if (idx < 0) idx += arr.size();
+                            if (idx < 0 || idx >= arr.size()) {
+                                throw new PathResolutionException("Index out of bounds: " + idx);
+                            }
                         }
                         return arr.get(idx);
                     })

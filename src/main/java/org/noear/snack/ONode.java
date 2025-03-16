@@ -143,7 +143,12 @@ public final class ONode {
     }
 
     public ONode get(int index) {
-        return getArray().get(index);
+        if (index < 0) {
+            int pos = getArray().size() + index;
+            return getArray().get(pos);
+        } else {
+            return getArray().get(index);
+        }
     }
 
     public ONode add(Object value) {
