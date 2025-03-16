@@ -1,14 +1,13 @@
 package org.noear.snack.core;
 
 import org.noear.snack.ONode;
+import org.noear.snack.core.util.ReflectionUtil;
 
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class BeanCodec {
-    private static final Map<Class<?>, Map<String, Field>> FIELD_CACHE = new ConcurrentHashMap<>();
 
     // 序列化：对象转ONode
     public static ONode serialize(Object bean) {
@@ -76,7 +75,7 @@ public class BeanCodec {
         Class<?> clazz = bean.getClass();
         ONode node = new ONode(new LinkedHashMap<>());
 
-        for (Field field : getFields(clazz).values()) {
+        for (Field field : ReflectionUtil.getDeclaredFields(clazz)) {
             field.setAccessible(true);
             Object value = field.get(bean);
             ONode fieldNode = convertValueToNode(value, visited, opts);
@@ -153,9 +152,8 @@ public class BeanCodec {
         constructor.setAccessible(true);
         T bean = constructor.newInstance();
 
-        for (String fieldName : getFields(clazz).keySet()) {
-            Field field = getFields(clazz).get(fieldName);
-            ONode fieldNode = node.get(fieldName);
+        for (Field field : ReflectionUtil.getDeclaredFields(clazz)) {
+            ONode fieldNode = node.get(field.getName());
 
             if (fieldNode != null && !fieldNode.isNull()) {
                 Object value = convertValue(fieldNode, field.getGenericType(), visited, opts);
@@ -267,21 +265,5 @@ public class BeanCodec {
         else if (type == short.class) field.setShort(bean, (short) 0);
         else if (type == byte.class) field.setByte(bean, (byte) 0);
         else if (type == char.class) field.setChar(bean, '\u0000');
-    }
-
-    // 获取类字段（包含继承字段）
-    private static Map<String, Field> getFields(Class<?> clazz) {
-        return FIELD_CACHE.computeIfAbsent(clazz, k -> {
-            Map<String, Field> fields = new LinkedHashMap<>();
-            Class<?> current = clazz;
-            while (current != null) {
-                for (Field field : current.getDeclaredFields()) {
-                    field.setAccessible(true);
-                    fields.put(field.getName(), field);
-                }
-                current = current.getSuperclass();
-            }
-            return fields;
-        });
     }
 }

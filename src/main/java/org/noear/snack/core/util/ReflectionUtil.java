@@ -1,5 +1,7 @@
 package org.noear.snack.core.util;
 
+import org.noear.snack.exception.ReflectionException;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -43,13 +45,6 @@ public class ReflectionUtil {
             field.set(target, value);
         } catch (IllegalAccessException e) {
             throw new ReflectionException("Set field failed: " + field.getName(), e);
-        }
-    }
-
-    // 自定义反射异常
-    public static class ReflectionException extends RuntimeException {
-        public ReflectionException(String message, Throwable cause) {
-            super(message, cause);
         }
     }
 }
