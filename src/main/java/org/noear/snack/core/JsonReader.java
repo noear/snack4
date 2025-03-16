@@ -34,11 +34,15 @@ public class JsonReader {
     }
 
     public ONode read() throws IOException {
-        state.fillBuffer();
-        ONode node = parseValue();
-        state.skipWhitespace();
-        if (state.bufferPosition < state.bufferLimit) throw state.error("Unexpected data after json root");
-        return node;
+        try (Reader ignored = state.reader) { // 仅对可关闭的 Reader 有效
+            state.fillBuffer();
+            ONode node = parseValue();
+            state.skipWhitespace();
+            if (state.bufferPosition < state.bufferLimit) {
+                throw state.error("Unexpected data after json root");
+            }
+            return node;
+        }
     }
 
     private ONode parseValue() throws IOException {
@@ -73,21 +77,51 @@ public class JsonReader {
         }
     }
 
+    // 修改后的 skipLineComment
     private void skipLineComment() throws IOException {
-        while (state.bufferPosition < state.bufferLimit && state.buffer[state.bufferPosition] != '\n') {
-            state.bufferPosition++;
-        }
-    }
-
-    private void skipBlockComment() throws IOException {
-        state.bufferPosition++;
         while (true) {
             if (state.bufferPosition >= state.bufferLimit && !state.fillBuffer()) break;
-            char c = state.buffer[state.bufferPosition++];
-            if (c == '*' && state.peekChar() == '/') {
+            char c = state.buffer[state.bufferPosition];
+            if (c == '\n') {
+                state.line++;
+                state.column = 0;
                 state.bufferPosition++;
                 break;
             }
+            state.bufferPosition++;
+            state.column++;
+        }
+    }
+
+    // 修改后的 skipBlockComment
+    private void skipBlockComment() throws IOException {
+        state.bufferPosition++; // 跳过起始的 '/'
+        boolean closed = false;
+        while (true) {
+            if (state.bufferPosition >= state.bufferLimit && !state.fillBuffer()) {
+                break;
+            }
+            char c = state.buffer[state.bufferPosition++];
+            // 更新行号和列号
+            if (c == '\n') {
+                state.line++;
+                state.column = 0;
+            } else if (c == '\r') {
+                if (state.peekChar() == '\n') state.bufferPosition++;
+                state.line++;
+                state.column = 0;
+            } else {
+                state.column++;
+            }
+
+            if (c == '*' && state.peekChar() == '/') {
+                state.bufferPosition++;
+                closed = true;
+                break;
+            }
+        }
+        if (!closed) {
+            throw state.error("Unclosed block comment");
         }
     }
 
