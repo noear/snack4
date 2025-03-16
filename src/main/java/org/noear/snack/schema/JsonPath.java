@@ -16,17 +16,13 @@ public class JsonPath {
     static {
         FUNCTIONS.put("count", node -> new ONode(node.isArray() ? node.size() : 1));
         FUNCTIONS.put("sum", node -> {
-            if (!node.isArray()) {
-                throw new PathResolutionException("sum() requires an array");
+            // 允许对数组字段求和（如 $.prices.sum()）
+            if (!node.isArray() && !node.getObject().values().stream().allMatch(ONode::isNumber)) {
+                throw new PathResolutionException("sum() requires an array or numeric fields");
             }
-            List<ONode> arr = node.getArray();
-            if (arr.isEmpty()) {
-                return new ONode(0); // 空数组返回0
-            }
-            double sum = arr.stream()
-                    .filter(o->o.isNumber())
-                    .mapToDouble(n -> n.getDouble())
-                    .sum();
+            double sum = node.isArray() ?
+                    node.getArray().stream().mapToDouble(ONode::getDouble).sum() :
+                    node.getObject().values().stream().mapToDouble(ONode::getDouble).sum();
             return new ONode(sum);
         });
     }
@@ -157,9 +153,13 @@ public class JsonPath {
         private List<ONode> resolveRecursive(List<ONode> nodes) {
             final List<ONode> results = new ArrayList<>();
             nodes.forEach(node -> collectRecursive(node, results));
-            // 递归后继续处理后续路径（例如 .price）
-            if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
-                return resolveKey(results, false);
+            // 递归后继续处理后续路径（例如 .book[?(@.isbn)]）
+            if (index < path.length()) {
+                if (path.charAt(index) == '[') {
+                    return handleBracket(results);
+                } else if (path.charAt(index) == '.') {
+                    return handleDot(results);
+                }
             }
             return results;
         }
@@ -194,20 +194,21 @@ public class JsonPath {
                     String key = parts[0];
                     String op = parts[1];
                     String value = parts[2].replaceAll("['\"]", "");
-                    ONode target = node.get(key);
-                    if (target == null) return false;
-
-                    // 根据类型安全比较
+                    // 支持嵌套路径（如 @.author.name）
+                    ONode target = node;
+                    for (String k : key.split("\\.")) {
+                        target = target.get(k);
+                        if (target == null) return false;
+                    }
+                    // 类型安全比较
                     if (target.isString()) {
-                        String targetValue = target.getString();
-                        return compareString(op, targetValue, value);
+                        return compareString(op, target.getString(), value);
                     } else if (target.isNumber()) {
-                        double targetValue = target.getDouble();
-                        return compareNumber(op, targetValue, Double.parseDouble(value));
+                        return compareNumber(op, target.getDouble(), Double.parseDouble(value));
                     }
                 }
             }
-            throw new PathResolutionException("Invalid filter: " + filter);
+            return false;
         }
 
         private boolean compareString(String op, String a, String b) {
