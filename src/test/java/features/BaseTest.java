@@ -2,12 +2,14 @@ package features;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.*;
+import org.noear.snack.core.BeanCodec;
 import org.noear.snack.core.JsonReader;
 import org.noear.snack.exception.SchemaException;
 import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Properties;
 
 /**
  * @author noear 2025/3/15 created
@@ -62,5 +64,19 @@ public class BaseTest {
             System.out.println(e.getMessage());
             // 输出: Value -5.0 < minimum(0.0) at $.age
         }
+    }
+
+    @Test
+    public void case3() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("order.item[0].user", "1");
+
+        ONode node = BeanCodec.serialize(properties);
+        System.out.println(node.toJson()); // 输出: {"order":{"item":[{"user":"1"}]}}
+        assert "{\"order\":{\"item\":[{\"user\":\"1\"}]}}".equals(node.toJson());
+
+        Properties deserializedProperties = BeanCodec.deserialize(node, Properties.class);
+        System.out.println(deserializedProperties.getProperty("order.item[0].user")); // 输出: 1
+        assert "1".equals(deserializedProperties.getProperty("order.item[0].user"));
     }
 }

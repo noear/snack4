@@ -34,7 +34,7 @@ public class BeanCodec {
 
     // 反序列化：ONode转对象
     public static <T> T deserialize(ONode node, Class<T> clazz) {
-        return deserialize(node,clazz, Options.def());
+        return deserialize(node, clazz, Options.def());
     }
 
     public static <T> T deserialize(ONode node, Class<T> clazz, Options opts) {
@@ -67,6 +67,11 @@ public class BeanCodec {
             return node;
         }
 
+        // 处理Properties类型
+        if (bean instanceof Properties) {
+            return convertPropertiesToNode((Properties) bean, visited, opts);
+        }
+
         // 循环引用检测
         if (visited.containsKey(bean)) {
             throw new StackOverflowError("Circular reference detected: " + bean.getClass().getName());
@@ -83,6 +88,50 @@ public class BeanCodec {
         }
 
         return node;
+    }
+
+    // 处理Properties类型
+    private static ONode convertPropertiesToNode(Properties properties, Map<Object, Object> visited, Options opts) throws Exception {
+        ONode rootNode = new ONode(new LinkedHashMap<>());
+        for (String key : properties.stringPropertyNames()) {
+            String value = properties.getProperty(key);
+            setNestedValue(rootNode, key, value);
+        }
+        return rootNode;
+    }
+
+    // 设置嵌套值
+    private static void setNestedValue(ONode node, String key, String value) {
+        String[] parts = key.split("\\.");
+        ONode current = node;
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            if (i == parts.length - 1) {
+                current.set(part, new ONode(value));
+            } else {
+                if (part.endsWith("]")) {
+                    // 处理数组
+                    String arrayName = part.substring(0, part.indexOf('['));
+                    int index = Integer.parseInt(part.substring(part.indexOf('[') + 1, part.indexOf(']')));
+                    ONode arrayNode = current.get(arrayName);
+                    if (arrayNode == null || arrayNode.isNull()) {
+                        arrayNode = new ONode(new ArrayList<>());
+                        current.set(arrayName, arrayNode);
+                    }
+                    while (arrayNode.getArray().size() <= index) {
+                        arrayNode.add(new ONode(new LinkedHashMap<>()));
+                    }
+                    current = arrayNode.get(index);
+                } else {
+                    ONode nextNode = current.get(part);
+                    if (nextNode == null || nextNode.isNull()) {
+                        nextNode = new ONode(new LinkedHashMap<>());
+                        current.set(part, nextNode);
+                    }
+                    current = nextNode;
+                }
+            }
+        }
     }
 
     // 值转ONode处理
@@ -148,6 +197,11 @@ public class BeanCodec {
             return codec.decode(node);
         }
 
+        // 处理Properties类型
+        if (clazz == Properties.class) {
+            return (T) convertNodeToProperties(node);
+        }
+
         Constructor<T> constructor = clazz.getDeclaredConstructor();
         constructor.setAccessible(true);
         T bean = constructor.newInstance();
@@ -163,6 +217,31 @@ public class BeanCodec {
             }
         }
         return bean;
+    }
+
+    // 处理Properties类型
+    private static Properties convertNodeToProperties(ONode node) {
+        Properties properties = new Properties();
+        flattenNodeToProperties(node, properties, "");
+        return properties;
+    }
+
+    // 将嵌套的ONode扁平化为Properties
+    private static void flattenNodeToProperties(ONode node, Properties properties, String prefix) {
+        if (node.isObject()) {
+            for (Map.Entry<String, ONode> entry : node.getObject().entrySet()) {
+                String key = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
+                flattenNodeToProperties(entry.getValue(), properties, key);
+            }
+        } else if (node.isArray()) {
+            List<ONode> array = node.getArray();
+            for (int i = 0; i < array.size(); i++) {
+                String key = prefix + "[" + i + "]";
+                flattenNodeToProperties(array.get(i), properties, key);
+            }
+        } else {
+            properties.setProperty(prefix, node.getString());
+        }
     }
 
     // 类型转换核心
