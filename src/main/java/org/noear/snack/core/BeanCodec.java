@@ -1,6 +1,7 @@
 package org.noear.snack.core;
 
 import org.noear.snack.ONode;
+import org.noear.snack.core.util.FieldWrapper;
 import org.noear.snack.core.util.ReflectionUtil;
 
 import java.lang.reflect.*;
@@ -75,11 +76,10 @@ public class BeanCodec {
         Class<?> clazz = bean.getClass();
         ONode node = new ONode(new LinkedHashMap<>());
 
-        for (Field field : ReflectionUtil.getDeclaredFields(clazz)) {
-            field.setAccessible(true);
-            Object value = field.get(bean);
+        for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
+            Object value = field.getField().get(bean);
             ONode fieldNode = convertValueToNode(value, visited, opts);
-            node.set(field.getName(), fieldNode);
+            node.set(field.getAliasName(), fieldNode);
         }
 
         return node;
@@ -152,14 +152,14 @@ public class BeanCodec {
         constructor.setAccessible(true);
         T bean = constructor.newInstance();
 
-        for (Field field : ReflectionUtil.getDeclaredFields(clazz)) {
-            ONode fieldNode = node.get(field.getName());
+        for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
+            ONode fieldNode = node.get(field.getAliasName());
 
             if (fieldNode != null && !fieldNode.isNull()) {
-                Object value = convertValue(fieldNode, field.getGenericType(), visited, opts);
-                field.set(bean, value);
+                Object value = convertValue(fieldNode, field.getField().getGenericType(), visited, opts);
+                field.getField().set(bean, value);
             } else {
-                setPrimitiveDefault(field, bean);
+                setPrimitiveDefault(field.getField(), bean);
             }
         }
         return bean;
