@@ -8,6 +8,7 @@ import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.ParseException;
 import java.util.*;
 
 /**
@@ -208,20 +209,32 @@ public final class ONode {
     /// /////////////
 
     // 添加带 Options 的静态方法
-    public static ONode load(String json, Options opts) throws IOException {
-        return new JsonReader(new StringReader(json), opts).read();
+    public static ONode load(String json, Options opts) {
+        try {
+            return new JsonReader(new StringReader(json), opts).read();
+        } catch (RuntimeException ex) {
+            throw ex;
+        } catch (Throwable ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
-    public String toJson(Options opts) throws IOException {
-        return JsonWriter.serialize(this, opts);
+    public String toJson(Options opts) {
+        try {
+            return JsonWriter.serialize(this, opts);
+        } catch (RuntimeException ex) {
+            throw ex;
+        } catch (Throwable ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     // 保持原有方法兼容性
-    public static ONode load(String json) throws IOException {
+    public static ONode load(String json) {
         return load(json, Options.def());
     }
 
-    public String toJson() throws IOException {
+    public String toJson() {
         return toJson(Options.def());
     }
 
