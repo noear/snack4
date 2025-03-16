@@ -11,6 +11,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class JsonReader {
+    // 新增带 Options 的快捷方法
+    public static ONode read(String json) throws IOException {
+        return read(json, Options.def());
+    }
+
+    public static ONode read(String json, Options opts) throws IOException {
+        return new JsonReader(new StringReader(json), opts).read();
+    }
+
+    public static ONode read(Reader reader, Options opts) throws IOException {
+        return new JsonReader(reader, opts).read();
+    }
+
+    /// ////////
 
     private final Options opts;
     private final ParserState state;
@@ -24,17 +38,8 @@ public class JsonReader {
         this.opts = opts != null ? opts : Options.def();
     }
 
-    // 新增带 Options 的快捷方法
-    public static ONode read(String json) throws IOException {
-        return read(json, Options.def());
-    }
-
-    public static ONode read(String json, Options opts) throws IOException {
-        return new JsonReader(new StringReader(json), opts).read();
-    }
-
     public ONode read() throws IOException {
-        try (Reader ignored = state.reader) { // 仅对可关闭的 Reader 有效
+        try {
             state.fillBuffer();
             ONode node = parseValue();
             state.skipWhitespace();
@@ -42,13 +47,14 @@ public class JsonReader {
                 throw state.error("Unexpected data after json root");
             }
             return node;
+        } finally {
+            state.reader.close();
         }
     }
 
     private ONode parseValue() throws IOException {
         state.skipWhitespace();
-        char c = state.nextChar();
-        state.bufferPosition--; // 回退进行类型判断
+        char c = state.peekChar();
 
         if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
             state.skipComments();
@@ -66,7 +72,7 @@ public class JsonReader {
 
     private ONode parseObject() throws IOException {
         Map<String, ONode> map = new LinkedHashMap<>();
-        expect('{');
+        state.expect('{');
         while (true) {
             state.skipWhitespace();
             if (state.peekChar() == '}') {
@@ -79,7 +85,7 @@ public class JsonReader {
             if (key.isEmpty()) throw state.error("Empty key in object");
 
             state.skipWhitespace();
-            expect(':');
+            state.expect(':');
             ONode value = parseValue();
             map.put(key, value);
 
@@ -99,7 +105,7 @@ public class JsonReader {
 
     private ONode parseArray() throws IOException {
         ArrayList<ONode> list = new ArrayList<>();
-        expect('[');
+        state.expect('[');
         while (true) {
             state.skipWhitespace();
             if (state.peekChar() == ']') {
@@ -124,7 +130,7 @@ public class JsonReader {
     }
 
     private String parseString() throws IOException {
-        expect('"');
+        state.expect('"');
         StringBuilder sb = new StringBuilder();
         while (true) {
             char c = state.nextChar();
@@ -251,14 +257,6 @@ public class JsonReader {
         return new ONode(value);
     }
 
-    private void expect(char expected) throws IOException {
-        char c = state.nextChar();
-        if (c != expected) {
-            throw state.error("Expected '" + expected + "' but found '" + c + "'");
-        }
-    }
-
-
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
@@ -308,6 +306,13 @@ public class JsonReader {
             bufferLimit = reader.read(buffer);
             bufferPosition = 0;
             return bufferLimit > 0;
+        }
+
+        private void expect(char expected) throws IOException {
+            char c = nextChar();
+            if (c != expected) {
+                throw error("Expected '" + expected + "' but found '" + c + "'");
+            }
         }
 
         private ParseException error(String message) {
