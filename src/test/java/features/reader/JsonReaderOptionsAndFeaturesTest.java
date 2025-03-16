@@ -1,4 +1,4 @@
-package features.parser;
+package features.reader;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.core.Feature;

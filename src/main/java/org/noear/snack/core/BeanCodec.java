@@ -59,6 +59,10 @@ public class BeanCodec {
             return new ONode(null);
         }
 
+        if(bean instanceof ONode){
+            return (ONode) bean;
+        }
+
         // 优先使用自定义编解码器
         Codec<Object> codec = (Codec<Object>) opts.getCodecRegistry().get(bean.getClass());
         if (codec != null) {
@@ -79,15 +83,27 @@ public class BeanCodec {
         visited.put(bean, null);
 
         Class<?> clazz = bean.getClass();
-        ONode node = new ONode(new LinkedHashMap<>());
 
-        for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
-            Object value = field.getField().get(bean);
-            ONode fieldNode = convertValueToNode(value, visited, opts);
-            node.set(field.getAliasName(), fieldNode);
+        if (clazz.isArray()) {
+            //数组
+            return convertArrayToNode(bean, visited, opts);
+        } else if (bean instanceof Collection) {
+            //集合
+            return convertCollectionToNode((Collection<?>) bean, visited, opts);
+        } else if (bean instanceof Map) {
+            //字典
+            return convertMapToNode((Map) bean, visited, opts);
+        } else {
+            ONode node = new ONode(new LinkedHashMap<>());
+
+            for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
+                Object value = field.getField().get(bean);
+                ONode fieldNode = convertValueToNode(value, visited, opts);
+                node.set(field.getAliasName(), fieldNode);
+            }
+
+            return node;
         }
-
-        return node;
     }
 
     // 处理Properties类型
@@ -163,8 +179,23 @@ public class BeanCodec {
         } else if (value instanceof Map) {
             return convertMapToNode((Map<?, ?>) value, visited, opts);
         } else {
-            return convertBeanToNode(value, visited, opts);
+            if (value.getClass().isArray()) {
+                return convertArrayToNode(value, visited, opts);
+            } else {
+                return convertBeanToNode(value, visited, opts);
+            }
         }
+    }
+
+    // 处理数组类型
+    private static ONode convertArrayToNode(Object array, Map<Object, Object> visited, Options opts) throws Exception {
+        ONode arrayNode = new ONode(new ArrayList<>());
+        int length = Array.getLength(array);
+        for (int i = 0; i < length; i++) {
+            Object element = Array.get(array, i);
+            arrayNode.add(convertValueToNode(element, visited, opts));
+        }
+        return arrayNode;
     }
 
     // 处理集合类型
@@ -201,7 +232,7 @@ public class BeanCodec {
         if (clazz == Properties.class) {
             return (T) convertNodeToProperties(node);
         }
-        
+
         T bean = ReflectionUtil.newInstance(clazz);
 
         for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {

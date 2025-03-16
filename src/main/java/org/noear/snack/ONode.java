@@ -6,7 +6,6 @@ import org.noear.snack.core.JsonWriter;
 import org.noear.snack.core.Options;
 import org.noear.snack.schema.SchemaValidator;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.util.*;
@@ -43,6 +42,7 @@ public final class ONode {
         if (value instanceof String) return TYPE_STRING;
         if (value instanceof List) return TYPE_ARRAY;
         if (value instanceof Map) return TYPE_OBJECT;
+
         throw new IllegalArgumentException("Unsupported type");
     }
 
@@ -105,7 +105,8 @@ public final class ONode {
 
     public ONode newObject() {
         if (value == null) {
-            value = new HashMap<>();
+            value = new LinkedHashMap<>();
+            type = TYPE_OBJECT;
         }
 
         return this;
@@ -114,6 +115,7 @@ public final class ONode {
     public ONode newArray() {
         if (value == null) {
             value = new ArrayList<>();
+            type = TYPE_ARRAY;
         }
 
         return this;
@@ -139,16 +141,35 @@ public final class ONode {
         return getObject().get(key);
     }
 
-    public void set(String key, ONode value) {
+    public ONode set(String key, Object value) {
+        return set(key, new ONode(value));
+    }
+
+    public ONode set(String key, ONode value) {
+        if(type == TYPE_NULL){
+            newObject();
+        }
+
         getObject().put(key, value);
+        return this;
     }
 
     public ONode get(int index) {
         return getArray().get(index);
     }
 
-    public void add(ONode value) {
+    public ONode add(Object value) {
+        add(new ONode(value));
+        return this;
+    }
+
+    public ONode add(ONode value) {
+        if(type == TYPE_NULL){
+            newArray();
+        }
+
         getArray().add(value);
+        return this;
     }
 
     public Optional<ONode> getOptional(String key) {

@@ -36,7 +36,11 @@ public class JsonWriter {
                 writeString(node.getString());
                 break;
             case ONode.TYPE_NUMBER:
-                writeNumber(node.getNumber());
+                if(opts.isFeatureEnabled(Feature.UseBigNumberMode)) {
+                    writeString(String.valueOf(node.getValue()));
+                }else {
+                    writeNumber(node.getNumber());
+                }
                 break;
             case ONode.TYPE_BOOLEAN:
                 writer.write(node.getBoolean() ? "true" : "false");
