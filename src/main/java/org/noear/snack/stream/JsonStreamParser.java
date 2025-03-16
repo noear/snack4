@@ -1,7 +1,7 @@
 package org.noear.snack.stream;
 
 import org.noear.snack.ONode;
-import org.noear.snack.format.JsonReader;
+import org.noear.snack.core.JsonReader;
 
 import java.io.IOException;
 import java.util.Map;

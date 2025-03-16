@@ -1,6 +1,6 @@
 package org.noear.snack.annotation;
 
-import org.noear.snack.format.Codec;
+import org.noear.snack.core.Codec;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

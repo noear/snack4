@@ -1,7 +1,7 @@
 package features;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.format.BeanCodec;
+import org.noear.snack.core.BeanCodec;
 import org.noear.snack.ONode;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;

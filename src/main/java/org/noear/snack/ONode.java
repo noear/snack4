@@ -1,8 +1,8 @@
 package org.noear.snack;
 
-import org.noear.snack.format.BeanCodec;
-import org.noear.snack.format.JsonReader;
-import org.noear.snack.format.JsonWriter;
+import org.noear.snack.core.BeanCodec;
+import org.noear.snack.core.JsonReader;
+import org.noear.snack.core.JsonWriter;
 import org.noear.snack.core.Options;
 import org.noear.snack.extensions.SchemaValidator;
 

@@ -1,6 +1,5 @@
 package org.noear.snack.core;
 
-import org.noear.snack.format.Codec;
 import org.noear.snack.extensions.SchemaValidator;
 
 import java.text.DateFormat;

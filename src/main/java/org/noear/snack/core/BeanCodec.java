@@ -1,7 +1,6 @@
-package org.noear.snack.format;
+package org.noear.snack.core;
 
 import org.noear.snack.ONode;
-import org.noear.snack.core.Options;
 
 import java.lang.reflect.*;
 import java.util.*;
