@@ -1,9 +1,6 @@
 package org.noear.snack;
 
-import org.noear.snack.core.BeanCodec;
-import org.noear.snack.core.JsonReader;
-import org.noear.snack.core.JsonWriter;
-import org.noear.snack.core.Options;
+import org.noear.snack.core.*;
 import org.noear.snack.schema.SchemaValidator;
 
 import java.io.StringReader;
@@ -16,17 +13,8 @@ public final class ONode {
     private Object value;
     private int type;
 
-    public static final ONode NULL = new ONode();
-
-    public static final int TYPE_NULL = 0;
-    public static final int TYPE_BOOLEAN = 1;
-    public static final int TYPE_NUMBER = 2;
-    public static final int TYPE_STRING = 3;
-    public static final int TYPE_ARRAY = 4;
-    public static final int TYPE_OBJECT = 5;
-
     public ONode() {
-        this.type = TYPE_NULL;
+        this.type = Constants.TYPE_NULL;
     }
 
     public ONode(Object value) {
@@ -35,45 +23,45 @@ public final class ONode {
     }
 
     private int resolveType(Object value) {
-        if (value == null) return TYPE_NULL;
-        if (value instanceof Boolean) return TYPE_BOOLEAN;
-        if (value instanceof Number) return TYPE_NUMBER;
-        if (value instanceof String) return TYPE_STRING;
-        if (value instanceof List) return TYPE_ARRAY;
-        if (value instanceof Map) return TYPE_OBJECT;
+        if (value == null) return Constants.TYPE_NULL;
+        if (value instanceof Boolean) return Constants.TYPE_BOOLEAN;
+        if (value instanceof Number) return Constants.TYPE_NUMBER;
+        if (value instanceof String) return Constants.TYPE_STRING;
+        if (value instanceof List) return Constants.TYPE_ARRAY;
+        if (value instanceof Map) return Constants.TYPE_OBJECT;
 
         throw new IllegalArgumentException("Unsupported type");
     }
 
     // Getters and Setters
     public boolean isNull() {
-        return type == TYPE_NULL;
+        return type == Constants.TYPE_NULL;
     }
 
     public boolean isNullOrEmpty() {
-        return type == TYPE_NULL ||
-                (type == TYPE_OBJECT && getObject().isEmpty()) ||
-                (type == TYPE_ARRAY && getArray().isEmpty());
+        return type == Constants.TYPE_NULL ||
+                (type == Constants.TYPE_OBJECT && getObject().isEmpty()) ||
+                (type == Constants.TYPE_ARRAY && getArray().isEmpty());
     }
 
     public boolean isBoolean() {
-        return type == TYPE_BOOLEAN;
+        return type == Constants.TYPE_BOOLEAN;
     }
 
     public boolean isNumber() {
-        return type == TYPE_NUMBER;
+        return type == Constants.TYPE_NUMBER;
     }
 
     public boolean isString() {
-        return type == TYPE_STRING;
+        return type == Constants.TYPE_STRING;
     }
 
     public boolean isArray() {
-        return type == TYPE_ARRAY;
+        return type == Constants.TYPE_ARRAY;
     }
 
     public boolean isObject() {
-        return type == TYPE_OBJECT;
+        return type == Constants.TYPE_OBJECT;
     }
 
     public Object getValue() {
@@ -105,7 +93,7 @@ public final class ONode {
     public ONode newObject() {
         if (value == null) {
             value = new LinkedHashMap<>();
-            type = TYPE_OBJECT;
+            type = Constants.TYPE_OBJECT;
         }
 
         return this;
@@ -114,7 +102,7 @@ public final class ONode {
     public ONode newArray() {
         if (value == null) {
             value = new ArrayList<>();
-            type = TYPE_ARRAY;
+            type = Constants.TYPE_ARRAY;
         }
 
         return this;
@@ -156,7 +144,7 @@ public final class ONode {
     }
 
     private ONode set0(String key, ONode value) {
-        if (type == TYPE_NULL) {
+        if (type == Constants.TYPE_NULL) {
             newObject();
         }
 
@@ -185,7 +173,7 @@ public final class ONode {
     }
 
     private ONode add0(ONode value) {
-        if (type == TYPE_NULL) {
+        if (type == Constants.TYPE_NULL) {
             newArray();
         }
 
@@ -227,25 +215,6 @@ public final class ONode {
 
     public boolean hasKey(String key) {
         return isObject() && getObject().containsKey(key);
-    }
-
-    public static String typeToString(int type) {
-        switch (type) {
-            case TYPE_NULL:
-                return "null";
-            case TYPE_BOOLEAN:
-                return "boolean";
-            case TYPE_NUMBER:
-                return "number";
-            case TYPE_STRING:
-                return "string";
-            case TYPE_ARRAY:
-                return "array";
-            case TYPE_OBJECT:
-                return "object";
-            default:
-                return "unknown";
-        }
     }
 
     /// /////////////
