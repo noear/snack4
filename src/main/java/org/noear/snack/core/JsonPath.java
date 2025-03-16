@@ -37,15 +37,15 @@ public class JsonPath {
     /**
      * 根据 jsonpath 删除
      */
-    public static ONode delete(ONode root, String path) {
-        return null;
+    public static void delete(ONode root, String path) {
+       //从 root 身上，匹配 path  的节点
     }
 
     /**
      * 根据 jsonpath 生成
      */
-    public static ONode create(ONode root, String path) {
-        return null;
+    public static void create(ONode root, String path) {
+        //为 root 构建，匹配 path 的结构
     }
 
     private static class PathParser {

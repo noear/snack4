@@ -218,15 +218,15 @@ public final class ONode {
     /**
      * 根据 jsonpath 删除
      */
-    public ONode delete(String jsonpath) {
-        return JsonPath.select(this, jsonpath);
+    public void delete(String jsonpath) {
+        JsonPath.delete(this, jsonpath);
     }
 
     /**
      * 根据 jsonpath 生成
      */
-    public ONode create(String jsonpath) {
-        return JsonPath.select(this, jsonpath);
+    public void create(String jsonpath) {
+        JsonPath.create(this, jsonpath);
     }
 
 
