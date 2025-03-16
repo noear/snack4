@@ -19,27 +19,27 @@ public enum Feature {
     /**
      * 允许单引号字符串
      */
-    Input_AllowSingleQuotes(false),
+    Input_AllowSingleQuotes(true),
     /**
-     * 允许未用引号包裹的字段名
+     * 允许未用引号包裹的键名
      */
-    Input_AllowUnquotedFieldNames(false),
+    Input_AllowUnquotedKeys(true),
     /**
-     * 允许非字符串键 (自动转换)
+     * 允许未空的键名
      */
-    Input_AllowNonStringKeys(false),
+    Input_AllowEmptyKeys(false),
     /**
      * 允许JavaScript风格的十六进制数字 (如 0x1F)
      */
     Input_AllowHexNumbers(false),
     /**
+     * 允许零开头的数字
+     */
+    Input_AllowZeroLeadingNumbers(false),
+    /**
      * 允许特殊浮点值 (Infinity, -Infinity, NaN)
      */
     Input_AllowSpecialFloats(false),
-    /**
-     * 允许属性值省略引号 (自动推导类型)
-     */
-    Input_AllowAutoType(false),
     /**
      * 自动转换字段命名风格（默认不转换）
      */
@@ -85,6 +85,10 @@ public enum Feature {
     //-----------------------------
     // 通用特性（同时影响读写）
     //-----------------------------
+    /**
+     * 允许属性值省略引号 (自动推导类型)
+     */
+    AllowAutoType(false),
     /**
      * 处理大数字时使用字符串模式（避免精度丢失）
      */

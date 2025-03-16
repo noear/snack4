@@ -40,6 +40,11 @@ public class JsonReader {
             state.fillBuffer();
             ONode node = parseValue();
             state.skipWhitespace();
+
+            if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
+                state.skipComments();
+            }
+
             if (state.bufferPosition < state.bufferLimit) {
                 throw state.error("Unexpected data after json root");
             }
@@ -51,11 +56,12 @@ public class JsonReader {
 
     private ONode parseValue() throws IOException {
         state.skipWhitespace();
-        char c = state.peekChar();
 
         if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
             state.skipComments();
         }
+
+        char c = state.peekChar();
 
         if (c == '{') return parseObject();
         if (c == '[') return parseArray();
@@ -81,7 +87,7 @@ public class JsonReader {
 
             String key = parseKey();
 
-            if (key.isEmpty()) {
+            if (key.isEmpty() && opts.isFeatureEnabled(Feature.Input_AllowEmptyKeys) == false) {
                 throw new ParseException("Empty key is not allowed");
             }
 
@@ -105,11 +111,14 @@ public class JsonReader {
     }
 
     private String parseKey() throws IOException {
-        if (opts.isFeatureEnabled(Feature.Input_AllowUnquotedFieldNames)) {
-            return parseUnquotedString();
-        } else {
-            return parseString();
+        if (opts.isFeatureEnabled(Feature.Input_AllowUnquotedKeys)) {
+            char c = state.peekChar();
+            if (c != '"' && c != '\'') {
+                return parseUnquotedString();
+            }
         }
+
+        return parseString();
     }
 
     private String parseUnquotedString() throws IOException {
@@ -217,12 +226,16 @@ public class JsonReader {
         }
 
         // 解析整数部分
-        if (state.peekChar() == '0') {
-            sb.append(state.nextChar());
-            if (isDigit(state.peekChar())) {
-                throw state.error("Leading zeros not allowed");
+        if (opts.isFeatureEnabled(Feature.Input_AllowZeroLeadingNumbers) == false) {
+            if (state.peekChar() == '0') {
+                sb.append(state.nextChar());
+                if (isDigit(state.peekChar())) {
+                    throw state.error("Leading zeros not allowed");
+                }
             }
-        } else if (isDigit(state.peekChar())) {
+        }
+
+        if (isDigit(state.peekChar())) {
             while (isDigit(state.peekChar())) {
                 sb.append(state.nextChar());
             }

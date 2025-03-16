@@ -91,6 +91,10 @@ public final class Options {
         return DEFAULT;
     }
 
+    public static Builder of() {
+        return new Builder();
+    }
+
     /** 选项建造者 */
     public static class Builder {
         private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
