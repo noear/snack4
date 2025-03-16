@@ -1,8 +1,8 @@
-package org.noear.snack.extensions;
+package org.noear.snack.schema;
 
 import org.noear.snack.ONode;
 import org.noear.snack.exception.SchemaException;
-import org.noear.snack.extensions.rule.ValidationRule;
+import org.noear.snack.schema.rule.ValidationRule;
 import org.noear.snack.core.PathTracker;
 
 import java.util.List;

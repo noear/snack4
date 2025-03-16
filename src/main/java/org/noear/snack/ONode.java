@@ -4,7 +4,7 @@ import org.noear.snack.core.BeanCodec;
 import org.noear.snack.core.JsonReader;
 import org.noear.snack.core.JsonWriter;
 import org.noear.snack.core.Options;
-import org.noear.snack.extensions.SchemaValidator;
+import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;

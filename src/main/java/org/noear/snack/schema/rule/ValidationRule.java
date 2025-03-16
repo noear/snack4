@@ -1,4 +1,4 @@
-package org.noear.snack.extensions.rule;
+package org.noear.snack.schema.rule;
 
 import org.noear.snack.ONode;
 import org.noear.snack.exception.SchemaException;

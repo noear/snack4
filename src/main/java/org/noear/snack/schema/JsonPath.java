@@ -1,4 +1,4 @@
-package org.noear.snack.extensions;
+package org.noear.snack.schema;
 
 import org.noear.snack.ONode;
 
