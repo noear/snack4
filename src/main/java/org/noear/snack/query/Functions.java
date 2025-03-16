@@ -1,17 +1,53 @@
-package org.noear.snack.core;
+package org.noear.snack.query;
 
 import org.noear.snack.ONode;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.DoubleSummaryStatistics;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.function.Function;
 
 /**
  * @author noear 2025/3/17 created
  */
-public class JsonPathFuns {
+public class Functions {
+    private static final Map<String, Function<ONode, ONode>> lib = new HashMap<>();
 
-    public static ONode sum(ONode node) {
+    static {
+        register("min", Functions::min);
+        register("max", Functions::max);
+        register("avg", Functions::avg);
+        register("sum", Functions::sum);
+
+        register("size", Functions::size);
+        register("first", Functions::first);
+        register("last", Functions::last);
+
+        register("length", Functions::length);
+        register("upper", Functions::upper);
+        register("lower", Functions::lower);
+        register("trim", Functions::trim);
+    }
+
+    /**
+     * 注册
+     */
+    public static void register(String name, Function<ONode, ONode> func) {
+        lib.put(name, func);
+    }
+
+    /**
+     * 获取
+     */
+    public static Function<ONode, ONode> get(String funcName) {
+        return lib.get(funcName);
+    }
+
+    /// /////////////////
+
+    static ONode sum(ONode node) {
         if (node.isArray()) {
             double sum = node.getArray().stream()
                     .filter(ONode::isNumber)
@@ -24,7 +60,7 @@ public class JsonPathFuns {
     }
 
 
-    public static ONode min(ONode node) {
+    static ONode min(ONode node) {
         if (node.isArray()) {
             OptionalDouble min = node.getArray().stream()
                     .filter(ONode::isNumber)
@@ -39,7 +75,7 @@ public class JsonPathFuns {
         }
     }
 
-    public static ONode max(ONode node) {
+    static ONode max(ONode node) {
         if (node.isArray()) {
             OptionalDouble max = node.getArray().stream()
                     .filter(ONode::isNumber)
@@ -54,7 +90,7 @@ public class JsonPathFuns {
         }
     }
 
-    public static ONode avg(ONode node) {
+    static ONode avg(ONode node) {
         if (!node.isArray()) {
             throw new PathResolutionException("avg() requires an array");
         }
@@ -69,7 +105,7 @@ public class JsonPathFuns {
                 new ONode(null);
     }
 
-    public static ONode first(ONode node) {
+    static ONode first(ONode node) {
         if (node.isArray()) {
             return node.get(0);
         } else {
@@ -77,7 +113,7 @@ public class JsonPathFuns {
         }
     }
 
-    public static ONode last(ONode node) {
+    static ONode last(ONode node) {
         if (node.isArray()) {
             return node.get(-1);
         } else {
@@ -85,7 +121,7 @@ public class JsonPathFuns {
         }
     }
 
-    public static ONode keys(ONode node) {
+    static ONode keys(ONode node) {
         if (node.isObject()) {
             return ONode.loadBean(node.getObject().keySet());
         } else {
@@ -93,12 +129,12 @@ public class JsonPathFuns {
         }
     }
 
-    public static ONode size(ONode node) {
+    static ONode size(ONode node) {
         return new ONode(node.size());
     }
 
     /* 字符串函数实现 */
-    public static ONode length(ONode node) {
+    static ONode length(ONode node) {
         if (node.isString()) {
             return new ONode(node.getString().length());
         } else if (node.isArray()) {
@@ -110,19 +146,19 @@ public class JsonPathFuns {
     }
 
 
-    public static ONode upper(ONode node) {
+    static ONode upper(ONode node) {
         return node.isString() ?
                 new ONode(node.getString().toUpperCase()) :
                 node;
     }
 
-    public static ONode lower(ONode node) {
+    static ONode lower(ONode node) {
         return node.isString() ?
                 new ONode(node.getString().toLowerCase()) :
                 node;
     }
 
-    public static ONode trim(ONode node) {
+    static ONode trim(ONode node) {
         return node.isString() ?
                 new ONode(node.getString().trim()) :
                 node;

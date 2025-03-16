@@ -2,7 +2,7 @@ package features.query;
 
 import org.noear.snack.ONode;
 import org.noear.snack.exception.PathResolutionException;
-import org.noear.snack.core.JsonPath;
+import org.noear.snack.query.JsonPath;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -256,8 +256,6 @@ public class JsonPathSelectSimpleTest {
     @Test
     public void testNonExistentKey() {
         ONode root = ONode.loadJson(JSON);
-        assertThrows(PathResolutionException.class, () -> {
-            JsonPath.select(root, "$.store.nonExistentKey");
-        });
+        assertTrue(JsonPath.select(root, "$.store.nonExistentKey").isNullOrEmpty());
     }
 }

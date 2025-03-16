@@ -5,7 +5,7 @@ import org.noear.snack.*;
 import org.noear.snack.core.BeanCodec;
 import org.noear.snack.core.JsonReader;
 import org.noear.snack.exception.SchemaException;
-import org.noear.snack.core.JsonPath;
+import org.noear.snack.query.JsonPath;
 import org.noear.snack.schema.SchemaValidator;
 
 import java.io.IOException;

@@ -1,39 +1,16 @@
-package org.noear.snack.core;
+package org.noear.snack.query;
 
 import org.noear.snack.ONode;
+import org.noear.snack.core.JsonSource;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * JSON路径查询工具类
  */
 public class JsonPath {
-    private static final Map<String, Function<ONode, ONode>> FUNCTIONS = new HashMap<>();
-
-    static {
-        // 新增数学函数
-        FUNCTIONS.put("min", JsonPathFuns::min);
-        FUNCTIONS.put("max", JsonPathFuns::max);
-        FUNCTIONS.put("avg", JsonPathFuns::avg);
-        FUNCTIONS.put("sum", JsonPathFuns::sum);
-        FUNCTIONS.put("mean", JsonPathFuns::avg); // 别名
-
-
-        FUNCTIONS.put("size", JsonPathFuns::size);
-        FUNCTIONS.put("first", JsonPathFuns::first);
-        FUNCTIONS.put("last", JsonPathFuns::last);
-
-
-        // 新增字符串函数
-        FUNCTIONS.put("length", JsonPathFuns::length);
-        FUNCTIONS.put("upper", JsonPathFuns::upper);
-        FUNCTIONS.put("lower", JsonPathFuns::lower);
-        FUNCTIONS.put("trim", JsonPathFuns::trim);
-    }
-
     /**
      * 根据 jsonpath 查询
      */
@@ -195,7 +172,7 @@ public class JsonPath {
             if (key.endsWith("()")) {
                 String funcName = key.substring(0, key.length() - 2);
                 return nodes.stream()
-                        .map(n -> FUNCTIONS.get(funcName).apply(n))
+                        .map(n -> Functions.get(funcName).apply(n))
                         .collect(Collectors.toList());
             }
             return nodes.stream()
@@ -219,7 +196,7 @@ public class JsonPath {
                         throw new PathResolutionException("Missing key '" + key + "'");
                     }
                 } else {
-                    child.source = new JsonSource(node,key,0);
+                    child.source = new JsonSource(node, key, 0);
                 }
                 return child != null ? Collections.singletonList(child) : Collections.emptyList();
             }
@@ -276,7 +253,7 @@ public class JsonPath {
                             }
                         }
                         ONode rst = arr.get(idx);
-                        rst.source = new JsonSource(arr,null,idx);
+                        rst.source = new JsonSource(arr, null, idx);
 
                         return rst;
                     })
