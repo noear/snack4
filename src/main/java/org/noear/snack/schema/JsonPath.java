@@ -17,12 +17,11 @@ public class JsonPath {
         FUNCTIONS.put("count", node -> new ONode(node.isArray() ? node.size() : 1));
         FUNCTIONS.put("sum", node -> {
             // 允许对数组字段求和（如 $.prices.sum()）
-            if (!node.isArray() && !node.getObject().values().stream().allMatch(ONode::isNumber)) {
-                throw new PathResolutionException("sum() requires an array or numeric fields");
-            }
-            double sum = node.isArray() ?
-                    node.getArray().stream().mapToDouble(ONode::getDouble).sum() :
-                    node.getObject().values().stream().mapToDouble(ONode::getDouble).sum();
+            if (!node.isArray()) throw new PathResolutionException("sum() requires an array");
+            double sum = node.getArray().stream()
+                    .filter(ONode::isNumber)
+                    .mapToDouble(ONode::getDouble)
+                    .sum();
             return new ONode(sum);
         });
     }
@@ -83,7 +82,7 @@ public class JsonPath {
         private List<ONode> handleBracket(List<ONode> nodes) {
             index++; // 跳过'['
             String segment = parseSegment(']');
-            // 确保跳过所有连续的 ]
+            // 跳过所有连续的 ]
             while (index < path.length() && path.charAt(index) == ']') {
                 index++;
             }
@@ -156,7 +155,7 @@ public class JsonPath {
 
             List<ONode> results = tmp;
 
-            // 递归后继续处理后续路径（例如 .book[?(@.isbn)]）
+            // 递归后继续处理后续路径（如 .book[?(@.isbn)]）
             while (index < path.length()) {
                 skipWhitespace();
                 if (index >= path.length()) break;
@@ -199,14 +198,26 @@ public class JsonPath {
 
         private boolean evaluateFilter(ONode node, String filter) {
             if (filter.startsWith("@.")) {
-                String[] parts = filter.substring(2).split("\\s+");
+                String[] parts = filter.substring(2).split("\\s+", 2);
                 String keyPath = parts[0];
                 // 存在性检查（如 [?(@.isbn)]）
                 if (parts.length == 1) {
                     return resolveNestedPath(node, keyPath) != null;
                 }
-                // 其他比较逻辑（如 @.price > 10）
-                // ...
+                // 处理其他比较操作（如 @.price > 10）
+                String opValue = parts[1];
+                String[] opParts = opValue.split("\\s+", 2);
+                if (opParts.length < 2) return false;
+                String op = opParts[0];
+                String value = opParts[1].replaceAll("['\"]", "");
+                ONode target = resolveNestedPath(node, keyPath);
+                if (target == null) return false;
+                // 数值或字符串比较
+                if (target.isNumber()) {
+                    return compareNumber(op, target.getDouble(), Double.parseDouble(value));
+                } else if (target.isString()) {
+                    return compareString(op, target.getString(), value);
+                }
             }
             return false;
         }
