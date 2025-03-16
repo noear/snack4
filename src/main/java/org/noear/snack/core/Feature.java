@@ -44,25 +44,14 @@ public enum Feature {
      * 自动转换字段命名风格（默认不转换）
      */
     Input_ConvertUnderlineStyle(false),
-
-
-    //================ 数据类型增强 ================//
-    /**
-     * 将数字解析为 BigDecimal (避免精度丢失)
-     */
-    Parse_UseBigDecimalForNumbers(false),
     /**
      * 自动解析日期格式 (支持多种格式)
      */
-    Parse_AutoParseDate(true),
-    /**
-     * 将空字符串转为 null
-     */
-    Parse_EmptyStringAsNull(false),
+    Input_AutoParseDate(true),
     /**
      * 自动展开行内JSON字符串 (如 {"data": "{\"id\":1}"} )
      */
-    Parse_UnwrapJsonString(false),
+    Input_UnwrapJsonString(false),
 
 
     //-----------------------------
@@ -92,11 +81,6 @@ public enum Feature {
      * 输出枚举使用名称（默认使用名称）
      */
     Output_EnumUsingName(true),
-
-    /**
-     * 将 Date 类型转为时间戳
-     */
-    Output_DateAsTimestamp(true),
 
     //-----------------------------
     // 通用特性（同时影响读写）
