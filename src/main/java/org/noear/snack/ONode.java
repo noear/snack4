@@ -208,6 +208,30 @@ public final class ONode {
 
     /// /////////////
 
+    /**
+     * 根据 jsonpath 查询
+     */
+    public ONode select(String jsonpath) {
+        return JsonPath.select(this, jsonpath);
+    }
+
+    /**
+     * 根据 jsonpath 删除
+     */
+    public ONode delete(String jsonpath) {
+        return JsonPath.select(this, jsonpath);
+    }
+
+    /**
+     * 根据 jsonpath 生成
+     */
+    public ONode create(String jsonpath) {
+        return JsonPath.select(this, jsonpath);
+    }
+
+
+    /// /////////////
+
     public static ONode loadBean(Object bean, Options opts) {
         return BeanCodec.serialize(bean, opts);
     }

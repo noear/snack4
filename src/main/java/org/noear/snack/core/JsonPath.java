@@ -26,9 +26,26 @@ public class JsonPath {
         });
     }
 
-    public static ONode query(ONode root, String path) {
+    /**
+     * 根据 jsonpath 查询
+     */
+    public static ONode select(ONode root, String path) {
         if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
         return new PathParser(path).evaluate(root);
+    }
+
+    /**
+     * 根据 jsonpath 删除
+     */
+    public static ONode delete(ONode root, String path) {
+        return null;
+    }
+
+    /**
+     * 根据 jsonpath 生成
+     */
+    public static ONode create(ONode root, String path) {
+        return null;
     }
 
     private static class PathParser {

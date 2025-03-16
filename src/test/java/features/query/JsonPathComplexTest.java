@@ -55,7 +55,7 @@ public class JsonPathComplexTest {
     @Test
     public void testNestedArrayAccess() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[0].tags[1]");
+        ONode result = JsonPath.select(root, "$.store.book[0].tags[1]");
         assertNotNull(result);
         assertEquals("wisdom", result.getString());
     }
@@ -63,7 +63,7 @@ public class JsonPathComplexTest {
     @Test
     public void testWildcardArrayAccess() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[*].title");
+        ONode result = JsonPath.select(root, "$.store.book[*].title");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(4, result.size());
@@ -72,7 +72,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearch() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..price");
+        ONode result = JsonPath.select(root, "$..price");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(5, result.size());
@@ -81,7 +81,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.price > 10)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.price > 10)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(2, result.size());
@@ -90,7 +90,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter2() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.price < 10)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.price < 10)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(2, result.size());
@@ -99,7 +99,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter3() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.category == 'fiction')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.category == 'fiction')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(3, result.size());
@@ -108,7 +108,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter4() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.author == 'J. R. R. Tolkien')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.author == 'J. R. R. Tolkien')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -117,7 +117,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter5() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.title == 'Moby Dick')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.title == 'Moby Dick')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -126,7 +126,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter6() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.price > 20)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.price > 20)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -135,7 +135,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter7() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.price < 5)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.price < 5)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(0, result.size());
@@ -144,7 +144,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter8() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.category == 'reference')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.category == 'reference')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -153,7 +153,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter9() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.author == 'Nigel Rees')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.author == 'Nigel Rees')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -162,7 +162,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter10() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.title == 'Sayings of the Century')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.title == 'Sayings of the Century')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -171,7 +171,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter11() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.price > 15)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.price > 15)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(2, result.size());
@@ -180,7 +180,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter12() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.price < 15)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.price < 15)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(2, result.size());
@@ -189,7 +189,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter13() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.category == 'fiction' && @.price > 10)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.category == 'fiction' && @.price > 10)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(2, result.size());
@@ -198,7 +198,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter14() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.category == 'fiction' && @.price < 10)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.category == 'fiction' && @.price < 10)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -207,7 +207,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter15() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.category == 'fiction' && @.price > 20)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.category == 'fiction' && @.price > 20)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -216,7 +216,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter16() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.category == 'fiction' && @.price < 20)]");
+        ONode result = JsonPath.select(root, "$..book[?(@.category == 'fiction' && @.price < 20)]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(2, result.size());
@@ -225,7 +225,7 @@ public class JsonPathComplexTest {
     @Test
     public void testBicycleAccessories() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.bicycle.accessories[2]");
+        ONode result = JsonPath.select(root, "$.store.bicycle.accessories[2]");
         assertNotNull(result);
         assertEquals("light", result.getString());
     }
@@ -233,7 +233,7 @@ public class JsonPathComplexTest {
     @Test
     public void testBicycleAccessoriesWildcard() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.bicycle.accessories[*]");
+        ONode result = JsonPath.select(root, "$.store.bicycle.accessories[*]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(3, result.size());
@@ -242,7 +242,7 @@ public class JsonPathComplexTest {
     @Test
     public void testMetadataCreatedAt() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.metadata.createdAt");
+        ONode result = JsonPath.select(root, "$.metadata.createdAt");
         assertNotNull(result);
         assertEquals("2023-01-01", result.getString());
     }
@@ -250,7 +250,7 @@ public class JsonPathComplexTest {
     @Test
     public void testMetadataUpdatedAt() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.metadata.updatedAt");
+        ONode result = JsonPath.select(root, "$.metadata.updatedAt");
         assertNotNull(result);
         assertEquals("2023-10-01", result.getString());
     }
@@ -258,7 +258,7 @@ public class JsonPathComplexTest {
     @Test
     public void testCountFunction() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book.count()");
+        ONode result = JsonPath.select(root, "$.store.book.count()");
         assertNotNull(result);
         assertEquals(4, result.getInt());
     }
@@ -266,7 +266,7 @@ public class JsonPathComplexTest {
     @Test
     public void testSumFunction() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..price.sum()");
+        ONode result = JsonPath.select(root, "$..price.sum()");
         assertNotNull(result);
         assertEquals(73.87, result.getDouble(), 0.01);
     }
@@ -274,7 +274,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter17() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.tags contains 'classic')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.tags contains 'classic')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -283,7 +283,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter18() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.tags contains 'fantasy')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.tags contains 'fantasy')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -292,7 +292,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter19() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.tags contains 'quotes')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.tags contains 'quotes')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());
@@ -301,7 +301,7 @@ public class JsonPathComplexTest {
     @Test
     public void testRecursiveSearchWithFilter20() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$..book[?(@.tags contains 'war')]");
+        ONode result = JsonPath.select(root, "$..book[?(@.tags contains 'war')]");
         assertNotNull(result);
         assertTrue(result.isArray());
         assertEquals(1, result.size());

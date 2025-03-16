@@ -48,7 +48,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testRootNode() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$");
+        ONode result = JsonPath.select(root, "$");
         assertNotNull(result);
         assertTrue(result.isObject());
     }
@@ -56,7 +56,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testStoreNode() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store");
+        ONode result = JsonPath.select(root, "$.store");
         assertNotNull(result);
         assertTrue(result.isObject());
     }
@@ -64,7 +64,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testBooksNode() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book");
+        ONode result = JsonPath.select(root, "$.store.book");
         assertNotNull(result);
         assertTrue(result.isArray());
     }
@@ -72,7 +72,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFirstBook() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[0]");
+        ONode result = JsonPath.select(root, "$.store.book[0]");
         assertNotNull(result);
         assertEquals("Nigel Rees", result.get("author").getString());
     }
@@ -80,7 +80,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testSecondBook() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[1]");
+        ONode result = JsonPath.select(root, "$.store.book[1]");
         assertNotNull(result);
         assertEquals("Evelyn Waugh", result.get("author").getString());
     }
@@ -88,7 +88,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testThirdBook() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[2]");
+        ONode result = JsonPath.select(root, "$.store.book[2]");
         assertNotNull(result);
         assertEquals("Herman Melville", result.get("author").getString());
     }
@@ -96,7 +96,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFourthBook() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[3]");
+        ONode result = JsonPath.select(root, "$.store.book[3]");
         assertNotNull(result);
         assertEquals("J. R. R. Tolkien", result.get("author").getString());
     }
@@ -104,7 +104,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testBicycleNode() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.bicycle");
+        ONode result = JsonPath.select(root, "$.store.bicycle");
         assertNotNull(result);
         assertTrue(result.isObject());
     }
@@ -112,7 +112,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testBicycleColor() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.bicycle.color");
+        ONode result = JsonPath.select(root, "$.store.bicycle.color");
         assertNotNull(result);
         assertEquals("red", result.getString());
     }
@@ -120,7 +120,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testBicyclePrice() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.bicycle.price");
+        ONode result = JsonPath.select(root, "$.store.bicycle.price");
         assertNotNull(result);
         assertEquals(19.95, result.getDouble());
     }
@@ -128,7 +128,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testExpensiveNode() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.expensive");
+        ONode result = JsonPath.select(root, "$.expensive");
         assertNotNull(result);
         assertEquals(10, result.getInt());
     }
@@ -136,7 +136,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFirstBookCategory() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[0].category");
+        ONode result = JsonPath.select(root, "$.store.book[0].category");
         assertNotNull(result);
         assertEquals("reference", result.getString());
     }
@@ -144,7 +144,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFirstBookTitle() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[0].title");
+        ONode result = JsonPath.select(root, "$.store.book[0].title");
         assertNotNull(result);
         assertEquals("Sayings of the Century", result.getString());
     }
@@ -152,7 +152,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFirstBookPrice() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[0].price");
+        ONode result = JsonPath.select(root, "$.store.book[0].price");
         assertNotNull(result);
         assertEquals(8.95, result.getDouble());
     }
@@ -160,7 +160,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testSecondBookCategory() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[1].category");
+        ONode result = JsonPath.select(root, "$.store.book[1].category");
         assertNotNull(result);
         assertEquals("fiction", result.getString());
     }
@@ -168,7 +168,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testSecondBookTitle() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[1].title");
+        ONode result = JsonPath.select(root, "$.store.book[1].title");
         assertNotNull(result);
         assertEquals("Sword of Honour", result.getString());
     }
@@ -176,7 +176,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testSecondBookPrice() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[1].price");
+        ONode result = JsonPath.select(root, "$.store.book[1].price");
         assertNotNull(result);
         assertEquals(12.99, result.getDouble());
     }
@@ -184,7 +184,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testThirdBookCategory() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[2].category");
+        ONode result = JsonPath.select(root, "$.store.book[2].category");
         assertNotNull(result);
         assertEquals("fiction", result.getString());
     }
@@ -192,7 +192,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testThirdBookTitle() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[2].title");
+        ONode result = JsonPath.select(root, "$.store.book[2].title");
         assertNotNull(result);
         assertEquals("Moby Dick", result.getString());
     }
@@ -200,7 +200,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testThirdBookPrice() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[2].price");
+        ONode result = JsonPath.select(root, "$.store.book[2].price");
         assertNotNull(result);
         assertEquals(8.99, result.getDouble());
     }
@@ -208,7 +208,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFourthBookCategory() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[3].category");
+        ONode result = JsonPath.select(root, "$.store.book[3].category");
         assertNotNull(result);
         assertEquals("fiction", result.getString());
     }
@@ -216,7 +216,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFourthBookTitle() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[3].title");
+        ONode result = JsonPath.select(root, "$.store.book[3].title");
         assertNotNull(result);
         assertEquals("The Lord of the Rings", result.getString());
     }
@@ -224,7 +224,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testFourthBookPrice() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[3].price");
+        ONode result = JsonPath.select(root, "$.store.book[3].price");
         assertNotNull(result);
         assertEquals(22.99, result.getDouble());
     }
@@ -232,7 +232,7 @@ public class JsonPathSimpleTest {
     @Test
     public void testNegativeIndex() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.query(root, "$.store.book[-1]");
+        ONode result = JsonPath.select(root, "$.store.book[-1]");
         assertNotNull(result);
         assertEquals("J. R. R. Tolkien", result.get("author").getString());
     }
@@ -241,7 +241,7 @@ public class JsonPathSimpleTest {
     public void testNegativeIndexOutOfBounds() {
         ONode root = ONode.loadJson(JSON);
         assertThrows(PathResolutionException.class, () -> {
-            JsonPath.query(root, "$.store.book[-10]");
+            JsonPath.select(root, "$.store.book[-10]");
         });
     }
 
@@ -249,7 +249,7 @@ public class JsonPathSimpleTest {
     public void testPositiveIndexOutOfBounds() {
         ONode root = ONode.loadJson(JSON);
         assertThrows(PathResolutionException.class, () -> {
-            JsonPath.query(root, "$.store.book[10]");
+            JsonPath.select(root, "$.store.book[10]");
         });
     }
 
@@ -257,7 +257,7 @@ public class JsonPathSimpleTest {
     public void testNonExistentKey() {
         ONode root = ONode.loadJson(JSON);
         assertThrows(PathResolutionException.class, () -> {
-            JsonPath.query(root, "$.store.nonExistentKey");
+            JsonPath.select(root, "$.store.nonExistentKey");
         });
     }
 }
