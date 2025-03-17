@@ -6,6 +6,7 @@ import org.noear.snack.schema.SchemaValidator;
 
 import java.io.StringReader;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * 高性能 JSON 节点抽象
@@ -204,6 +205,11 @@ public final class ONode {
         }
 
         getArray().add(value);
+        return this;
+    }
+
+    public ONode build(Consumer<ONode> builder) {
+        builder.accept(this);
         return this;
     }
 

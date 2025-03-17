@@ -1,4 +1,4 @@
-# snack4-lab
+# snack v4.0 lab
 
 ## 特性
 
@@ -7,7 +7,10 @@
 ```java
 ONode oNode = new ONode();
 oNode.set("id", 1);
-oNode.getOrNew("layout").add(new ONode().set("title","开始").set("type","start"));
+oNode.getOrNew("layout").build(o -> {
+    o.addNew().set("title", "开始").set("type", "start");
+    o.addNew().set("title", "结束").set("type", "end");
+});
 ```
 
 支持序列化、反序列化

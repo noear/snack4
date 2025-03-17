@@ -10,7 +10,10 @@ public class DemoLab {
     public void case1() {
         ONode oNode = new ONode();
         oNode.set("id", 1);
-        oNode.getOrNew("layout").add(new ONode().set("title", "开始").set("type", "start"));
+        oNode.getOrNew("layout").build(o -> {
+            o.addNew().set("title", "开始").set("type", "start");
+            o.addNew().set("title", "结束").set("type", "end");
+        });
     }
 
     public void case2() {
