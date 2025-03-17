@@ -56,6 +56,10 @@ public final class ONode {
         return type == JsonTypes.TYPE_OBJECT;
     }
 
+    public boolean isValue() {
+        return JsonTypes.isValue(type);
+    }
+
     public Object getValue() {
         return value;
     }
@@ -120,6 +124,10 @@ public final class ONode {
         return getObject().get(key);
     }
 
+    public ONode getOrNew(String key) {
+        return getObject().computeIfAbsent(key, k -> new ONode());
+    }
+
     public void remove(String key) {
         getObject().remove(key);
     }
@@ -180,6 +188,14 @@ public final class ONode {
 
         add0(oNode);
         return this;
+    }
+
+    public ONode addNew() {
+        newArray();
+
+        ONode oNode = new ONode();
+        getArray().add(oNode);
+        return oNode;
     }
 
     private ONode add0(ONode value) {
@@ -243,15 +259,17 @@ public final class ONode {
     /**
      * 根据 jsonpath 删除
      */
-    public void delete(String jsonpath) {
+    public ONode delete(String jsonpath) {
         JsonPath.delete(this, jsonpath);
+        return this;
     }
 
     /**
      * 根据 jsonpath 生成
      */
-    public void create(String jsonpath) {
+    public ONode create(String jsonpath) {
         JsonPath.create(this, jsonpath);
+        return this;
     }
 
 

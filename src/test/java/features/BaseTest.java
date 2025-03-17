@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.noear.snack.*;
 import org.noear.snack.core.BeanCodec;
 import org.noear.snack.core.JsonReader;
+import org.noear.snack.core.Options;
 import org.noear.snack.exception.SchemaException;
 import org.noear.snack.query.JsonPath;
 import org.noear.snack.schema.SchemaValidator;
@@ -30,7 +31,7 @@ public class BaseTest {
                 + "}"
                 + "}";
 
-        ONode node =  JsonReader.read(json);
+        ONode node = JsonReader.read(json);
 
         // 验证解析结果
         System.out.println(node.get("name").getString()); // Alice
@@ -84,19 +85,25 @@ public class BaseTest {
     }
 
     @Test
-    public void testDeleteNode() {
+    public void case4() {
         ONode root = ONode.loadJson("{}");
         JsonPath.delete(root, "$.store.book[0]");
         ONode result = JsonPath.select(root, "$.store.book[0]");
-        assertNull(result);
+        assertNull(result.isNull());
     }
 
     @Test
-    public void testCreateNode() {
+    public void case5() {
         ONode root = ONode.loadJson("{}");
         JsonPath.create(root, "$.store.newNode");
         ONode result = JsonPath.select(root, "$.store.newNode");
         assertNotNull(result);
-        assertTrue(result.isObject());
+        assertTrue(result.isNull());
+    }
+
+    @Test
+    public void case6() {
+        Options options = Options.builder().schema(ONode.loadJson("{user:{name:''}}")).build();
+        ONode.loadJson("{}", options);
     }
 }

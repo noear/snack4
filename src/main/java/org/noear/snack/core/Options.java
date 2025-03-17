@@ -1,5 +1,6 @@
 package org.noear.snack.core;
 
+import org.noear.snack.ONode;
 import org.noear.snack.schema.SchemaValidator;
 
 import java.text.DateFormat;
@@ -181,8 +182,8 @@ public final class Options {
         /**
          * 设置验证器
          */
-        public Builder schemaValidator(SchemaValidator validator) {
-            this.schemaValidator = validator;
+        public Builder schema(ONode schema) {
+            this.schemaValidator = new SchemaValidator(schema);
             return this;
         }
 

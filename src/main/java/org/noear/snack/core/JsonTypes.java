@@ -33,6 +33,10 @@ public interface JsonTypes {
         }
     }
 
+    static boolean isValue(int type) {
+        return type > TYPE_NULL && type < TYPE_ARRAY;
+    }
+
     static int resolveType(Object value) {
         if (value == null) return JsonTypes.TYPE_NULL;
         if (value instanceof Boolean) return JsonTypes.TYPE_BOOLEAN;
