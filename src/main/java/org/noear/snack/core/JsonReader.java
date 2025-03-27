@@ -329,7 +329,7 @@ public class JsonReader {
     }
 
     static class ParserState {
-        private static final int BUFFER_SIZE = 8192;
+        private static final int BUFFER_SIZE = 1024;
         private final Reader reader;
         private long line = 1;
         private long column = 0;
