@@ -10,9 +10,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 /**
- * JSON路径查询工具类（带预解析优化）
+ * JSON路径查询工具类
  */
 public class JsonPath {
     /**
