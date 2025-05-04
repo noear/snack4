@@ -321,10 +321,11 @@ public class JsonPath {
         // 新增递归展开方法
         private Stream<ONode> flattenNode(ONode node) {
             if (node.isArray()) {
-                return node.getArray().stream().flatMap(this::flattenNode);
-            } else {
-                return Stream.of(node);
+                return node.getArray().stream()
+                        .flatMap(this::flattenNode)
+                        .filter(n -> !n.isNull());
             }
+            return Stream.of(node);
         }
 
         private boolean evaluateFilter(ONode node, String filter) {
@@ -378,47 +379,58 @@ public class JsonPath {
 
         // 新增 contains 操作符处理
         private boolean evaluateContains(ONode node, String condition) {
-            String[] parts = condition.split("\\s+contains\\s+");
+            String[] parts = condition.split("\\s+contains\\s+", 2);
             if (parts.length != 2) return false;
 
-            String keyPath = parts[0].replace("@.", "");
-            String expectedValue = parts[1].replaceAll("^'|'$", "");
+            String keyPath = parts[0].replace("@.", "").trim();
+            String expectedRaw = parts[1].replaceAll("^'|'$", "");
+            String expectedValue = expectedRaw.replace("\\'", "'");
 
             ONode target = resolveNestedPath(node, keyPath);
             if (target == null) return false;
 
-            // 处理数组包含
+            // 支持多类型包含检查
             if (target.isArray()) {
                 return target.getArray().stream()
-                        .anyMatch(item -> item.isString() && item.getString().equals(expectedValue));
-            }
-            // 处理字符串包含
-            else if (target.isString()) {
+                        .anyMatch(item -> isValueMatch(item, expectedValue));
+            } else if (target.isString()) {
                 return target.getString().contains(expectedValue);
+            }
+            return false;
+        }
+
+        private boolean isValueMatch(ONode item, String expected) {
+            if (item.isString()) {
+                return item.getString().equals(expected);
+            } else if (item.isNumber()) {
+                try {
+                    return item.getDouble() == Double.parseDouble(expected);
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            } else if (item.isBoolean()) {
+                return item.getBoolean() == Boolean.parseBoolean(expected);
             }
             return false;
         }
 
         // 新增 in/nin 操作符处理
         private boolean evaluateIn(ONode node, String condition, boolean negate) {
-            String[] parts = condition.split("\\s+(in|nin)\\s+");
+            String[] parts = condition.split("\\s+(in|nin)\\s+", 2);
             if (parts.length != 2) return false;
 
-            String keyPath = parts[0].replace("@.", "");
+            String keyPath = parts[0].replace("@.", "").trim();
             String valuesStr = parts[1].replaceAll("^'|'$", "");
-            Set<String> expectedValues = Arrays.stream(valuesStr.split(","))
+            List<String> expectedValues = Arrays.stream(valuesStr.split(","))
                     .map(String::trim)
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toList());
 
             ONode target = resolveNestedPath(node, keyPath);
             if (target == null) return false;
 
-            // 获取目标值
-            String actualValue = target.isString() ?
-                    target.getString() :
-                    target.toJson();
-
-            return negate ^ expectedValues.contains(actualValue);
+            // 自动类型转换比较
+            return negate ^ expectedValues.stream()
+                    .anyMatch(v -> isValueMatch(target, v));
         }
 
         // 正则表达式更新（支持更复杂的键路径和转义字符）
@@ -439,7 +451,18 @@ public class JsonPath {
             String[] keys = keyPath.split("\\.");
             ONode current = node;
             for (String key : keys) {
-                current = current.get(key);
+                if (current.isObject()) {
+                    current = current.get(key);
+                } else if (current.isArray()) {
+                    try {
+                        int index = Integer.parseInt(key);
+                        current = current.get(index);
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
                 if (current == null) return null;
             }
             return current;
