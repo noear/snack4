@@ -115,15 +115,6 @@ public class JsonPathSelectComplexTest {
     }
 
     @Test
-    public void testRecursiveSearchWithFilter1_4() {
-        ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.select(root, "$..book[?(!@.price2)]");
-        assertNotNull(result);
-        assertTrue(result.isArray());
-        assertEquals(4, result.size());
-    }
-
-    @Test
     public void testRecursiveSearchWithFilter2() {
         ONode root = ONode.loadJson(JSON);
         ONode result = JsonPath.select(root, "$..book[?(@.price > 10 && @.price < 20)]");

@@ -2,6 +2,7 @@ package org.noear.snack.query;
 
 import org.noear.snack.ONode;
 import org.noear.snack.core.JsonSource;
+import org.noear.snack.core.util.TextUtil;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
@@ -460,6 +461,11 @@ public class JsonPath {
             String strValue = matcher.group("str");
             String numValue = matcher.group("num");
 
+            // 处理存在性检查（如 @.price）
+            if (TextUtil.isEmpty(op) && strValue == null && numValue == null) {
+                return resolveNestedPath(node, keyPath) != null;
+            }
+
             // 获取目标节点
             ONode target = resolveNestedPath(node, keyPath);
             if (target == null) return false;
@@ -540,9 +546,9 @@ public class JsonPath {
                 "^@?\\.?" +
                         "(?<key>[\\w\\.]+)" +  // 支持带点的键路径
                         "\\s*" +
-                        "(?<op>==|!=|>=|<=|>|<|contains|in|nin)" +
+                        "(?<op>==|!=|>=|<=|>|<|contains|in|nin|\\b)" + // 允许空操作符（存在性检查）
                         "\\s*" +
-                        "(?:'((?<str>.*?)(?<!\\\\))'|(?<num>[+-]?\\d+\\.?\\d*))" +
+                        "(?:'((?<str>.*?)(?<!\\\\))'|(?<num>[+-]?\\d+\\.?\\d*))?" + // 允许无值
                         "$", Pattern.CASE_INSENSITIVE
         );
 
