@@ -348,8 +348,12 @@ public class JsonPath {
                 return evaluateIn(node, condition, false);
             } else if (condition.contains(" nin ")) {
                 return evaluateIn(node, condition, true);
+            } else {
+                return evaluateComparison(node, condition);
             }
+        }
 
+        private boolean evaluateComparison(ONode node, String condition){
             Matcher matcher = CONDITION_PATTERN.matcher(condition);
             if (!matcher.matches()) return false;
 
