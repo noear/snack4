@@ -344,12 +344,37 @@ public class JsonPath {
             List<Token> tokens = new ArrayList<>();
             int index = 0;
             int len = filter.length();
+
             while (index < len) {
                 char c = filter.charAt(index);
                 if (Character.isWhitespace(c)) {
                     index++;
                     continue;
                 }
+
+                // 处理 in 操作符
+                if (c == 'i' && index + 2 < len && filter.substring(index, index + 3).equals("in ")) {
+                    tokens.add(new Token(TokenType.IN, "in"));
+                    index += 3;
+                    continue;
+                }
+
+                // 处理数组字面量 [..]
+                if (c == '[') {
+                    int start = index;
+                    int bracketCount = 1;
+                    index++;
+                    while (index < len && bracketCount > 0) {
+                        c = filter.charAt(index);
+                        if (c == '[') bracketCount++;
+                        if (c == ']') bracketCount--;
+                        index++;
+                    }
+                    tokens.add(new Token(TokenType.ARRAY, filter.substring(start, index)));
+                    continue;
+                }
+
+
                 if (c == '(') {
                     tokens.add(new Token(TokenType.LPAREN, "("));
                     index++;
@@ -440,9 +465,31 @@ public class JsonPath {
 
 
         private boolean evaluateSingleCondition(ONode node, String condition) {
-            if(condition.startsWith("!")){
+            if (condition.startsWith("!")) {
                 //非运行
                 return !evaluateSingleCondition(node, condition.substring(1));
+            }
+
+            if (condition.contains(" in ")) {
+                String[] parts = condition.split("\\s+in\\s+", 2);
+                if (parts.length != 2) return false;
+
+                String keyPath = parts[0].replace("@.", "").trim();
+                String arrayStr = parts[1].trim();
+
+                if (!arrayStr.startsWith("[") || !arrayStr.endsWith("]")) {
+                    return false;
+                }
+
+                ONode target = resolveNestedPath(node, keyPath);
+                if (target == null) return false;
+
+                List<String> expectedValues = parseArrayLiteral(arrayStr)
+                        .stream()
+                        .map(s -> s.replaceAll("^'|'$", ""))
+                        .collect(Collectors.toList());
+
+                return expectedValues.stream().anyMatch(v -> isValueMatch(target, v));
             }
 
             // 特殊处理包含操作符
@@ -457,12 +504,42 @@ public class JsonPath {
             }
         }
 
-        private boolean evaluateComparison(ONode node, String condition){
+        private List<String> parseArrayLiteral(String arrayStr) {
+            List<String> items = new ArrayList<>();
+            String content = arrayStr.substring(1, arrayStr.length()-1).trim();
+            if (content.isEmpty()) return items;
+
+            boolean inString = false;
+            StringBuilder current = new StringBuilder();
+            for (char c : content.toCharArray()) {
+                if (c == '\'' && !inString) {
+                    inString = true;
+                } else if (c == '\'' && inString) {
+                    inString = false;
+                    items.add(current.toString());
+                    current = new StringBuilder();
+                } else if (c == ',' && !inString) {
+                    if (current.length() > 0) {
+                        items.add(current.toString().trim());
+                        current = new StringBuilder();
+                    }
+                } else {
+                    current.append(c);
+                }
+            }
+            if (current.length() > 0) {
+                items.add(current.toString().trim());
+            }
+            return items;
+        }
+
+        private boolean evaluateComparison(ONode node, String condition) {
             Matcher matcher = CONDITION_PATTERN.matcher(condition);
             if (!matcher.matches()) return false;
 
             String keyPath = matcher.group("key");
             String op = matcher.group("op");
+            String regex = matcher.group("regex");
             String strValue = matcher.group("str");
             String numValue = matcher.group("num");
 
@@ -474,6 +551,11 @@ public class JsonPath {
             // 获取目标节点
             ONode target = resolveNestedPath(node, keyPath);
             if (target == null) return false;
+
+            if ("=~".equals(op) && regex != null) {
+                if (!target.isString()) return false;
+                return target.getString().matches(regex.replace("\\/", "/"));
+            }
 
             // 处理转义字符
             String value = strValue != null ?
@@ -549,11 +631,11 @@ public class JsonPath {
         // 正则表达式更新（支持更复杂的键路径和转义字符）
         private static final Pattern CONDITION_PATTERN = Pattern.compile(
                 "^@?\\.?" +
-                        "(?<key>[\\w\\.]+)" +  // 支持带点的键路径
+                        "(?<key>[\\w\\.]+)" +
                         "\\s*" +
-                        "(?<op>==|=~|!=|>=|<=|>|<|contains|in|nin|\\b)" + // 允许空操作符（存在性检查）
+                        "(?<op>==|=~|!=|>=|<=|>|<|contains|in|nin|\\b)" +
                         "\\s*" +
-                        "(?:'((?<str>.*?)(?<!\\\\))'|(?<num>[+-]?\\d+\\.?\\d*))?" + // 允许无值
+                        "(?:/(?<regex>.*?)/|'((?<str>.*?)(?<!\\\\))'|(?<num>[+-]?\\d+\\.?\\d*))?" +
                         "$", Pattern.CASE_INSENSITIVE
         );
 
@@ -584,8 +666,6 @@ public class JsonPath {
                     return a.equals(b);
                 case "!=":
                     return !a.equals(b);
-                case "=~":
-                    return Pattern.matches(b, a);
                 default:
                     throw new PathResolutionException("Unsupported operator for string: " + op);
             }
@@ -613,16 +693,36 @@ public class JsonPath {
         // 解析路径段（支持终止符列表）
         private String parseSegment(char... terminators) {
             StringBuilder sb = new StringBuilder();
+            boolean inRegex = false; // 标记是否正在解析正则表达式
+
             while (index < path.length()) {
                 char ch = path.charAt(index);
-                if (ch == ']') {
-                    index++; // 强制跳过闭合的 ]
+
+                // 处理正则表达式开始/结束标记
+                if (ch == '/' && !inRegex) {
+                    inRegex = true;
+                    sb.append(ch);
+                    index++;
+                    continue;
+                } else if (ch == '/' && inRegex) {
+                    inRegex = false;
+                    sb.append(ch);
+                    index++;
+                    continue;
+                }
+
+                // 如果在正则表达式内部，忽略终止符检查
+                if (!inRegex && isTerminator(ch, terminators)) {
+                    if (ch == ']') {
+                        index++; // 跳过闭合的 ]
+                    }
                     break;
                 }
-                if (isTerminator(ch, terminators)) break;
+
                 sb.append(ch);
                 index++;
             }
+
             return sb.toString().trim();
         }
 
@@ -642,7 +742,7 @@ public class JsonPath {
     }
 
 
-    private enum TokenType { ATOM, AND, OR, LPAREN, RPAREN }
+    private enum TokenType {ATOM, AND, OR, IN, ARRAY, LPAREN, RPAREN}
 
     private static class Token {
         final TokenType type;

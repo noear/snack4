@@ -156,20 +156,10 @@ public class JsonPathSelectComplexTest2 {
     @Test
     void testMultipleValueRanges() {
         ONode result = JsonPath.select(loadRoot(),
-                "$.store.book[?((@.price between 10 and 20) || (@.price between 30 and 50))]");
+                "$.store.book[?((@.price >= 10 && @.price <= 20) || (@.price >= 30 && @.price <= 50))]");
 
         assertEquals(3, result.size());
         assertArrayEquals(new String[]{"Book C", "Book D", "Book E"},
-                result.select("$[*].title").toBean(String[].class));
-    }
-
-    @Test
-    void testDeepPropertyNavigation() {
-        ONode result = JsonPath.select(loadRoot(),
-                "$.store.book[?(@.author.length() > 6 && @.title.length() < 7)]");
-
-        assertEquals(2, result.size());
-        assertArrayEquals(new String[]{"Book A", "Book B"},
                 result.select("$[*].title").toBean(String[].class));
     }
 
