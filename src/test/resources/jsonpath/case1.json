@@ -28,7 +28,8 @@
     ],
     "bicycle": {
       "color": "red",
-      "price": 19.95
+      "price": 19.95,
+      "accessories": ["bell", "basket", "light"]
     }
   },
   "expensive": 10

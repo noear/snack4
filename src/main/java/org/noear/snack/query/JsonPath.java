@@ -66,7 +66,15 @@ public class JsonPath {
                 }
             }
 
-            return currentNodes.size() == 1 ? currentNodes.get(0) : new ONode(currentNodes);
+            if ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0) || path.indexOf("()") > 0) {
+                if (currentNodes.size() > 0) {
+                    return currentNodes.get(0);
+                } else {
+                    return new ONode();
+                }
+            } else {
+                return new ONode(currentNodes);
+            }
         }
 
         // 删除节点
