@@ -161,7 +161,7 @@ public class JsonPath {
             if (segment.equals("*")) {
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
-                return resolveFilter(nodes, segment.substring(1));
+                return resolveFilter(nodes, segment.substring(2, segment.length() - 1));
             } else {
                 return resolveIndex(nodes, segment);
             }
@@ -412,7 +412,7 @@ public class JsonPath {
             for (char t : terminators) {
                 if (ch == t) return true;
             }
-            return ch == '.' || ch == '[' || ch == ']';
+            return false;
         }
 
         // 跳过空白字符
