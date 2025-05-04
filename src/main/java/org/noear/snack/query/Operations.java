@@ -21,10 +21,10 @@ public class Operations {
     public static final Pattern CONDITION_PATTERN = Pattern.compile(
             "^@?\\.?" +
                     "(?<key>[\\w\\.\\[\\]]+)" +
-                    "\\s*" +
-                    "(?<op>==|=~|!=|>=|<=|>|<|startsWith|endsWith|contains|in|\\b)" +
-                    "\\s*" +
-                    "(?<right>.*?)" +
+                    "(\\s+" +
+                    "(?<op>[\\w=~!><]+)" + //==|=~|!=|>=|<=|>|<|startsWith|endsWith|contains|in|\b
+                    "(\\s+" +
+                    "(?<right>.*?))?)?" +
                     "$", Pattern.CASE_INSENSITIVE
     );
 
