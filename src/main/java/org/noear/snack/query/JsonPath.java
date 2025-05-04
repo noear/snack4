@@ -352,29 +352,6 @@ public class JsonPath {
                     continue;
                 }
 
-                // 处理 in 操作符
-                if (c == 'i' && index + 2 < len && filter.substring(index, index + 3).equals("in ")) {
-                    tokens.add(new Token(TokenType.IN, "in"));
-                    index += 3;
-                    continue;
-                }
-
-                // 处理数组字面量 [..]
-                if (c == '[') {
-                    int start = index;
-                    int bracketCount = 1;
-                    index++;
-                    while (index < len && bracketCount > 0) {
-                        c = filter.charAt(index);
-                        if (c == '[') bracketCount++;
-                        if (c == ']') bracketCount--;
-                        index++;
-                    }
-                    tokens.add(new Token(TokenType.ARRAY, filter.substring(start, index)));
-                    continue;
-                }
-
-
                 if (c == '(') {
                     tokens.add(new Token(TokenType.LPAREN, "("));
                     index++;
@@ -465,31 +442,9 @@ public class JsonPath {
 
 
         private boolean evaluateSingleCondition(ONode node, String condition) {
-            if (condition.startsWith("!")) {
+            if(condition.startsWith("!")){
                 //非运行
                 return !evaluateSingleCondition(node, condition.substring(1));
-            }
-
-            if (condition.contains(" in ")) {
-                String[] parts = condition.split("\\s+in\\s+", 2);
-                if (parts.length != 2) return false;
-
-                String keyPath = parts[0].replace("@.", "").trim();
-                String arrayStr = parts[1].trim();
-
-                if (!arrayStr.startsWith("[") || !arrayStr.endsWith("]")) {
-                    return false;
-                }
-
-                ONode target = resolveNestedPath(node, keyPath);
-                if (target == null) return false;
-
-                List<String> expectedValues = parseArrayLiteral(arrayStr)
-                        .stream()
-                        .map(s -> s.replaceAll("^'|'$", ""))
-                        .collect(Collectors.toList());
-
-                return expectedValues.stream().anyMatch(v -> isValueMatch(target, v));
             }
 
             // 特殊处理包含操作符
@@ -504,36 +459,7 @@ public class JsonPath {
             }
         }
 
-        private List<String> parseArrayLiteral(String arrayStr) {
-            List<String> items = new ArrayList<>();
-            String content = arrayStr.substring(1, arrayStr.length()-1).trim();
-            if (content.isEmpty()) return items;
-
-            boolean inString = false;
-            StringBuilder current = new StringBuilder();
-            for (char c : content.toCharArray()) {
-                if (c == '\'' && !inString) {
-                    inString = true;
-                } else if (c == '\'' && inString) {
-                    inString = false;
-                    items.add(current.toString());
-                    current = new StringBuilder();
-                } else if (c == ',' && !inString) {
-                    if (current.length() > 0) {
-                        items.add(current.toString().trim());
-                        current = new StringBuilder();
-                    }
-                } else {
-                    current.append(c);
-                }
-            }
-            if (current.length() > 0) {
-                items.add(current.toString().trim());
-            }
-            return items;
-        }
-
-        private boolean evaluateComparison(ONode node, String condition) {
+        private boolean evaluateComparison(ONode node, String condition){
             Matcher matcher = CONDITION_PATTERN.matcher(condition);
             if (!matcher.matches()) return false;
 
@@ -742,7 +668,7 @@ public class JsonPath {
     }
 
 
-    private enum TokenType {ATOM, AND, OR, IN, ARRAY, LPAREN, RPAREN}
+    private enum TokenType { ATOM, AND, OR, LPAREN, RPAREN }
 
     private static class Token {
         final TokenType type;
