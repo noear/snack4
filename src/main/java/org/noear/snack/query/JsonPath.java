@@ -2,12 +2,10 @@ package org.noear.snack.query;
 
 import org.noear.snack.ONode;
 import org.noear.snack.core.JsonSource;
-import org.noear.snack.core.util.TextUtil;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
