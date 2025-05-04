@@ -447,7 +447,7 @@ public class JsonPath {
                 return !evaluateSingleCondition(node, condition.substring(1));
             }
 
-            Matcher matcher = CONDITION_PATTERN.matcher(condition);
+            Matcher matcher = Operations.CONDITION_PATTERN.matcher(condition);
             if (!matcher.matches()) return false;
 
             Factor factor = new Factor();
@@ -459,17 +459,6 @@ public class JsonPath {
             return Operations.get(factor.op).apply(node, factor);
         }
 
-
-        // 正则表达式更新（支持更复杂的键路径和转义字符）
-        private static final Pattern CONDITION_PATTERN = Pattern.compile(
-                "^@?\\.?" +
-                        "(?<key>[\\w\\.\\[\\]]+)" +
-                        "\\s*" +
-                        "(?<op>==|=~|!=|>=|<=|>|<|startsWith|endsWith|contains|in|\\b)" +
-                        "\\s*" +
-                        "(?<right>.*?)" +
-                        "$", Pattern.CASE_INSENSITIVE
-        );
 
 
         // 解析路径段（支持终止符列表）

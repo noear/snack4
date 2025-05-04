@@ -17,11 +17,24 @@ import java.util.regex.Pattern;
  * @author noear 2025/5/5 created
  */
 public class Operations {
+    // 正则表达式更新（支持更复杂的键路径和转义字符）
+    public static final Pattern CONDITION_PATTERN = Pattern.compile(
+            "^@?\\.?" +
+                    "(?<key>[\\w\\.\\[\\]]+)" +
+                    "\\s*" +
+                    "(?<op>==|=~|!=|>=|<=|>|<|startsWith|endsWith|contains|in|\\b)" +
+                    "\\s*" +
+                    "(?<right>.*?)" +
+                    "$", Pattern.CASE_INSENSITIVE
+    );
+
+
     private static final Map<String, BiFunction<ONode, JsonPath.Factor, Boolean>> lib = new HashMap<>();
 
     static {
-        // 聚合函数
+        // 操作函数
         register("startsWith", Operations::startsWith);
+        register("endsWith", Operations::endsWith);
         register("contains", Operations::contains);
         register("in", Operations::in);
     }
@@ -60,6 +73,22 @@ public class Operations {
             return false;
         } else if (target.isString()) {
             return target.getString().startsWith(factor.right);
+        }
+        return false;
+    }
+
+    private static boolean endsWith(ONode node, JsonPath.Factor factor) {
+        if (factor.right == null) {
+            return false;
+        }
+
+        factor.right = factor.right.substring(1, factor.right.length() - 1);
+
+        ONode target = resolveNestedPath(node, factor.keyPath);
+        if (target == null) {
+            return false;
+        } else if (target.isString()) {
+            return target.getString().endsWith(factor.right);
         }
         return false;
     }
