@@ -573,6 +573,8 @@ public class JsonPath {
                     return a.equals(b);
                 case "!=":
                     return !a.equals(b);
+                case "=~":
+                    return Pattern.matches(b, a);
                 default:
                     throw new PathResolutionException("Unsupported operator for string: " + op);
             }
