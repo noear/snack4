@@ -258,7 +258,7 @@ public class JsonPathSelectComplexTest {
     @Test
     public void testCountFunction() {
         ONode root = ONode.loadJson(JSON);
-        ONode result = JsonPath.select(root, "$.store.book.count()");
+        ONode result = JsonPath.select(root, "$.store.book.size()");
         assertNotNull(result);
         assertEquals(4, result.getInt());
     }

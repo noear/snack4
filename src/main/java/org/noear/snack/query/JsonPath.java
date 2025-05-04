@@ -171,9 +171,9 @@ public class JsonPath {
             String key = parseSegment('.', '[');
             if (key.endsWith("()")) {
                 String funcName = key.substring(0, key.length() - 2);
-                return nodes.stream()
-                        .map(n -> Functions.get(funcName).apply(n))
-                        .collect(Collectors.toList());
+                return Collections.singletonList(
+                        Functions.get(funcName).apply(nodes) // 传入节点列表
+                );
             }
             return nodes.stream()
                     .map(n -> getChild(n, key, strict))

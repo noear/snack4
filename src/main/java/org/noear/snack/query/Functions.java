@@ -3,28 +3,32 @@ package org.noear.snack.query;
 import org.noear.snack.ONode;
 import org.noear.snack.exception.PathResolutionException;
 
-import java.util.DoubleSummaryStatistics;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.OptionalDouble;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
 
 /**
  * @author noear 2025/3/17 created
  */
 public class Functions {
-    private static final Map<String, Function<ONode, ONode>> lib = new HashMap<>();
+    private static final Map<String, Function<List<ONode>, ONode>> lib = new HashMap<>();
 
     static {
+        // 聚合函数
         register("min", Functions::min);
         register("max", Functions::max);
         register("avg", Functions::avg);
         register("sum", Functions::sum);
 
+        // 集合函数
         register("size", Functions::size);
+        register("keys", Functions::keys);
         register("first", Functions::first);
         register("last", Functions::last);
 
+        // 字符串函数
         register("length", Functions::length);
         register("upper", Functions::upper);
         register("lower", Functions::lower);
@@ -34,133 +38,135 @@ public class Functions {
     /**
      * 注册
      */
-    public static void register(String name, Function<ONode, ONode> func) {
+    public static void register(String name, Function<List<ONode>, ONode> func) {
         lib.put(name, func);
     }
 
     /**
      * 获取
      */
-    public static Function<ONode, ONode> get(String funcName) {
+    public static Function<List<ONode>, ONode> get(String funcName) {
         return lib.get(funcName);
     }
 
     /// /////////////////
 
-    static ONode sum(ONode node) {
-        if (node.isArray()) {
-            double sum = node.getArray().stream()
-                    .filter(ONode::isNumber)
-                    .mapToDouble(ONode::getDouble)
-                    .sum();
-            return new ONode(sum);
-        } else {
-            throw new PathResolutionException("sum() requires an array");
-        }
-    }
-
-
-    static ONode min(ONode node) {
-        if (node.isArray()) {
-            OptionalDouble min = node.getArray().stream()
-                    .filter(ONode::isNumber)
-                    .mapToDouble(ONode::getDouble)
-                    .min();
-
-            return min.isPresent() ? new ONode(min.getAsDouble()) : new ONode(null);
-        } else if (node.isNumber()) {
-            return node;
-        } else {
-            throw new PathResolutionException("min() requires array or number");
-        }
-    }
-
-    static ONode max(ONode node) {
-        if (node.isArray()) {
-            OptionalDouble max = node.getArray().stream()
-                    .filter(ONode::isNumber)
-                    .mapToDouble(ONode::getDouble)
-                    .max();
-
-            return max.isPresent() ? new ONode(max.getAsDouble()) : new ONode(null);
-        } else if (node.isNumber()) {
-            return node;
-        } else {
-            throw new PathResolutionException("max() requires array or number");
-        }
-    }
-
-    static ONode avg(ONode node) {
-        if (!node.isArray()) {
-            throw new PathResolutionException("avg() requires an array");
-        }
-
-        DoubleSummaryStatistics stats = node.getArray().stream()
+    static ONode sum(List<ONode> nodes) {
+        DoubleStream stream = nodes.stream()
+                .flatMap(n -> n.isArray() ?
+                        n.getArray().stream() :
+                        Stream.of(n))
                 .filter(ONode::isNumber)
-                .mapToDouble(ONode::getDouble)
-                .summaryStatistics();
+                .mapToDouble(ONode::getDouble);
 
+        return new ONode(stream.sum());
+    }
+
+
+    static ONode min(List<ONode> nodes) {
+        OptionalDouble min = collectNumbers(nodes).min();
+        return min.isPresent() ? new ONode(min.getAsDouble()) : new ONode(null);
+    }
+
+    static ONode max(List<ONode> nodes) {
+        OptionalDouble max = collectNumbers(nodes).max();
+        return max.isPresent() ? new ONode(max.getAsDouble()) : new ONode(null);
+    }
+
+    static ONode avg(List<ONode> nodes) {
+        DoubleSummaryStatistics stats = collectNumbers(nodes).summaryStatistics();
         return stats.getCount() > 0 ?
                 new ONode(stats.getAverage()) :
                 new ONode(null);
     }
 
-    static ONode first(ONode node) {
-        if (node.isArray()) {
-            return node.get(0);
-        } else {
-            throw new PathResolutionException("first() requires array");
-        }
+    static ONode first(List<ONode> nodes) {
+        return nodes.isEmpty() ?
+                new ONode(null) :
+                nodes.get(0);
     }
 
-    static ONode last(ONode node) {
-        if (node.isArray()) {
-            return node.get(-1);
-        } else {
-            throw new PathResolutionException("last() requires array");
-        }
+    static ONode last(List<ONode> nodes) {
+        return nodes.isEmpty() ?
+                new ONode(null) :
+                nodes.get(nodes.size() - 1);
     }
 
-    static ONode keys(ONode node) {
-        if (node.isObject()) {
-            return ONode.loadBean(node.getObject().keySet());
+    static ONode keys(List<ONode> nodes) {
+        if (nodes.size() == 1) {
+            ONode node = nodes.get(0);
+
+            if (node.isObject()) {
+                return ONode.loadBean(node.getObject().keySet());
+            } else {
+                throw new PathResolutionException("keys() requires object");
+            }
         } else {
             throw new PathResolutionException("keys() requires object");
         }
     }
 
-    static ONode size(ONode node) {
-        return new ONode(node.size());
+    static ONode size(List<ONode> nodes) {
+        int size = nodes.stream()
+                .filter(n -> n.isArray() || n.isObject())
+                .mapToInt(n -> n.size())
+                .sum();
+
+        return new ONode(size);
     }
 
     /* 字符串函数实现 */
-    static ONode length(ONode node) {
-        if (node.isString()) {
-            return new ONode(node.getString().length());
-        } else if (node.isArray()) {
-            return new ONode(node.size());
-        } else if (node.isObject()) {
-            return new ONode(node.getObject().size());
+    static ONode length(List<ONode> nodes) {
+        if (nodes.size() == 1) {
+            ONode n = nodes.get(0);
+            if (n.isString()) return new ONode(n.getString().length());
+            if (n.isArray()) return new ONode(n.size());
+            if (n.isObject()) return new ONode(n.getObject().size());
         }
         return new ONode(0);
     }
 
 
-    static ONode upper(ONode node) {
-        return node.isString() ?
-                new ONode(node.getString().toUpperCase()) :
-                node;
+    static ONode upper(List<ONode> nodes) {
+        return processStrings(nodes, String::toUpperCase);
     }
 
-    static ONode lower(ONode node) {
-        return node.isString() ?
-                new ONode(node.getString().toLowerCase()) :
-                node;
+    static ONode lower(List<ONode> nodes) {
+        return processStrings(nodes, String::toLowerCase);
     }
 
-    static ONode trim(ONode node) {
-        return node.isString() ?
-                new ONode(node.getString().trim()) :
-                node;
+    static ONode trim(List<ONode> nodes) {
+        return processStrings(nodes, String::trim);
+    }
+
+    /// ///////////////// 工具方法 //////////////////
+
+    private static DoubleStream collectNumbers(List<ONode> nodes) {
+        return nodes.stream()
+                .flatMap(n -> n.isArray() ?
+                        n.getArray().stream() :
+                        Stream.of(n))
+                .filter(ONode::isNumber)
+                .mapToDouble(ONode::getDouble);
+    }
+
+    private static ONode processStrings(List<ONode> nodes, Function<String, String> processor) {
+        List<String> results = nodes.stream()
+                .flatMap(n -> {
+                    if (n.isString()) {
+                        return Stream.of(n.getString());
+                    } else if (n.isArray()) {
+                        return n.getArray().stream()
+                                .filter(ONode::isString)
+                                .map(ONode::getString);
+                    }
+                    return Stream.empty();
+                })
+                .map(processor)
+                .collect(Collectors.toList());
+
+        return results.size() == 1 ?
+                new ONode(results.get(0)) :
+                ONode.loadBean(results);
     }
 }

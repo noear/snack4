@@ -89,7 +89,7 @@ public class BaseTest {
         ONode root = ONode.loadJson("{}");
         JsonPath.delete(root, "$.store.book[0]");
         ONode result = JsonPath.select(root, "$.store.book[0]");
-        assertNull(result.isNull());
+        assertTrue(result.isNull());
     }
 
     @Test
