@@ -13,52 +13,52 @@ import java.util.function.Consumer;
  */
 public final class ONode {
     private Object value;
-    private int type;
+    private JsonType type;
 
     public transient JsonSource source;
 
     public ONode() {
-        this.type = JsonTypes.TYPE_NULL;
+        this.type = JsonType.TYPE_NULL;
     }
 
     public ONode(Object value) {
         this.value = value;
-        this.type = JsonTypes.resolveType(value);
+        this.type = JsonType.resolveType(value);
     }
 
     // Getters and Setters
     public boolean isNull() {
-        return type == JsonTypes.TYPE_NULL;
+        return type == JsonType.TYPE_NULL;
     }
 
     public boolean isNullOrEmpty() {
-        return type == JsonTypes.TYPE_NULL ||
-                (type == JsonTypes.TYPE_OBJECT && getObject().isEmpty()) ||
-                (type == JsonTypes.TYPE_ARRAY && getArray().isEmpty());
+        return type == JsonType.TYPE_NULL ||
+                (type == JsonType.TYPE_OBJECT && getObject().isEmpty()) ||
+                (type == JsonType.TYPE_ARRAY && getArray().isEmpty());
     }
 
     public boolean isBoolean() {
-        return type == JsonTypes.TYPE_BOOLEAN;
+        return type == JsonType.TYPE_BOOLEAN;
     }
 
     public boolean isNumber() {
-        return type == JsonTypes.TYPE_NUMBER;
+        return type == JsonType.TYPE_NUMBER;
     }
 
     public boolean isString() {
-        return type == JsonTypes.TYPE_STRING;
+        return type == JsonType.TYPE_STRING;
     }
 
     public boolean isArray() {
-        return type == JsonTypes.TYPE_ARRAY;
+        return type == JsonType.TYPE_ARRAY;
     }
 
     public boolean isObject() {
-        return type == JsonTypes.TYPE_OBJECT;
+        return type == JsonType.TYPE_OBJECT;
     }
 
     public boolean isValue() {
-        return JsonTypes.isValue(type);
+        return JsonType.isValue(type);
     }
 
     public Object getValue() {
@@ -90,7 +90,7 @@ public final class ONode {
     public ONode newObject() {
         if (value == null) {
             value = new LinkedHashMap<>();
-            type = JsonTypes.TYPE_OBJECT;
+            type = JsonType.TYPE_OBJECT;
         }
 
         return this;
@@ -99,7 +99,7 @@ public final class ONode {
     public ONode newArray() {
         if (value == null) {
             value = new ArrayList<>();
-            type = JsonTypes.TYPE_ARRAY;
+            type = JsonType.TYPE_ARRAY;
         }
 
         return this;
@@ -149,7 +149,7 @@ public final class ONode {
     }
 
     private ONode set0(String key, ONode value) {
-        if (type == JsonTypes.TYPE_NULL) {
+        if (type == JsonType.TYPE_NULL) {
             newObject();
         }
 
@@ -200,7 +200,7 @@ public final class ONode {
     }
 
     private ONode add0(ONode value) {
-        if (type == JsonTypes.TYPE_NULL) {
+        if (type == JsonType.TYPE_NULL) {
             newArray();
         }
 
@@ -231,7 +231,7 @@ public final class ONode {
 
     public ONode reset(Object value) {
         this.value = value;
-        this.type = JsonTypes.resolveType(value);
+        this.type = JsonType.resolveType(value);
         return this;
     }
 
@@ -245,7 +245,7 @@ public final class ONode {
         }
     }
 
-    public int getType() {
+    public JsonType getType() {
         return type;
     }
 
@@ -306,6 +306,15 @@ public final class ONode {
         return loadJson(json, Options.def());
     }
 
+
+    public <T> T toBean(Class<T> clazz, Options opts) {
+        return BeanCodec.deserialize(this, clazz, opts);
+    }
+
+    public <T> T toBean(Class<T> clazz) {
+        return toBean(clazz, Options.def());
+    }
+
     public String toJson(Options opts) {
         try {
             return JsonWriter.serialize(this, opts);
@@ -320,12 +329,9 @@ public final class ONode {
         return toJson(Options.def());
     }
 
-    public <T> T toBean(Class<T> clazz, Options opts) {
-        return BeanCodec.deserialize(this, clazz, opts);
-    }
-
-    public <T> T toBean(Class<T> clazz) {
-        return toBean(clazz, Options.def());
+    @Override
+    public String toString() {
+        return toJson();
     }
 
     public void validate(SchemaValidator schema) {

@@ -26,26 +26,26 @@ public class JsonWriter {
 
     public void write(ONode node) throws IOException {
         switch (node.getType()) {
-            case JsonTypes.TYPE_OBJECT:
+            case TYPE_OBJECT:
                 writeObject(node.getObject());
                 break;
-            case JsonTypes.TYPE_ARRAY:
+            case TYPE_ARRAY:
                 writeArray(node.getArray());
                 break;
-            case JsonTypes.TYPE_STRING:
+            case TYPE_STRING:
                 writeString(node.getString());
                 break;
-            case JsonTypes.TYPE_NUMBER:
+            case TYPE_NUMBER:
                 if(opts.isFeatureEnabled(Feature.UseBigNumberMode)) {
                     writeString(String.valueOf(node.getValue()));
                 }else {
                     writeNumber(node.getNumber());
                 }
                 break;
-            case JsonTypes.TYPE_BOOLEAN:
+            case TYPE_BOOLEAN:
                 writer.write(node.getBoolean() ? "true" : "false");
                 break;
-            case JsonTypes.TYPE_NULL:
+            case TYPE_NULL:
                 writer.write("null");
                 break;
         }
