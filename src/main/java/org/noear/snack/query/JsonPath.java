@@ -5,6 +5,8 @@ import org.noear.snack.core.JsonSource;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -326,39 +328,112 @@ public class JsonPath {
         }
 
         private boolean evaluateFilter(ONode node, String filter) {
-            if (filter.startsWith("@.")) {
-                String expr = filter.substring(2).trim();
+            // 分割多个条件（支持 && 操作符）
+            String[] conditions = filter.split("\\s*&&\\s*");
 
-                // 支持更复杂的表达式解析
-                String[] parts = expr.split("\\s*(==|!=|>=|<=|>|<)\\s*", 2);
-                if (parts.length != 2) return false;
-
-                String keyPath = parts[0].trim();
-                String op = expr.substring(parts[0].length(), expr.length() - parts[1].length()).trim();
-                String value = parts[1].replaceAll("['\"]", "").trim();
-
-                ONode target = resolveNestedPath(node, keyPath);
-                if (target == null) return false;
-
-                // 增强类型处理
-                if (target.isNumber() && isNumeric(value)) {
-                    return compareNumber(op, target.getDouble(), Double.parseDouble(value));
-                } else if (target.isString()) {
-                    return compareString(op, target.getString(), value);
+            for (String condition : conditions) {
+                if (!evaluateSingleCondition(node, condition)) {
+                    return false;
                 }
+            }
+            return true;
+        }
+
+        private boolean evaluateSingleCondition(ONode node, String condition) {
+            // 特殊处理包含操作符
+            if (condition.contains(" contains ")) {
+                return evaluateContains(node, condition);
+            } else if (condition.contains(" in ")) {
+                return evaluateIn(node, condition, false);
+            } else if (condition.contains(" nin ")) {
+                return evaluateIn(node, condition, true);
+            }
+
+            Matcher matcher = CONDITION_PATTERN.matcher(condition);
+            if (!matcher.matches()) return false;
+
+            String keyPath = matcher.group("key");
+            String op = matcher.group("op");
+            String strValue = matcher.group("str");
+            String numValue = matcher.group("num");
+
+            // 获取目标节点
+            ONode target = resolveNestedPath(node, keyPath);
+            if (target == null) return false;
+
+            // 处理转义字符
+            String value = strValue != null ?
+                    strValue.replaceAll("\\\\(.)", "$1") :
+                    numValue;
+
+            // 类型判断逻辑
+            if (numValue != null) {
+                if (!target.isNumber()) return false;
+                return compareNumber(op, target.getDouble(), Double.parseDouble(numValue));
+            } else {
+                if (!target.isString()) return false;
+                return compareString(op, target.getString(), value);
+            }
+        }
+
+        // 新增 contains 操作符处理
+        private boolean evaluateContains(ONode node, String condition) {
+            String[] parts = condition.split("\\s+contains\\s+");
+            if (parts.length != 2) return false;
+
+            String keyPath = parts[0].replace("@.", "");
+            String expectedValue = parts[1].replaceAll("^'|'$", "");
+
+            ONode target = resolveNestedPath(node, keyPath);
+            if (target == null) return false;
+
+            // 处理数组包含
+            if (target.isArray()) {
+                return target.getArray().stream()
+                        .anyMatch(item -> item.isString() && item.getString().equals(expectedValue));
+            }
+            // 处理字符串包含
+            else if (target.isString()) {
+                return target.getString().contains(expectedValue);
             }
             return false;
         }
 
-        // 新增数值检查方法
-        private boolean isNumeric(String str) {
-            try {
-                Double.parseDouble(str);
-                return true;
-            } catch (NumberFormatException e) {
-                return false;
-            }
+        // 新增 in/nin 操作符处理
+        private boolean evaluateIn(ONode node, String condition, boolean negate) {
+            String[] parts = condition.split("\\s+(in|nin)\\s+");
+            if (parts.length != 2) return false;
+
+            String keyPath = parts[0].replace("@.", "");
+            String valuesStr = parts[1].replaceAll("^'|'$", "");
+            Set<String> expectedValues = Arrays.stream(valuesStr.split(","))
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+
+            ONode target = resolveNestedPath(node, keyPath);
+            if (target == null) return false;
+
+            // 获取目标值
+            String actualValue = target.isString() ?
+                    target.getString() :
+                    target.toJson();
+
+            return negate ^ expectedValues.contains(actualValue);
         }
+
+        // 正则表达式更新（支持更复杂的键路径和转义字符）
+        private static final Pattern CONDITION_PATTERN = Pattern.compile(
+                "^@?\\.?" +
+                        "(?<key>\\w+(?:\\.\\w+)*)" +  // 键路径（如 category 或 book.author）
+                        "\\s*" +
+                        "(?<op>==|!=|>=|<=|>|<|contains|in|nin)" +    // 操作符
+                        "\\s*" +
+                        "(?:" +
+                        "'(?<str>(?:\\\\.|[^'])*)'|" + // 字符串值（支持转义）
+                        "(?<num>[+-]?\\d+\\.?\\d*)" + // 数值
+                        ")" +
+                        "$"
+        );
 
         private ONode resolveNestedPath(ONode node, String keyPath) {
             String[] keys = keyPath.split("\\.");
