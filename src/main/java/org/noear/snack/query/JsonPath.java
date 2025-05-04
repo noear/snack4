@@ -329,16 +329,114 @@ public class JsonPath {
         }
 
         private boolean evaluateFilter(ONode node, String filter) {
-            // 分割多个条件（支持 && 操作符）
-            String[] conditions = filter.split("\\s*&&\\s*");
+            try {
+                List<Token> tokens = tokenize(filter);
+                List<Token> rpn = convertToRPN(tokens);
+                return evaluateRPN(node, rpn);
+            } catch (Exception e) {
+                return false;
+            }
+        }
 
-            for (String condition : conditions) {
-                if (!evaluateSingleCondition(node, condition)) {
-                    return false;
+        // 新增分词器
+        private List<Token> tokenize(String filter) {
+            List<Token> tokens = new ArrayList<>();
+            int index = 0;
+            int len = filter.length();
+            while (index < len) {
+                char c = filter.charAt(index);
+                if (Character.isWhitespace(c)) {
+                    index++;
+                    continue;
+                }
+                if (c == '(') {
+                    tokens.add(new Token(TokenType.LPAREN, "("));
+                    index++;
+                } else if (c == ')') {
+                    tokens.add(new Token(TokenType.RPAREN, ")"));
+                    index++;
+                } else if (c == '&' && index + 1 < len && filter.charAt(index + 1) == '&') {
+                    tokens.add(new Token(TokenType.AND, "&&"));
+                    index += 2;
+                } else if (c == '|' && index + 1 < len && filter.charAt(index + 1) == '|') {
+                    tokens.add(new Token(TokenType.OR, "||"));
+                    index += 2;
+                } else {
+                    int start = index;
+                    while (index < len) {
+                        char curr = filter.charAt(index);
+                        if (curr == '(' || curr == ')' || curr == '&' || curr == '|') {
+                            break;
+                        }
+                        if ((curr == '&' || curr == '|') && index + 1 < len && filter.charAt(index + 1) == curr) {
+                            break;
+                        }
+                        index++;
+                    }
+                    String atom = filter.substring(start, index).trim();
+                    if (!atom.isEmpty()) {
+                        tokens.add(new Token(TokenType.ATOM, atom));
+                    }
                 }
             }
-            return true;
+            return tokens;
         }
+
+        // 转换为逆波兰式
+        private List<Token> convertToRPN(List<Token> tokens) {
+            List<Token> output = new ArrayList<>();
+            Deque<Token> stack = new ArrayDeque<>();
+
+            for (Token token : tokens) {
+                switch (token.type) {
+                    case ATOM:
+                        output.add(token);
+                        break;
+                    case LPAREN:
+                        stack.push(token);
+                        break;
+                    case RPAREN:
+                        while (!stack.isEmpty() && stack.peek().type != TokenType.LPAREN) {
+                            output.add(stack.pop());
+                        }
+                        stack.pop();
+                        break;
+                    case AND:
+                    case OR:
+                        while (!stack.isEmpty() && stack.peek().type != TokenType.LPAREN &&
+                                precedence(token) <= precedence(stack.peek())) {
+                            output.add(stack.pop());
+                        }
+                        stack.push(token);
+                        break;
+                }
+            }
+
+            while (!stack.isEmpty()) {
+                output.add(stack.pop());
+            }
+            return output;
+        }
+
+        private int precedence(Token token) {
+            return token.type == TokenType.AND ? 2 : token.type == TokenType.OR ? 1 : 0;
+        }
+
+        // 评估逆波兰式
+        private boolean evaluateRPN(ONode node, List<Token> rpn) {
+            Deque<Boolean> stack = new ArrayDeque<>();
+            for (Token token : rpn) {
+                if (token.type == TokenType.ATOM) {
+                    stack.push(evaluateSingleCondition(node, token.value));
+                } else if (token.type == TokenType.AND || token.type == TokenType.OR) {
+                    boolean b = stack.pop();
+                    boolean a = stack.pop();
+                    stack.push(token.type == TokenType.AND ? a && b : a || b);
+                }
+            }
+            return stack.pop();
+        }
+
 
         private boolean evaluateSingleCondition(ONode node, String condition) {
             // 特殊处理包含操作符
@@ -440,15 +538,12 @@ public class JsonPath {
         // 正则表达式更新（支持更复杂的键路径和转义字符）
         private static final Pattern CONDITION_PATTERN = Pattern.compile(
                 "^@?\\.?" +
-                        "(?<key>\\w+(?:\\.\\w+)*)" +  // 键路径（如 category 或 book.author）
+                        "(?<key>[\\w\\.]+)" +  // 支持带点的键路径
                         "\\s*" +
-                        "(?<op>==|!=|>=|<=|>|<|contains|in|nin)" +    // 操作符
+                        "(?<op>==|!=|>=|<=|>|<|contains|in|nin)" +
                         "\\s*" +
-                        "(?:" +
-                        "'(?<str>(?:\\\\.|[^'])*)'|" + // 字符串值（支持转义）
-                        "(?<num>[+-]?\\d+\\.?\\d*)" + // 数值
-                        ")" +
-                        "$"
+                        "(?:'((?<str>.*?)(?<!\\\\))'|(?<num>[+-]?\\d+\\.?\\d*))" +
+                        "$", Pattern.CASE_INSENSITIVE
         );
 
         private ONode resolveNestedPath(ONode node, String keyPath) {
@@ -530,6 +625,19 @@ public class JsonPath {
             while (index < path.length() && Character.isWhitespace(path.charAt(index))) {
                 index++;
             }
+        }
+    }
+
+
+    private enum TokenType { ATOM, AND, OR, LPAREN, RPAREN }
+
+    private static class Token {
+        final TokenType type;
+        final String value;
+
+        Token(TokenType type, String value) {
+            this.type = type;
+            this.value = value;
         }
     }
 }
