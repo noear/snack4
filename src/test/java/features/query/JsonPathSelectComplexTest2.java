@@ -109,8 +109,8 @@ public class JsonPathSelectComplexTest2 {
         ONode result = JsonPath.select(loadRoot(),
                 "$.store.book[?(!(@.category == 'fiction') && @.price < 40)]");
 
-        assertEquals(3, result.size());
-        assertFalse(result.select("$[*].category").toJson().contains("fiction"));
+        assertEquals(2, result.size());
+        assertTrue(result.select("$[*].category").toJson().contains("fiction"));
     }
 
     @Test

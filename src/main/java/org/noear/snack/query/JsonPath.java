@@ -442,203 +442,35 @@ public class JsonPath {
 
 
         private boolean evaluateSingleCondition(ONode node, String condition) {
-            if(condition.startsWith("!")){
+            if (condition.startsWith("!")) {
                 //非运行
                 return !evaluateSingleCondition(node, condition.substring(1));
             }
 
-            // 特殊处理包含操作符
-            if (condition.contains(" contains ")) {
-                return evaluateContains(node, condition);
-            } else if (condition.contains(" in ")) {
-                return evaluateIn(node, condition, false);
-            } else if (condition.contains(" nin ")) {
-                return evaluateIn(node, condition, true);
-            } else {
-                return evaluateComparison(node, condition);
-            }
-        }
-
-        private boolean evaluateComparison(ONode node, String condition) {
             Matcher matcher = CONDITION_PATTERN.matcher(condition);
             if (!matcher.matches()) return false;
 
-            String keyPath = matcher.group("key");
-            String op = matcher.group("op");
-            String right = matcher.group("right");
-
-            // 处理存在性检查（如 @.price）
-            if (TextUtil.isEmpty(op) && TextUtil.isEmpty(right)) {
-                return resolveNestedPath(node, keyPath) != null;
-            }
-
-            // 获取目标节点
-            ONode target = resolveNestedPath(node, keyPath);
-            if (target == null) return false;
-
-            if ("=~".equals(op) && right != null) {
-                if (!target.isString()) return false;
-                return target.getString().matches(right.substring(1, right.length() - 1).replace("\\/", "/"));
-            }
+            Factor factor = new Factor();
+            factor.keyPath = matcher.group("key");
+            factor.op = matcher.group("op");
+            factor.right = matcher.group("right");
 
 
-            // 类型判断逻辑
-            if (right.startsWith("'")) {
-                if (!target.isString()) return false;
-                return compareString(op, target.getString(), right.substring(1, right.length() - 1));
-            } else {
-                if (!target.isNumber()) return false;
-                return compareNumber(op, target.getDouble(), Double.parseDouble(right));
-            }
+            return Operations.get(factor.op).apply(node, factor);
         }
 
-        // 新增 contains 操作符处理
-        private boolean evaluateContains(ONode node, String condition) {
-            String[] parts = condition.split("\\s+contains\\s+", 2);
-            if (parts.length != 2) return false;
-
-            String keyPath = parts[0].replace("@.", "").trim();
-            String expectedRaw = parts[1].replaceAll("^'|'$", "");
-            String expectedValue = expectedRaw.replace("\\'", "'");
-
-            ONode target = resolveNestedPath(node, keyPath);
-            if (target == null) return false;
-
-            // 支持多类型包含检查
-            if (target.isArray()) {
-                return target.getArray().stream()
-                        .anyMatch(item -> isValueMatch(item, expectedValue));
-            } else if (target.isString()) {
-                return target.getString().contains(expectedValue);
-            }
-            return false;
-        }
-
-        private boolean isValueMatch(ONode item, String expected) {
-            if(item.isArray()){
-                return item.getArray().stream().anyMatch(one -> isValueMatch(one, expected));
-            }
-
-            if (item.isString()) {
-                return item.getString().equals(expected);
-            } else if (item.isNumber()) {
-                try {
-                    double itemValue = item.getDouble();
-                    double expectedValue = Double.parseDouble(expected);
-                    return itemValue == expectedValue;
-                } catch (NumberFormatException e) {
-                    return false;
-                }
-            } else if (item.isBoolean()) {
-                Boolean itemBool = item.getBoolean();
-                if (expected.equalsIgnoreCase("true") || expected.equalsIgnoreCase("false")) {
-                    return itemBool == Boolean.parseBoolean(expected);
-                }
-                return false;
-            }
-            return false;
-        }
-
-        // 新增 in/nin 操作符处理
-        private boolean evaluateIn(ONode node, String condition, boolean negate) {
-            String[] parts = condition.split("\\s+(in|nin)\\s+", 2);
-            if (parts.length != 2) return false;
-
-            String keyPath = parts[0].replace("@.", "").trim();
-            String arrayContent = parts[1].trim();
-
-            // 处理数组的方括号
-            if (arrayContent.startsWith("[") && arrayContent.endsWith("]")) {
-                arrayContent = arrayContent.substring(1, arrayContent.length() - 1).trim();
-            }
-
-            List<String> expectedValues = new ArrayList<>();
-            if (!arrayContent.isEmpty()) {
-                // 正则表达式匹配元素（单引号字符串、数值、其他）
-                Pattern elementPattern = Pattern.compile("'((?:\\\\'|[^'])*)'|(-?\\d+\\.?\\d*)|([\\w-]+)");
-                Matcher matcher = elementPattern.matcher(arrayContent);
-                while (matcher.find()) {
-                    String element = matcher.group(0).trim();
-                    if (element.startsWith("'")) {
-                        // 处理单引号字符串，转义单引号
-                        element = element.substring(1, element.length() - 1).replace("\\'", "'");
-                    }
-                    expectedValues.add(element);
-                }
-            }
-
-            ONode target = resolveNestedPath(node, keyPath);
-            if (target == null) return false;
-
-            boolean found = expectedValues.stream().anyMatch(v -> isValueMatch(target, v));
-            return negate ? !found : found;
-        }
 
         // 正则表达式更新（支持更复杂的键路径和转义字符）
         private static final Pattern CONDITION_PATTERN = Pattern.compile(
                 "^@?\\.?" +
                         "(?<key>[\\w\\.\\[\\]]+)" +
                         "\\s*" +
-                        "(?<op>==|=~|!=|>=|<=|>|<|contains|in|nin|\\b)" +
+                        "(?<op>==|=~|!=|>=|<=|>|<|startsWith|endsWith|contains|in|\\b)" +
                         "\\s*" +
                         "(?<right>.*?)" +
                         "$", Pattern.CASE_INSENSITIVE
         );
 
-        private ONode resolveNestedPath(ONode node, String keyPath) {
-            String[] keys = keyPath.split("\\.|\\[");
-            ONode current = node;
-            for (String key : keys) {
-                if(key.endsWith("]")) {
-                    key = key.substring(0, key.length() - 1).trim();
-                }
-
-                if (current.isObject()) {
-                    current = current.get(key);
-                } else if (current.isArray()) {
-                    try {
-                        int index = Integer.parseInt(key);
-                        current = current.get(index);
-                    } catch (NumberFormatException e) {
-                        return null;
-                    }
-                } else {
-                    return null;
-                }
-                if (current == null) return null;
-            }
-            return current;
-        }
-
-        private boolean compareString(String op, String a, String b) {
-            switch (op) {
-                case "==":
-                    return a.equals(b);
-                case "!=":
-                    return !a.equals(b);
-                default:
-                    throw new PathResolutionException("Unsupported operator for string: " + op);
-            }
-        }
-
-        private boolean compareNumber(String op, double a, double b) {
-            switch (op) {
-                case "==":
-                    return a == b;
-                case "!=":
-                    return a != b;
-                case ">":
-                    return a > b;
-                case "<":
-                    return a < b;
-                case ">=":
-                    return a >= b;
-                case "<=":
-                    return a <= b;
-                default:
-                    throw new PathResolutionException("Unsupported operator for number: " + op);
-            }
-        }
 
         // 解析路径段（支持终止符列表）
         private String parseSegment(char... terminators) {
@@ -706,7 +538,7 @@ public class JsonPath {
     }
 
 
-    private enum TokenType { ATOM, AND, OR, LPAREN, RPAREN }
+    private enum TokenType {ATOM, AND, OR, LPAREN, RPAREN}
 
     private static class Token {
         final TokenType type;
@@ -716,5 +548,11 @@ public class JsonPath {
             this.type = type;
             this.value = value;
         }
+    }
+
+    public static class Factor {
+        public String keyPath;
+        public String op;
+        public String right;
     }
 }
