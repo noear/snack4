@@ -5,311 +5,294 @@ import org.noear.snack.core.JsonSource;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 /**
  * JSON路径查询工具类（带预解析优化）
  */
 public class JsonPath {
     /**
-     * 路径编译器（带缓存）
+     * 根据 jsonpath 查询
      */
-    private static final PathCompiler pathCompiler = new PathCompiler();
-
     public static ONode select(ONode root, String path) {
-        List<PathSegment> segments = pathCompiler.compile(path);
-        return new PathProcessor(segments).processSelect(root);
+        if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
+        return new PathParser(path).select(root);
     }
 
+    /**
+     * 根据 jsonpath 删除
+     */
     public static void delete(ONode root, String path) {
-        List<PathSegment> segments = pathCompiler.compile(path);
-        new PathProcessor(segments).processDelete(root);
+        if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
+        new PathParser(path).delete(root);
     }
 
+    /**
+     * 根据 jsonpath 生成
+     */
     public static void create(ONode root, String path) {
-        List<PathSegment> segments = pathCompiler.compile(path);
-        new PathProcessor(segments).processCreate(root);
+        if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
+        new PathParser(path).create(root);
     }
 
-    /**
-     * 路径片段定义
-     */
-    static class PathSegment {
-        enum Type {ROOT, RECURSIVE, PROPERTY, WILDCARD, INDEX, FILTER, FUNCTION}
-
-        final Type type;
-        final String value;
-        final Predicate<ONode> filter;
-        final int index;
-
-        PathSegment(Type type) {
-            this(type, null, null, -1);
-        }
-
-        PathSegment(Type type, String value) {
-            this(type, value, null, -1);
-        }
-
-        PathSegment(Predicate<ONode> filter) {
-            this(Type.FILTER, null, filter, -1);
-        }
-
-        PathSegment(int index) {
-            this(Type.INDEX, null, null, index);
-        }
-
-        private PathSegment(Type type, String value, Predicate<ONode> filter, int index) {
-            this.type = type;
-            this.value = value;
-            this.filter = filter;
-            this.index = index;
-        }
-    }
-
-    /**
-     * 路径编译器
-     */
-    static class PathCompiler {
-        private static final int MAX_CACHE_SIZE = 1024;
-        private final Map<String, List<PathSegment>> cache = new LinkedHashMap<String, List<PathSegment>>() {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry eldest) {
-                return size() > MAX_CACHE_SIZE;
-            }
-        };
-
-        public List<PathSegment> compile(String path) {
-            return cache.computeIfAbsent(path, k -> doCompile(k));
-        }
-
-        private List<PathSegment> doCompile(String path) {
-            List<PathSegment> segments = new ArrayList<>();
-            ParserContext ctx = new ParserContext(path);
-
-            if (ctx.current() != '$') {
-                throw new PathResolutionException("Path must start with $");
-            }
-            segments.add(new PathSegment(PathSegment.Type.ROOT));
-            ctx.consume();
-
-            while (ctx.hasNext()) {
-                ctx.skipSpaces();
-                char c = ctx.current();
-
-                if (c == '.') {
-                    parseDot(ctx, segments);
-                } else if (c == '[') {
-                    parseBracket(ctx, segments);
-                } else {
-                    throw new PathResolutionException("Unexpected char '" + c + "' at " + ctx.pos());
-                }
-            }
-
-            return segments;
-        }
-
-        private void parseDot(ParserContext ctx, List<PathSegment> segs) {
-            ctx.consume(); // 跳过 .
-            if (ctx.current() == '.') { // 递归 ..
-                ctx.consume();
-                segs.add(new PathSegment(PathSegment.Type.RECURSIVE));
-                ctx.skipSpaces();
-                if (ctx.current() != '[' && ctx.current() != '.') {
-                    parseProperty(ctx, segs);
-                }
-            } else { // 普通属性
-                parseProperty(ctx, segs);
-            }
-        }
-
-        private void parseProperty(ParserContext ctx, List<PathSegment> segs) {
-            StringBuilder sb = new StringBuilder();
-            while (ctx.hasNext()) {
-                char c = ctx.current();
-                if (c == '.' || c == '[' || Character.isWhitespace(c)) break;
-                sb.append(c);
-                ctx.consume();
-            }
-            String prop = sb.toString().trim();
-            if (prop.endsWith("()")) { // 函数
-                segs.add(new PathSegment(PathSegment.Type.FUNCTION, prop.substring(0, prop.length() - 2)));
-            } else {
-                segs.add(new PathSegment(PathSegment.Type.PROPERTY, prop));
-            }
-        }
-
-        private void parseBracket(ParserContext ctx, List<PathSegment> segs) {
-            ctx.consume(); // 跳过 [
-            ctx.skipSpaces();
-            char c = ctx.current();
-
-            if (c == '*') { // 通配符
-                ctx.consume();
-                segs.add(new PathSegment(PathSegment.Type.WILDCARD));
-            } else if (c == '?') { // 过滤器
-                String filterExpr = parseFilter(ctx);
-                segs.add(new PathSegment(compileFilter(filterExpr)));
-            } else if (Character.isDigit(c) || c == '-') { // 索引
-                int index = parseIndex(ctx);
-                segs.add(new PathSegment(index));
-            }
-            ctx.skipUntil(']');
-            ctx.consume(); // 跳过 ]
-        }
-
-        private String parseFilter(ParserContext ctx) {
-            ctx.consume(); // 跳过 ?
-            ctx.skipSpaces();
-            StringBuilder sb = new StringBuilder();
-            while (ctx.hasNext() && ctx.current() != ']') {
-                sb.append(ctx.current());
-                ctx.consume();
-            }
-            return sb.toString().trim();
-        }
-
-        private int parseIndex(ParserContext ctx) {
-            StringBuilder sb = new StringBuilder();
-            while (ctx.hasNext() && (Character.isDigit(ctx.current()) || ctx.current() == '-')) {
-                sb.append(ctx.current());
-                ctx.consume();
-            }
-            return Integer.parseInt(sb.toString());
-        }
-
-        private Predicate<ONode> compileFilter(String expr) {
-            // 示例：实现等于比较
-            Matcher matcher = Pattern.compile("@\\.?(\\w+)\\s*==\\s*'?(.*?)'?").matcher(expr);
-            if (matcher.find()) {
-                String key = matcher.group(1);
-                String value = matcher.group(2).replace("'", "");
-                return node -> {
-                    ONode target = node.get(key);
-                    return target != null && target.getString().equals(value);
-                };
-            }
-            return node -> false;
-        }
-    }
-
-    /**
-     * 路径处理器
-     */
-    static class PathProcessor {
-        private final List<PathSegment> segments;
+    private static class PathParser {
+        private final String path;
+        private int index;
         private boolean isCreateMode;
         private boolean isDeleteMode;
 
-        PathProcessor(List<PathSegment> segments) {
-            this.segments = segments;
+        PathParser(String path) {
+            this.path = path;
+            this.index = 0; // 起始位置为 $ 符号
         }
 
-        ONode processSelect(ONode root) {
-            List<ONode> current = Collections.singletonList(root);
-            for (PathSegment seg : segments.subList(1, segments.size())) {
-                current = processSegment(current, seg);
-                if (current.isEmpty()) break;
+        // 主解析逻辑
+        ONode select(ONode root) {
+            List<ONode> currentNodes = Collections.singletonList(root);
+            index++;
+
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+
+                char ch = path.charAt(index);
+                if (ch == '.') {
+                    currentNodes = handleDot(currentNodes);
+                } else if (ch == '[') {
+                    currentNodes = handleBracket(currentNodes);
+                } else {
+                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
+                }
             }
-            return buildResult(current);
+
+            if ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0) || path.indexOf("()") > 0) {
+                if (currentNodes.size() > 0) {
+                    return currentNodes.get(0);
+                } else {
+                    return new ONode();
+                }
+            } else {
+                return new ONode(currentNodes);
+            }
         }
 
-        void processDelete(ONode root) {
+        // 删除节点
+        void delete(ONode root) {
             isDeleteMode = true;
-            List<ONode> current = Collections.singletonList(root);
-            for (int i = 1; i < segments.size() - 1; i++) {
-                current = processSegment(current, segments.get(i));
+            List<ONode> currentNodes = Collections.singletonList(root);
+            index++;
+
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+
+                char ch = path.charAt(index);
+                if (ch == '.') {
+                    currentNodes = handleDot(currentNodes);
+                } else if (ch == '[') {
+                    currentNodes = handleBracket(currentNodes);
+                } else {
+                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
+                }
             }
-            deleteNodes(processSegment(current, segments.get(segments.size() - 1)));
+
+            if (currentNodes.size() == 1) {
+                for (ONode n : currentNodes) {
+                    if (n.source != null) {
+                        if (n.source.key != null) {
+                            if ("*".equals(n.source.key)) {
+                                n.source.parent.clear();
+                            } else {
+                                n.source.parent.remove(n.source.key);
+                            }
+                        } else {
+                            n.source.parent.remove(n.source.index);
+                        }
+                    }
+                }
+            }
         }
 
-        void processCreate(ONode root) {
+        // 创建节点
+        void create(ONode root) {
             isCreateMode = true;
-            List<ONode> current = Collections.singletonList(root);
-            for (int i = 1; i < segments.size(); i++) {
-                current = processSegment(current, segments.get(i));
+            List<ONode> currentNodes = Collections.singletonList(root);
+            index++;
+
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+
+                char ch = path.charAt(index);
+                if (ch == '.') {
+                    currentNodes = handleDot(currentNodes);
+                } else if (ch == '[') {
+                    currentNodes = handleBracket(currentNodes);
+                } else {
+                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
+                }
+            }
+
+            if (currentNodes.size() == 1) {
+                ONode node = currentNodes.get(0);
+                if (node.isObject()) {
+                    node.set(path.substring(path.lastIndexOf('.') + 1), new ONode());
+                } else if (node.isArray()) {
+                    node.add(new ONode());
+                }
             }
         }
 
-        private List<ONode> processSegment(List<ONode> nodes, PathSegment seg) {
-            switch (seg.type) {
-                case PROPERTY:
-                    return resolveProperty(nodes, seg.value);
-                case RECURSIVE:
-                    return resolveRecursive(nodes);
-                case WILDCARD:
-                    return resolveWildcard(nodes);
-                case FILTER:
-                    return resolveFilter(nodes, seg.filter);
-                case INDEX:
-                    return resolveIndex(nodes, seg.index);
-                case FUNCTION:
-                    return resolveFunction(nodes, seg.value);
-                default:
-                    return Collections.emptyList();
+        // 处理 '.' 或 '..'，返回新的节点集合
+        private List<ONode> handleDot(List<ONode> currentNodes) {
+            index++;
+            if (index < path.length() && path.charAt(index) == '.') {
+                index++;
+                currentNodes = resolveRecursive(currentNodes);
+                if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
+                    currentNodes = resolveKey(currentNodes, false);
+                }
+            } else {
+                currentNodes = resolveKey(currentNodes, false);
+            }
+            return currentNodes;
+        }
+
+        // 处理 '[...]'
+        private List<ONode> handleBracket(List<ONode> nodes) {
+            index++; // 跳过'['
+            String segment = parseSegment(']');
+            while (index < path.length() && path.charAt(index) == ']') {
+                index++;
+            }
+            if (segment.equals("*")) {
+                return resolveWildcard(nodes);
+            } else if (segment.startsWith("?")) {
+                return resolveFilter(nodes, segment.substring(2, segment.length() - 1));
+            } else {
+                return resolveIndex(nodes, segment);
             }
         }
 
-        // 处理属性访问
-        private List<ONode> resolveProperty(List<ONode> nodes, String prop) {
+        // 解析键名或函数调用（如 "store" 或 "count()"）
+        private List<ONode> resolveKey(List<ONode> nodes, boolean strict) {
+            String key = parseSegment('.', '[');
+            if (key.endsWith("()")) {
+                String funcName = key.substring(0, key.length() - 2);
+                return Collections.singletonList(
+                        Functions.get(funcName).apply(nodes) // 传入节点列表
+                );
+            }
             return nodes.stream()
-                    .map(node -> getChild(node, prop))
-                    .flatMap(List::stream)
+                    .map(n -> getChild(n, key, strict))
+                    .flatMap(Collection::stream)
                     .collect(Collectors.toList());
         }
 
-        private List<ONode> getChild(ONode node, String key) {
+        private List<ONode> getChild(ONode node, String key, boolean strict) {
             if (isCreateMode) {
-                if (!node.isObject()) node.newObject();
-                if (!node.hasKey(key)) node.set(key, new ONode());
+                node.newObject();
             }
 
-            ONode child = node.get(key);
-            if (child == null) {
-                return Collections.emptyList();
+            if (node.isObject()) {
+                ONode child = node.get(key);
+                if (child == null) {
+                    if (isCreateMode) {
+                        child = new ONode();
+                        node.set(key, child);
+                    } else if (strict) {
+                        throw new PathResolutionException("Missing key '" + key + "'");
+                    }
+                } else {
+                    child.source = new JsonSource(node, key, 0);
+                }
+                return child != null ? Collections.singletonList(child) : Collections.emptyList();
             }
-            if (isDeleteMode) {
-                child.source = new JsonSource(node, key, -1);
-            }
-            return Collections.singletonList(child);
+            return Collections.emptyList(); // 非对象节点直接跳过
         }
 
-        // 处理通配符
+        // 处理通配符 *
         private List<ONode> resolveWildcard(List<ONode> nodes) {
             return nodes.stream()
-                    .flatMap(node -> {
-                        if (node.isArray()) return node.getArray().stream();
-                        if (node.isObject()) return node.getObject().values().stream();
-                        return Stream.empty();
-                    })
-                    .peek(child -> {
-                        if (isDeleteMode) child.source = new JsonSource(null, "*", -1);
-                    })
-                    .collect(Collectors.toList());
-        }
+                    .map(n -> {
+                        List<ONode> childs;
+                        if (n.isArray()) childs = n.getArray();
+                        else if (n.isObject()) childs = new ArrayList<>(n.getObject().values());
+                        else childs = Collections.<ONode>emptyList();
 
-        // 处理索引
-        private List<ONode> resolveIndex(List<ONode> nodes, int index) {
-            return nodes.stream()
-                    .filter(ONode::isArray)
-                    .map(arr -> {
-                        if (isCreateMode) {
-                            while (arr.size() <= index) arr.add(new ONode());
+                        if (isDeleteMode) {
+                            JsonSource source = new JsonSource(n, "*", 0);
+                            for (ONode child : childs) {
+                                child.source = source;
+                            }
                         }
-                        int idx = index >= 0 ? index : arr.size() + index;
-                        return arr.get(idx);
+
+                        return childs;
+
+                    })
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+        }
+
+        // 处理精确索引（支持负数）
+        private List<ONode> resolveIndex(List<ONode> nodes, String indexStr) {
+            return nodes.stream()
+                    .filter(o -> {
+                        if (isCreateMode) {
+                            o.newArray();
+                            return true;
+                        } else {
+                            return o.isArray();
+                        }
+                    })
+                    .map(arr -> {
+                        int idx = Integer.parseInt(indexStr);
+
+                        if (isCreateMode) {
+                            //0 算1个，-1 算1个（至少算1个）
+                            int count = Math.max(Math.abs(idx), 1) - arr.size();
+                            for (int i = 0; i < count; i++) {
+                                arr.add(new ONode());
+                            }
+                        } else {
+                            if (idx < 0) idx += arr.size();
+                            if (idx < 0 || idx >= arr.size()) {
+                                throw new PathResolutionException("Index out of bounds: " + idx);
+                            }
+                        }
+                        ONode rst = arr.get(idx);
+                        rst.source = new JsonSource(arr, null, idx);
+
+                        return rst;
                     })
                     .collect(Collectors.toList());
         }
 
-        // 处理递归搜索
+        // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes) {
-            List<ONode> results = new ArrayList<>();
-            nodes.forEach(node -> collectRecursive(node, results));
+            List<ONode> tmp = new ArrayList<>();
+            nodes.forEach(node -> collectRecursive(node, tmp));
+
+            List<ONode> results = tmp;
+
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+                char ch = path.charAt(index);
+                if (ch == '.' || ch == '[') {
+                    if (ch == '.') {
+                        results = handleDot(results);
+                    } else if (ch == '[') {
+                        results = handleBracket(results);
+                    }
+                } else {
+                    break;
+                }
+            }
             return results;
         }
 
@@ -322,84 +305,232 @@ public class JsonPath {
             results.add(node);
         }
 
-        // 处理过滤器
-        private List<ONode> resolveFilter(List<ONode> nodes, Predicate<ONode> filter) {
+        // 处理过滤器（如 [?(@.price > 10)]）
+        private List<ONode> resolveFilter(List<ONode> nodes, String filter) {
             return nodes.stream()
-                    .flatMap(n -> flatten(n))
-                    .filter(filter)
+                    .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
+                    .filter(n -> {
+                        try {
+                            return evaluateFilter(n, filter);
+                        } catch (Exception e) {
+                            return false;
+                        }
+                    })
                     .collect(Collectors.toList());
         }
 
-        private Stream<ONode> flatten(ONode node) {
+        // 新增递归展开方法
+        private Stream<ONode> flattenNode(ONode node) {
             if (node.isArray()) {
-                return node.getArray().stream().flatMap(this::flatten);
+                return node.getArray().stream()
+                        .flatMap(this::flattenNode)
+                        .filter(n -> !n.isNull());
             }
             return Stream.of(node);
         }
 
-        // 处理函数
-        private List<ONode> resolveFunction(List<ONode> nodes, String func) {
-            Function<List<ONode>, ONode> fn = Functions.get(func);
-            return Collections.singletonList(fn.apply(nodes));
-        }
+        private boolean evaluateFilter(ONode node, String filter) {
+            // 分割多个条件（支持 && 操作符）
+            String[] conditions = filter.split("\\s*&&\\s*");
 
-        // 构建结果
-        private ONode buildResult(List<ONode> nodes) {
-            if (nodes.isEmpty()) return new ONode();
-            if (nodes.size() == 1) return nodes.get(0);
-            return new ONode(nodes);
-        }
-
-        // 删除节点
-        private void deleteNodes(List<ONode> nodes) {
-            nodes.forEach(node -> {
-                if (node.source != null) {
-                    if (node.source.parent != null) {
-                        if (node.source.key != null) {
-                            node.source.parent.remove(node.source.key);
-                        } else if (node.source.index >= 0) {
-                            node.source.parent.remove(node.source.index);
-                        }
-                    }
+            for (String condition : conditions) {
+                if (!evaluateSingleCondition(node, condition)) {
+                    return false;
                 }
-            });
-        }
-    }
-
-    /**
-     * 解析上下文辅助类
-     */
-    static class ParserContext {
-        private final String input;
-        private int pos;
-
-        ParserContext(String input) {
-            this.input = input;
-            this.pos = 0;
+            }
+            return true;
         }
 
-        char current() {
-            return pos < input.length() ? input.charAt(pos) : 0;
+        private boolean evaluateSingleCondition(ONode node, String condition) {
+            // 特殊处理包含操作符
+            if (condition.contains(" contains ")) {
+                return evaluateContains(node, condition);
+            } else if (condition.contains(" in ")) {
+                return evaluateIn(node, condition, false);
+            } else if (condition.contains(" nin ")) {
+                return evaluateIn(node, condition, true);
+            } else {
+                return evaluateComparison(node, condition);
+            }
         }
 
-        boolean hasNext() {
-            return pos < input.length();
+        private boolean evaluateComparison(ONode node, String condition){
+            Matcher matcher = CONDITION_PATTERN.matcher(condition);
+            if (!matcher.matches()) return false;
+
+            String keyPath = matcher.group("key");
+            String op = matcher.group("op");
+            String strValue = matcher.group("str");
+            String numValue = matcher.group("num");
+
+            // 获取目标节点
+            ONode target = resolveNestedPath(node, keyPath);
+            if (target == null) return false;
+
+            // 处理转义字符
+            String value = strValue != null ?
+                    strValue.replaceAll("\\\\(.)", "$1") :
+                    numValue;
+
+            // 类型判断逻辑
+            if (numValue != null) {
+                if (!target.isNumber()) return false;
+                return compareNumber(op, target.getDouble(), Double.parseDouble(numValue));
+            } else {
+                if (!target.isString()) return false;
+                return compareString(op, target.getString(), value);
+            }
         }
 
-        void consume() {
-            pos++;
+        // 新增 contains 操作符处理
+        private boolean evaluateContains(ONode node, String condition) {
+            String[] parts = condition.split("\\s+contains\\s+", 2);
+            if (parts.length != 2) return false;
+
+            String keyPath = parts[0].replace("@.", "").trim();
+            String expectedRaw = parts[1].replaceAll("^'|'$", "");
+            String expectedValue = expectedRaw.replace("\\'", "'");
+
+            ONode target = resolveNestedPath(node, keyPath);
+            if (target == null) return false;
+
+            // 支持多类型包含检查
+            if (target.isArray()) {
+                return target.getArray().stream()
+                        .anyMatch(item -> isValueMatch(item, expectedValue));
+            } else if (target.isString()) {
+                return target.getString().contains(expectedValue);
+            }
+            return false;
         }
 
-        int pos() {
-            return pos;
+        private boolean isValueMatch(ONode item, String expected) {
+            if (item.isString()) {
+                return item.getString().equals(expected);
+            } else if (item.isNumber()) {
+                try {
+                    return item.getDouble() == Double.parseDouble(expected);
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            } else if (item.isBoolean()) {
+                return item.getBoolean() == Boolean.parseBoolean(expected);
+            }
+            return false;
         }
 
-        void skipSpaces() {
-            while (hasNext() && Character.isWhitespace(current())) consume();
+        // 新增 in/nin 操作符处理
+        private boolean evaluateIn(ONode node, String condition, boolean negate) {
+            String[] parts = condition.split("\\s+(in|nin)\\s+", 2);
+            if (parts.length != 2) return false;
+
+            String keyPath = parts[0].replace("@.", "").trim();
+            String valuesStr = parts[1].replaceAll("^'|'$", "");
+            List<String> expectedValues = Arrays.stream(valuesStr.split(","))
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+
+            ONode target = resolveNestedPath(node, keyPath);
+            if (target == null) return false;
+
+            // 自动类型转换比较
+            return negate ^ expectedValues.stream()
+                    .anyMatch(v -> isValueMatch(target, v));
         }
 
-        void skipUntil(char end) {
-            while (hasNext() && current() != end) consume();
+        // 正则表达式更新（支持更复杂的键路径和转义字符）
+        private static final Pattern CONDITION_PATTERN = Pattern.compile(
+                "^@?\\.?" +
+                        "(?<key>\\w+(?:\\.\\w+)*)" +  // 键路径（如 category 或 book.author）
+                        "\\s*" +
+                        "(?<op>==|!=|>=|<=|>|<|contains|in|nin)" +    // 操作符
+                        "\\s*" +
+                        "(?:" +
+                        "'(?<str>(?:\\\\.|[^'])*)'|" + // 字符串值（支持转义）
+                        "(?<num>[+-]?\\d+\\.?\\d*)" + // 数值
+                        ")" +
+                        "$"
+        );
+
+        private ONode resolveNestedPath(ONode node, String keyPath) {
+            String[] keys = keyPath.split("\\.");
+            ONode current = node;
+            for (String key : keys) {
+                if (current.isObject()) {
+                    current = current.get(key);
+                } else if (current.isArray()) {
+                    try {
+                        int index = Integer.parseInt(key);
+                        current = current.get(index);
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+                if (current == null) return null;
+            }
+            return current;
+        }
+
+        private boolean compareString(String op, String a, String b) {
+            switch (op) {
+                case "==":
+                    return a.equals(b);
+                case "!=":
+                    return !a.equals(b);
+                default:
+                    throw new PathResolutionException("Unsupported operator for string: " + op);
+            }
+        }
+
+        private boolean compareNumber(String op, double a, double b) {
+            switch (op) {
+                case "==":
+                    return a == b;
+                case "!=":
+                    return a != b;
+                case ">":
+                    return a > b;
+                case "<":
+                    return a < b;
+                case ">=":
+                    return a >= b;
+                case "<=":
+                    return a <= b;
+                default:
+                    throw new PathResolutionException("Unsupported operator for number: " + op);
+            }
+        }
+
+        // 解析路径段（支持终止符列表）
+        private String parseSegment(char... terminators) {
+            StringBuilder sb = new StringBuilder();
+            while (index < path.length()) {
+                char ch = path.charAt(index);
+                if (ch == ']') {
+                    index++; // 强制跳过闭合的 ]
+                    break;
+                }
+                if (isTerminator(ch, terminators)) break;
+                sb.append(ch);
+                index++;
+            }
+            return sb.toString().trim();
+        }
+
+        private boolean isTerminator(char ch, char[] terminators) {
+            for (char t : terminators) {
+                if (ch == t) return true;
+            }
+            return false;
+        }
+
+        // 跳过空白字符
+        private void skipWhitespace() {
+            while (index < path.length() && Character.isWhitespace(path.charAt(index))) {
+                index++;
+            }
         }
     }
 }
