@@ -10,6 +10,8 @@ import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 /**
+ * 函数处理库
+ *
  * @author noear 2025/3/17 created
  */
 public class Functions {

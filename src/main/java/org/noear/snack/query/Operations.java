@@ -14,6 +14,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * 操作符处理库
+ *
  * @author noear 2025/5/5 created
  */
 public class Operations {
