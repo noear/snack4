@@ -515,6 +515,10 @@ public class JsonPath {
         }
 
         private boolean isValueMatch(ONode item, String expected) {
+            if(item.isArray()){
+                return item.getArray().stream().anyMatch(one -> isValueMatch(one, expected));
+            }
+
             if (item.isString()) {
                 return item.getString().equals(expected);
             } else if (item.isNumber()) {
@@ -573,7 +577,7 @@ public class JsonPath {
         // 正则表达式更新（支持更复杂的键路径和转义字符）
         private static final Pattern CONDITION_PATTERN = Pattern.compile(
                 "^@?\\.?" +
-                        "(?<key>[\\w\\.]+)" +
+                        "(?<key>[\\w\\.\\[\\]]+)" +
                         "\\s*" +
                         "(?<op>==|=~|!=|>=|<=|>|<|contains|in|nin|\\b)" +
                         "\\s*" +
@@ -582,9 +586,13 @@ public class JsonPath {
         );
 
         private ONode resolveNestedPath(ONode node, String keyPath) {
-            String[] keys = keyPath.split("\\.");
+            String[] keys = keyPath.split("\\.|\\[");
             ONode current = node;
             for (String key : keys) {
+                if(key.endsWith("]")) {
+                    key = key.substring(0, key.length() - 1).trim();
+                }
+
                 if (current.isObject()) {
                     current = current.get(key);
                 } else if (current.isArray()) {
@@ -636,6 +644,7 @@ public class JsonPath {
         private String parseSegment(char... terminators) {
             StringBuilder sb = new StringBuilder();
             boolean inRegex = false; // 标记是否正在解析正则表达式
+            boolean inBracket = false;
 
             while (index < path.length()) {
                 char ch = path.charAt(index);
@@ -653,12 +662,25 @@ public class JsonPath {
                     continue;
                 }
 
+                // 处理[]内嵌表达式结束
+                if (ch == ']' && inBracket) {
+                    inBracket = false;
+                    sb.append(ch);
+                    index++;
+                    continue;
+                }
+
                 // 如果在正则表达式内部，忽略终止符检查
-                if (!inRegex && isTerminator(ch, terminators)) {
+                if (!inBracket && !inRegex && isTerminator(ch, terminators)) {
                     if (ch == ']') {
                         index++; // 跳过闭合的 ]
                     }
                     break;
+                }
+
+                // 处理[]内嵌表达式开始
+                if (ch == '[' && !inBracket) {
+                    inBracket = true;
                 }
 
                 sb.append(ch);

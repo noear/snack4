@@ -176,8 +176,8 @@ public class JsonPathSelectComplexTest2 {
         ONode result = JsonPath.select(loadRoot(),
                 "$.store.book[?(@.tags[0] in ['programming','fantasy'] && @.tags[1] != 'java')]");
 
-        assertEquals(2, result.size());
-        assertArrayEquals(new String[]{"Book C", "Book B"},
+        assertEquals(1, result.size());
+        assertArrayEquals(new String[]{"Book C"},
                 result.select("$[*].title").toBean(String[].class));
     }
 
