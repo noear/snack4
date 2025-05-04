@@ -172,7 +172,7 @@ public class JsonPath {
             if (segment.equals("*")) {
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
-                return resolveFilter(nodes, segment.substring(2, segment.length() - 1));
+                return resolveFilter(nodes, segment.substring(1));
             } else {
                 return resolveIndex(nodes, segment);
             }
@@ -440,6 +440,11 @@ public class JsonPath {
 
 
         private boolean evaluateSingleCondition(ONode node, String condition) {
+            if(condition.startsWith("!")){
+                //非运行
+                return !evaluateSingleCondition(node, condition.substring(1));
+            }
+
             // 特殊处理包含操作符
             if (condition.contains(" contains ")) {
                 return evaluateContains(node, condition);
@@ -546,7 +551,7 @@ public class JsonPath {
                 "^@?\\.?" +
                         "(?<key>[\\w\\.]+)" +  // 支持带点的键路径
                         "\\s*" +
-                        "(?<op>==|!=|>=|<=|>|<|contains|in|nin|\\b)" + // 允许空操作符（存在性检查）
+                        "(?<op>==|=~|!=|>=|<=|>|<|contains|in|nin|\\b)" + // 允许空操作符（存在性检查）
                         "\\s*" +
                         "(?:'((?<str>.*?)(?<!\\\\))'|(?<num>[+-]?\\d+\\.?\\d*))?" + // 允许无值
                         "$", Pattern.CASE_INSENSITIVE
