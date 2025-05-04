@@ -53,9 +53,7 @@ public class Functions {
 
     static ONode sum(List<ONode> nodes) {
         DoubleStream stream = nodes.stream()
-                .flatMap(n -> n.isArray() ?
-                        n.getArray().stream() :
-                        Stream.of(n))
+                .flatMap(n -> flatten(n)) // 使用统一的展开方法
                 .filter(ONode::isNumber)
                 .mapToDouble(ONode::getDouble);
 
@@ -140,6 +138,14 @@ public class Functions {
     }
 
     /// ///////////////// 工具方法 //////////////////
+
+    private static Stream<ONode> flatten(ONode node) {
+        if (node.isArray()) {
+            return node.getArray().stream().flatMap(Functions::flatten);
+        } else {
+            return Stream.of(node);
+        }
+    }
 
     private static DoubleStream collectNumbers(List<ONode> nodes) {
         return nodes.stream()

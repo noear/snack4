@@ -6,6 +6,7 @@ import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * JSON路径查询工具类
@@ -296,37 +297,59 @@ public class JsonPath {
         // 处理过滤器（如 [?(@.price > 10)]）
         private List<ONode> resolveFilter(List<ONode> nodes, String filter) {
             return nodes.stream()
+                    .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
                     .filter(n -> {
                         try {
                             return evaluateFilter(n, filter);
                         } catch (Exception e) {
-                            return false; // 静默跳过异常
+                            return false;
                         }
                     })
                     .collect(Collectors.toList());
         }
 
+        // 新增递归展开方法
+        private Stream<ONode> flattenNode(ONode node) {
+            if (node.isArray()) {
+                return node.getArray().stream().flatMap(this::flattenNode);
+            } else {
+                return Stream.of(node);
+            }
+        }
+
         private boolean evaluateFilter(ONode node, String filter) {
             if (filter.startsWith("@.")) {
-                String[] parts = filter.substring(2).split("\\s+", 2);
-                String keyPath = parts[0];
-                if (parts.length == 1) {
-                    return resolveNestedPath(node, keyPath) != null;
-                }
-                String opValue = parts[1];
-                String[] opParts = opValue.split("\\s+", 2);
-                if (opParts.length < 2) return false;
-                String op = opParts[0];
-                String value = opParts[1].replaceAll("['\"]", "");
+                String expr = filter.substring(2).trim();
+
+                // 支持更复杂的表达式解析
+                String[] parts = expr.split("\\s*(==|!=|>=|<=|>|<)\\s*", 2);
+                if (parts.length != 2) return false;
+
+                String keyPath = parts[0].trim();
+                String op = expr.substring(parts[0].length(), expr.length() - parts[1].length()).trim();
+                String value = parts[1].replaceAll("['\"]", "").trim();
+
                 ONode target = resolveNestedPath(node, keyPath);
                 if (target == null) return false;
-                if (target.isNumber()) {
+
+                // 增强类型处理
+                if (target.isNumber() && isNumeric(value)) {
                     return compareNumber(op, target.getDouble(), Double.parseDouble(value));
                 } else if (target.isString()) {
                     return compareString(op, target.getString(), value);
                 }
             }
             return false;
+        }
+
+        // 新增数值检查方法
+        private boolean isNumeric(String str) {
+            try {
+                Double.parseDouble(str);
+                return true;
+            } catch (NumberFormatException e) {
+                return false;
+            }
         }
 
         private ONode resolveNestedPath(ONode node, String keyPath) {

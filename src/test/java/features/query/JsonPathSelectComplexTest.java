@@ -88,6 +88,19 @@ public class JsonPathSelectComplexTest {
     }
 
     @Test
+    public void testRecursiveSearchWithFilter1() {
+        // 测试数据
+        String JSON = "{\"store\":{\"book\":[{\"price\":8},{\"price\":12},{\"price\":15}]}}";
+
+        ONode root = ONode.loadJson(JSON);
+        ONode result = JsonPath.select(root, "$..book[?(@.price > 10)]");
+
+        assertNotNull(result);
+        assertTrue(result.isArray());
+        assertEquals(2, result.size()); // 现在应该正确返回两个元素
+    }
+
+    @Test
     public void testRecursiveSearchWithFilter2() {
         ONode root = ONode.loadJson(JSON);
         ONode result = JsonPath.select(root, "$..book[?(@.price < 10)]");
