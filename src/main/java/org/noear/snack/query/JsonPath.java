@@ -459,18 +459,16 @@ public class JsonPath {
             }
         }
 
-        private boolean evaluateComparison(ONode node, String condition){
+        private boolean evaluateComparison(ONode node, String condition) {
             Matcher matcher = CONDITION_PATTERN.matcher(condition);
             if (!matcher.matches()) return false;
 
             String keyPath = matcher.group("key");
             String op = matcher.group("op");
-            String regex = matcher.group("regex");
-            String strValue = matcher.group("str");
-            String numValue = matcher.group("num");
+            String right = matcher.group("right");
 
             // 处理存在性检查（如 @.price）
-            if (TextUtil.isEmpty(op) && strValue == null && numValue == null) {
+            if (TextUtil.isEmpty(op) && TextUtil.isEmpty(right)) {
                 return resolveNestedPath(node, keyPath) != null;
             }
 
@@ -478,23 +476,19 @@ public class JsonPath {
             ONode target = resolveNestedPath(node, keyPath);
             if (target == null) return false;
 
-            if ("=~".equals(op) && regex != null) {
+            if ("=~".equals(op) && right != null) {
                 if (!target.isString()) return false;
-                return target.getString().matches(regex.replace("\\/", "/"));
+                return target.getString().matches(right.substring(1, right.length() - 1).replace("\\/", "/"));
             }
 
-            // 处理转义字符
-            String value = strValue != null ?
-                    strValue.replaceAll("\\\\(.)", "$1") :
-                    numValue;
 
             // 类型判断逻辑
-            if (numValue != null) {
-                if (!target.isNumber()) return false;
-                return compareNumber(op, target.getDouble(), Double.parseDouble(numValue));
-            } else {
+            if (right.startsWith("'")) {
                 if (!target.isString()) return false;
-                return compareString(op, target.getString(), value);
+                return compareString(op, target.getString(), right.substring(1, right.length() - 1));
+            } else {
+                if (!target.isNumber()) return false;
+                return compareNumber(op, target.getDouble(), Double.parseDouble(right));
             }
         }
 
@@ -525,12 +519,18 @@ public class JsonPath {
                 return item.getString().equals(expected);
             } else if (item.isNumber()) {
                 try {
-                    return item.getDouble() == Double.parseDouble(expected);
+                    double itemValue = item.getDouble();
+                    double expectedValue = Double.parseDouble(expected);
+                    return itemValue == expectedValue;
                 } catch (NumberFormatException e) {
                     return false;
                 }
             } else if (item.isBoolean()) {
-                return item.getBoolean() == Boolean.parseBoolean(expected);
+                Boolean itemBool = item.getBoolean();
+                if (expected.equalsIgnoreCase("true") || expected.equalsIgnoreCase("false")) {
+                    return itemBool == Boolean.parseBoolean(expected);
+                }
+                return false;
             }
             return false;
         }
@@ -541,17 +541,33 @@ public class JsonPath {
             if (parts.length != 2) return false;
 
             String keyPath = parts[0].replace("@.", "").trim();
-            String valuesStr = parts[1].replaceAll("^'|'$", "");
-            List<String> expectedValues = Arrays.stream(valuesStr.split(","))
-                    .map(String::trim)
-                    .collect(Collectors.toList());
+            String arrayContent = parts[1].trim();
+
+            // 处理数组的方括号
+            if (arrayContent.startsWith("[") && arrayContent.endsWith("]")) {
+                arrayContent = arrayContent.substring(1, arrayContent.length() - 1).trim();
+            }
+
+            List<String> expectedValues = new ArrayList<>();
+            if (!arrayContent.isEmpty()) {
+                // 正则表达式匹配元素（单引号字符串、数值、其他）
+                Pattern elementPattern = Pattern.compile("'((?:\\\\'|[^'])*)'|(-?\\d+\\.?\\d*)|([\\w-]+)");
+                Matcher matcher = elementPattern.matcher(arrayContent);
+                while (matcher.find()) {
+                    String element = matcher.group(0).trim();
+                    if (element.startsWith("'")) {
+                        // 处理单引号字符串，转义单引号
+                        element = element.substring(1, element.length() - 1).replace("\\'", "'");
+                    }
+                    expectedValues.add(element);
+                }
+            }
 
             ONode target = resolveNestedPath(node, keyPath);
             if (target == null) return false;
 
-            // 自动类型转换比较
-            return negate ^ expectedValues.stream()
-                    .anyMatch(v -> isValueMatch(target, v));
+            boolean found = expectedValues.stream().anyMatch(v -> isValueMatch(target, v));
+            return negate ? !found : found;
         }
 
         // 正则表达式更新（支持更复杂的键路径和转义字符）
@@ -561,7 +577,7 @@ public class JsonPath {
                         "\\s*" +
                         "(?<op>==|=~|!=|>=|<=|>|<|contains|in|nin|\\b)" +
                         "\\s*" +
-                        "(?:/(?<regex>.*?)/|'((?<str>.*?)(?<!\\\\))'|(?<num>[+-]?\\d+\\.?\\d*))?" +
+                        "(?<right>.*?)" +
                         "$", Pattern.CASE_INSENSITIVE
         );
 
