@@ -42,7 +42,7 @@ public class BeanCodec {
             return null;
         }
         try {
-            return convertNodeToBean(node, clazz, new IdentityHashMap<>(), opts);
+            return (T)convertNodeToBean(node, clazz, new IdentityHashMap<>(), opts);
         } catch (Throwable e) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -221,7 +221,7 @@ public class BeanCodec {
     //-- 反序列化逻辑 --//
 
     @SuppressWarnings("unchecked")
-    private static <T> T convertNodeToBean(ONode node, Class<T> clazz, Map<Object, Object> visited, Options opts) throws Exception {
+    private static <T> Object convertNodeToBean(ONode node, Class<T> clazz, Map<Object, Object> visited, Options opts) throws Exception {
         // 优先使用自定义编解码器
         Codec<T> codec = (Codec<T>) opts.getCodecRegistry().get(clazz);
         if (codec != null) {
@@ -230,7 +230,23 @@ public class BeanCodec {
 
         // 处理Properties类型
         if (clazz == Properties.class) {
-            return (T) convertNodeToProperties(node);
+            return convertNodeToProperties(node);
+        } else if (clazz == String.class) {
+            return node.getString();
+        } else if (clazz == Double.class || clazz == Double.TYPE) {
+            return node.getNumber().doubleValue();
+        } else if (clazz == Float.class || clazz == Float.TYPE) {
+            return node.getNumber().floatValue();
+        } else if (clazz == Long.class || clazz == Long.TYPE) {
+            return node.getNumber().longValue();
+        } else if (clazz == Integer.class || clazz == Integer.TYPE) {
+            return node.getNumber().intValue();
+        } else if (clazz == Short.class || clazz == Short.TYPE) {
+            return node.getNumber().shortValue();
+        } else if (clazz.isArray()) {
+            return convertNodeToArray(node, clazz);
+        } else if (clazz.isEnum()) {
+            return Enum.valueOf((Class<? extends Enum>) clazz, node.getString());
         }
 
         T bean = ReflectionUtil.newInstance(clazz);
@@ -253,6 +269,17 @@ public class BeanCodec {
         Properties properties = new Properties();
         flattenNodeToProperties(node, properties, "");
         return properties;
+    }
+
+    private static Object convertNodeToArray(ONode node, Class<?> clazz) {
+        Class<?> itemType = clazz.getComponentType();
+        Object array = Array.newInstance(itemType, node.size());
+
+        for (int i = 0; i < node.size(); i++) {
+            Array.set(array, i, node.get(i).toBean(itemType));
+        }
+
+        return array;
     }
 
     // 将嵌套的ONode扁平化为Properties
