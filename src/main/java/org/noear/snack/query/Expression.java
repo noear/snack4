@@ -24,7 +24,7 @@ public class Expression implements BiPredicate<ONode,ONode> {
 
     private final List<Token> rpn;
 
-    public Expression(String expressionStr) {
+    private Expression(String expressionStr) {
         List<Token> tokens = tokenize(expressionStr);
         this.rpn = convertToRPN(tokens);
     }
