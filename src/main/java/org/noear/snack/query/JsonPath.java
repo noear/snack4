@@ -6,6 +6,7 @@ import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -66,14 +67,18 @@ public class JsonPath {
                 }
             }
 
-            if ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0 && path.indexOf(",") < 0) || path.indexOf("()") > 0) {
-                if (currentNodes.size() > 0) {
-                    return currentNodes.get(0);
-                } else {
-                    return new ONode();
-                }
-            } else {
+            if (currentNodes.size() > 1) {
                 return new ONode(currentNodes);
+            } else {
+                if ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0 && path.indexOf(",") < 0 && path.indexOf(":") < 0) || path.indexOf("()") > 0) {
+                    if (currentNodes.size() > 0) {
+                        return currentNodes.get(0);
+                    } else {
+                        return new ONode();
+                    }
+                } else {
+                    return new ONode(currentNodes);
+                }
             }
         }
 
@@ -168,15 +173,65 @@ public class JsonPath {
             }
 
             if (segment.equals("*")) {
+                // 全选
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
+                // 条件过滤
                 return resolveFilter(nodes, segment.substring(1), root);
             } else if (segment.contains(",")) {
-                // 新增：处理多索引选择，如 [1,4]
+                // 多索引选择，如 [1,4]
                 return resolveMultiIndex(nodes, segment);
-            } else {
+            }  else if (segment.contains(":")) {
+                // 范围选择，如 [1:4]
+                return resolveRangeIndex(nodes, segment);
+            }else {
+                // 属性选择
                 return resolveIndex(nodes, segment);
             }
+        }
+
+        private List<ONode> resolveRangeIndex(List<ONode> nodes, String rangeStr) {
+            String[] parts = rangeStr.split(":");
+            if (parts.length != 2) {
+                throw new PathResolutionException("Invalid range syntax: " + rangeStr);
+            }
+
+            return nodes.stream()
+                    .filter(ONode::isArray)
+                    .flatMap(arr -> {
+                        int size = arr.size();
+                        int start = parseRangeBound(parts[0], size);
+                        int end = parseRangeBound(parts[1], size);
+
+                        // 调整范围确保有效
+                        start = Math.max(0, Math.min(start, size));
+                        end = Math.max(0, Math.min(end, size));
+
+                        if (start >= end) {
+                            return Stream.empty();
+                        }
+
+                        return IntStream.range(start, end)
+                                .mapToObj(idx -> {
+                                    ONode node = arr.get(idx);
+                                    node.source = new JsonSource(arr, null, idx);
+                                    return node;
+                                });
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // 辅助方法：解析范围边界
+        private int parseRangeBound(String boundStr, int size) {
+            if (boundStr.isEmpty()) {
+                return 0; // 默认开始
+            }
+
+            int bound = Integer.parseInt(boundStr.trim());
+            if (bound < 0) {
+                bound += size;
+            }
+            return bound;
         }
 
         // 新增方法：处理多索引选择
