@@ -166,6 +166,8 @@ public class JsonPath {
 
         // 处理 '[...]'
         private List<ONode> handleBracket(List<ONode> nodes, ONode root) {
+            char expect = path.charAt(index-1);
+
             index++; // 跳过'['
             String segment = parseSegment(']');
             while (index < path.length() && path.charAt(index) == ']') {
@@ -176,8 +178,11 @@ public class JsonPath {
                 // 全选
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
-                // 条件过滤
-                return resolveFilter(nodes, segment.substring(1), root);
+                // 条件过滤，如 [?@id]
+                // ..*[?...] 支持进一步深度展开
+                // ..x[?...] 展开过，但查询后是新的结果可以再展开
+                // ..[?...] 展开过，不需要再展开
+                return resolveFilter(nodes, segment.substring(1), expect != '.', root);
             } else if (segment.contains(",")) {
                 // 多索引选择，如 [1,4]
                 return resolveMultiIndex(nodes, segment);
@@ -397,13 +402,19 @@ public class JsonPath {
         }
 
         // 处理过滤器（如 [?(@.price > 10)]）
-        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, ONode root) {
-            Expression filter = Expression.get(filterStr);
+        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, boolean isFlatten, ONode root) {
+            Expression expression = Expression.get(filterStr);
 
-            return nodes.stream()
-                    .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
-                    .filter(n -> filter.test(n, root))
-                    .collect(Collectors.toList());
+            if (isFlatten) {
+                return nodes.stream()
+                        .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
+                        .filter(n -> expression.test(n, root))
+                        .collect(Collectors.toList());
+            } else {
+                return nodes.stream()
+                        .filter(n -> expression.test(n, root))
+                        .collect(Collectors.toList());
+            }
         }
 
         // 新增递归展开方法
