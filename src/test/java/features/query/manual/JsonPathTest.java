@@ -85,12 +85,6 @@ public class JsonPathTest {
 
         ONode ary2_c = n.select("$..*[1]");
         assertEquals(2, ary2_c.size());
-
-        ONode ary2_d = n.select("$.*.list[0][0]");
-        assertTrue(ary2_d.isValue());
-
-        ONode ary2_e = n.select("$..list[0][0]");
-        assertTrue(ary2_e.isValue());
     }
 
     @Test
@@ -100,6 +94,7 @@ public class JsonPathTest {
 
         ONode t1 = n.select("$.data.ary2[*].a");
         assert  t1.size()==2;
+
 
         ONode t2 = n.select("$..a");
         assert  t2.size()==2;

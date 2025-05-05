@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.noear.snack.ONode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author noear 2023/11/3 created
@@ -124,6 +125,18 @@ public class JsonPathCompatibleTest1 {
 //
 //        compatible_do("1", json, jsonpathStr1);
 //    }
+
+    @Test
+    public void test7() {
+        //1.加载json
+        String json = ("{code:1,msg:'Hello world',data:{list:[1,2,3,4,5], ary2:[{a:2},{a:3,b:{c:'ddd'}}]}}");
+
+        String jsonpathStr1 = "$.*.list[0][0]";
+        String jsonpathStr2 = "$..list[0][0]";
+
+        compatible_do("1", json, jsonpathStr1);
+        compatible_do("2", json, jsonpathStr2);
+    }
 
 
     private void compatible_do(String hint, String json, String jsonpathStr) {
