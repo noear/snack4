@@ -51,19 +51,21 @@ public class JsonPathTest {
         //1.加载json
         ONode n = ONode.loadJson("{code:1,msg:'Hello world',data:{list:[1,2,3,4,5], ary2:[{a:2},{a:3,b:{c:'ddd'}}]}}");
 
-
         ONode ary2_a = n.select("$['code','msg']");
-        assert ary2_a.size() == 2;
-
+        assertEquals(2, ary2_a.size());
 
 
         ONode ary2_b = n.select("$.data[*]");
-        assert ary2_b.size() == 2;
+        assertEquals(2, ary2_b.size());
+    }
 
-
+    @Test
+    public void demo3_2() {
+        //1.加载json
+        ONode n = ONode.loadJson("{code:1,msg:'Hello world',data:{list:[1,2,3,4,5], ary2:[{a:2},{a:3,b:{c:'ddd'}}]}}");
 
         ONode ary2_c = n.select("$['data']['list'][2]");
-        assert ary2_c.getInt() == 3;
+        assertEquals(3, ary2_c.getInt());
     }
 
     @Test

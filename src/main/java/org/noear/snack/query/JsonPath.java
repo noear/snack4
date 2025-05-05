@@ -258,25 +258,40 @@ public class JsonPath {
 
         // 新增方法：处理多索引选择
         private List<ONode> resolveMultiIndex(List<ONode> nodes, String indicesStr) {
-            Stream<Integer> indexParts = Arrays.stream(indicesStr.split(","))
-                    .map(String::trim)
-                    .map(Integer::parseInt);
+            Stream<String> parts = Arrays.stream(indicesStr.split(","))
+                    .map(String::trim);
 
-            return nodes.stream()
-                    .filter(ONode::isArray)
-                    .flatMap(arr -> {
-                        return indexParts
-                                .map(idx -> {
-                                    if (idx < 0) idx += arr.size();
-                                    if (idx < 0 || idx >= arr.size()) {
-                                        throw new PathResolutionException("Index out of bounds: " + idx);
-                                    }
-                                    ONode node = arr.get(idx);
-                                    node.source = new JsonSource(arr, null, idx);
-                                    return node;
-                                });
-                    })
-                    .collect(Collectors.toList());
+            if (indicesStr.startsWith("'")) {
+                Stream<String> keyParts = parts.map(s->s.substring(1, s.length()-1));
+
+                return nodes.stream()
+                        .filter(ONode::isObject)
+                        .flatMap(obj -> {
+                            return keyParts.map(key -> {
+                                ONode node = obj.get(key);
+                                node.source = new JsonSource(obj, key, 0);
+                                return node;
+                            });
+                        })
+                        .collect(Collectors.toList());
+            } else {
+                Stream<Integer> indexParts = parts.map(Integer::parseInt);
+
+                return nodes.stream()
+                        .filter(ONode::isArray)
+                        .flatMap(arr -> {
+                            return indexParts.map(idx -> {
+                                if (idx < 0) idx += arr.size();
+                                if (idx < 0 || idx >= arr.size()) {
+                                    throw new PathResolutionException("Index out of bounds: " + idx);
+                                }
+                                ONode node = arr.get(idx);
+                                node.source = new JsonSource(arr, null, idx);
+                                return node;
+                            });
+                        })
+                        .collect(Collectors.toList());
+            }
         }
 
         // 解析键名或函数调用（如 "store" 或 "count()"）
@@ -348,42 +363,68 @@ public class JsonPath {
 
         // 处理精确索引（支持负数）
         private List<ONode> resolveIndex(List<ONode> nodes, String indexStr) {
-            return nodes.stream()
-                    .filter(o -> {
-                        if (isCreateMode) {
-                            o.newArray();
-                            return true;
-                        } else {
-                            return o.isArray();
-                        }
-                    })
-                    .map(arr -> {
-                        int idx = Integer.parseInt(indexStr);
+            if (indexStr.startsWith("'")) {
+                final String key = indexStr.substring(1, indexStr.length()-1);
 
-                        if (isCreateMode) {
-                            //0 算1个，-1 算1个（至少算1个）
-                            int count = 0;
-                            if (idx < 0) {
-                                count = Math.abs(idx) - arr.size();
+                return nodes.stream()
+                        .filter(o -> {
+                            if (isCreateMode) {
+                                o.newObject();
+                                return true;
                             } else {
-                                count = idx + 1 - arr.size();
+                                return o.isObject();
+                            }
+                        })
+                        .map(obj -> {
+                            if (isCreateMode) {
+                                obj.getOrNew(key);
                             }
 
-                            for (int i = 0; i < count; i++) {
-                                arr.add(new ONode());
-                            }
-                        } else {
-                            if (idx < 0) idx += arr.size();
-                            if (idx < 0 || idx >= arr.size()) {
-                                throw new PathResolutionException("Index out of bounds: " + idx);
-                            }
-                        }
-                        ONode rst = arr.get(idx);
-                        rst.source = new JsonSource(arr, null, idx);
+                            ONode rst = obj.get(key);
+                            rst.source = new JsonSource(obj, key, 0);
 
-                        return rst;
-                    })
-                    .collect(Collectors.toList());
+                            return rst;
+                        })
+                        .collect(Collectors.toList());
+            } else {
+                final int index = Integer.parseInt(indexStr);
+
+                return nodes.stream()
+                        .filter(o -> {
+                            if (isCreateMode) {
+                                o.newArray();
+                                return true;
+                            } else {
+                                return o.isArray();
+                            }
+                        })
+                        .map(arr -> {
+                            int idx = index;
+                            if (isCreateMode) {
+                                //0 算1个，-1 算1个（至少算1个）
+                                int count = 0;
+                                if (idx < 0) {
+                                    count = Math.abs(idx) - arr.size();
+                                } else {
+                                    count = idx + 1 - arr.size();
+                                }
+
+                                for (int i = 0; i < count; i++) {
+                                    arr.add(new ONode());
+                                }
+                            } else {
+                                if (idx < 0) idx += arr.size();
+                                if (idx < 0 || idx >= arr.size()) {
+                                    throw new PathResolutionException("Index out of bounds: " + idx);
+                                }
+                            }
+                            ONode rst = arr.get(idx);
+                            rst.source = new JsonSource(arr, null, idx);
+
+                            return rst;
+                        })
+                        .collect(Collectors.toList());
+            }
         }
 
         // 处理递归搜索 ..
