@@ -5,17 +5,17 @@ import org.noear.snack.ONode;
 import org.noear.snack.core.util.TextUtil;
 import org.noear.snack.exception.PathResolutionException;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 /**
- * 操作符处理库
+ * 操作符处理库(支持动态注册)
  *
  * @author noear 2025/5/5 created
  */
 public class Operations {
-    private static final Map<String, BiFunction<ONode, Condition, Boolean>> lib = new HashMap<>();
+    private static final Map<String, BiFunction<ONode, Condition, Boolean>> LIB = new ConcurrentHashMap<>();
 
     static {
         // 操作函数
@@ -29,14 +29,14 @@ public class Operations {
      * 注册
      */
     public static void register(String name, BiFunction<ONode, Condition, Boolean> func) {
-        lib.put(name, func);
+        LIB.put(name, func);
     }
 
     /**
      * 获取
      */
     public static BiFunction<ONode, Condition, Boolean> get(String funcName) {
-        BiFunction<ONode, Condition, Boolean> tmp = lib.get(funcName);
+        BiFunction<ONode, Condition, Boolean> tmp = LIB.get(funcName);
 
         if (tmp == null) {
             return Operations::def;

@@ -4,18 +4,19 @@ import org.noear.snack.ONode;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 /**
- * 函数处理库
+ * 函数处理库(支持动态注册)
  *
  * @author noear 2025/3/17 created
  */
 public class Functions {
-    private static final Map<String, Function<List<ONode>, ONode>> lib = new HashMap<>();
+    private static final Map<String, Function<List<ONode>, ONode>> LIB = new ConcurrentHashMap<>();
 
     static {
         // 聚合函数
@@ -41,14 +42,14 @@ public class Functions {
      * 注册
      */
     public static void register(String name, Function<List<ONode>, ONode> func) {
-        lib.put(name, func);
+        LIB.put(name, func);
     }
 
     /**
      * 获取
      */
     public static Function<List<ONode>, ONode> get(String funcName) {
-        return lib.get(funcName);
+        return LIB.get(funcName);
     }
 
     /// /////////////////
