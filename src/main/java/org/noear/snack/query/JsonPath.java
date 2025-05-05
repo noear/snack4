@@ -301,10 +301,14 @@ public class JsonPath {
         private List<ONode> resolveWildcard(List<ONode> nodes) {
             return nodes.stream()
                     .map(n -> {
-                        List<ONode> childs;
-                        if (n.isArray()) childs = n.getArray();
-                        else if (n.isObject()) childs = new ArrayList<>(n.getObject().values());
-                        else childs = Collections.<ONode>emptyList();
+                        Collection<ONode> childs;
+                        if (n.isArray()) {
+                            childs = n.getArray();
+                        } else if (n.isObject()) {
+                            childs = n.getObject().values();
+                        } else {
+                            childs = Collections.<ONode>emptyList();
+                        }
 
                         if (isDeleteMode) {
                             JsonSource source = new JsonSource(n, "*", 0);
