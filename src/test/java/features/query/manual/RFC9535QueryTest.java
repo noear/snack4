@@ -6,7 +6,7 @@ import org.noear.snack.ONode;
 /**
  * @author noear 2025/5/5 created
  */
-public class RFC9535 {
+public class RFC9535QueryTest {
     static final String json1 = "{\n" +
             "  \"o\": {\"j j\": {\"k.k\": 3}},\n" +
             "  \"'\": {\"@\": 2}\n" +

@@ -5,6 +5,7 @@ import org.noear.snack.ONode;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -129,17 +130,13 @@ public class OperationLib {
 
         // 类型判断逻辑
         if (condition.getRight().startsWith("'")) {
-            if (leftNode.isString()) {
-                if (rightNode.isString()) {
-                    return compareString(condition.getOp(), leftNode.getString(), condition.getRight().substring(1, condition.getRight().length() - 1));
-                }
-            }
-
-            return false;
+            return compareString(condition.getOp(), leftNode.getString(), rightNode.getString());
         } else {
-            if (leftNode.isNumber()) {
-                if (rightNode.isNumber()) {
+            if (leftNode.getType() == rightNode.getType()) {
+                if (leftNode.isNumber()) {
                     return compareNumber(condition.getOp(), leftNode.getDouble(), rightNode.getDouble());
+                } else if (leftNode.isNull()) {
+                    return compareNumber(condition.getOp(), 0, 0);
                 }
             }
 
@@ -153,9 +150,9 @@ public class OperationLib {
     private static boolean compareString(String op, String a, String b) {
         switch (op) {
             case "==":
-                return a.equals(b);
+                return Objects.equals(a, b);
             case "!=":
-                return !a.equals(b);
+                return !Objects.equals(a, b);
             default:
                 throw new PathResolutionException("Unsupported operator for string: " + op);
         }
