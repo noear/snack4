@@ -7,13 +7,31 @@ package org.noear.snack.query;
 import org.noear.snack.ONode;
 import org.noear.snack.core.util.TextUtil;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
  * 条件描述
  */
 public class Condition {
-    public static Condition parse(String conditionStr) {
+    private static Map<String, Condition> conditionMap = new ConcurrentHashMap<>();
+
+    public static Condition get(String conditionStr) {
+        return conditionMap.computeIfAbsent(conditionStr, Condition::new);
+    }
+
+    /// ///////////////////
+
+
+    private final String left;
+    private final String op;
+    private final String right;
+
+    private final ONode leftValue;
+    private final ONode rightValue;
+
+    private Condition(String conditionStr) {
         String[] parts = new String[3];
 
         int spaceIdx = conditionStr.indexOf(' ');
@@ -32,21 +50,9 @@ public class Condition {
             }
         }
 
-        return new Condition(parts[0], parts[1], parts[2]);
-    }
-
-
-    private final String left;
-    private final String op;
-    private final String right;
-
-    private final ONode leftValue;
-    private final ONode rightValue;
-
-    private Condition(String left, String op, String right) {
-        this.left = left;
-        this.op = op;
-        this.right = right;
+        this.left = parts[0];
+        this.op = parts[1];
+        this.right = parts[2];
 
         this.leftValue = resolveConstantNode(left);
         this.rightValue = resolveConstantNode(right);

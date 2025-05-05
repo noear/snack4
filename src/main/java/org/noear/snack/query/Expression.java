@@ -17,7 +17,7 @@ public class Expression implements BiPredicate<ONode,ONode> {
     private static Map<String, Expression> expressionMap = new ConcurrentHashMap<>();
 
     public static Expression get(String expressionStr) {
-        return expressionMap.computeIfAbsent(expressionStr, k -> new Expression(expressionStr));
+        return expressionMap.computeIfAbsent(expressionStr, Expression::new);
     }
 
     /// ///////////////////
@@ -142,7 +142,7 @@ public class Expression implements BiPredicate<ONode,ONode> {
             return !evaluateSingleCondition(node, conditionStr.substring(1), root);
         }
 
-        Condition condition = Condition.parse(conditionStr);
+        Condition condition = Condition.get(conditionStr);
 
         // 过滤空条件（操作符处理时，就不需要再过滤了）
         if (TextUtil.isEmpty(condition.getLeft())) {
