@@ -50,7 +50,7 @@ public class Condition {
         if (TextUtil.isEmpty(right)) {
             return null;
         } else {
-            char ch = left.charAt(0);
+            char ch = right.charAt(0);
             if (ch == '@' || ch == '$') {
                 return resolveNestedPath(node, right, root);
             } else {
@@ -105,12 +105,12 @@ public class Condition {
         String[] keys = keyPath.split("\\.|\\[");
         ONode current = node;
         for (String key : keys) {
-            if (key.endsWith("]")) {
-                key = key.substring(0, key.length() - 1).trim();
+            if (key.length() == 1 && '@' == key.charAt(0)) {
+                continue;
             }
 
-            if ("@".equals(key)) {
-                continue;
+            if (key.endsWith("]")) {
+                key = key.substring(0, key.length() - 1).trim();
             }
 
             if (current.isObject()) {
