@@ -1,4 +1,4 @@
-package features.query;
+package features.query.generated;
 
 import org.noear.snack.ONode;
 import org.noear.snack.query.JsonPath;

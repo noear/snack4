@@ -1,4 +1,4 @@
-package features.query;
+package features.query.generated;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.ONode;

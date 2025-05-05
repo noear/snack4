@@ -304,7 +304,7 @@ public class JsonPath {
 
         // 处理过滤器（如 [?(@.price > 10)]）
         private List<ONode> resolveFilter(List<ONode> nodes, String filterStr) {
-            Filter filter = Filter.get(filterStr);
+            Expression filter = Expression.get(filterStr);
 
             return nodes.stream()
                     .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组

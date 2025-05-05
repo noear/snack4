@@ -10,21 +10,23 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 /**
+ * 表达式
+ *
  * @author noear 2025/5/5 created
  */
-public class Filter implements Predicate<ONode> {
-    private static Map<String, Filter> filters = new ConcurrentHashMap<>();
+public class Expression implements Predicate<ONode> {
+    private static Map<String, Expression> expressionMap = new ConcurrentHashMap<>();
 
-    public static Filter get(String filterStr) {
-        return filters.computeIfAbsent(filterStr, k -> new Filter(filterStr));
+    public static Expression get(String expressionStr) {
+        return expressionMap.computeIfAbsent(expressionStr, k -> new Expression(expressionStr));
     }
 
     /// ///////////////////
 
     private final List<Token> rpn;
 
-    public Filter(String filterStr) {
-        List<Token> tokens = tokenize(filterStr);
+    public Expression(String expressionStr) {
+        List<Token> tokens = tokenize(expressionStr);
         this.rpn = convertToRPN(tokens);
     }
 
