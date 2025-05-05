@@ -25,7 +25,7 @@ public class JsonPathCompatibleTest1 {
         ONode tmp2 = ONode.loadJson(json).select("$..*");
         System.out.println(tmp2);
         assert tmp2.isArray();
-        assert tmp2.size() == 14;
+        assertEquals(14, tmp2.size());
     }
 
     @Test

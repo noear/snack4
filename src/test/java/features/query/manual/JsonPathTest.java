@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class JsonPathTest {
@@ -73,21 +74,23 @@ public class JsonPathTest {
         //1.加载json
         ONode n = ONode.loadJson("{code:1,msg:'Hello world',data:{list:[1,2,3,4,5], ary2:[{a:2},{a:3,b:{c:'ddd'}}]}}");
 
-
         ONode ary2_a = n.select("$.*");
-        assert ary2_a.size() == 3;
+        assertEquals(3, ary2_a.size());
+
+        ary2_a = n.select("$[*]");
+        assertEquals(3, ary2_a.size());
 
         ONode ary2_b = n.select("$..*");
-        assert ary2_b.size() == 16;
+        assertEquals(16, ary2_b.size());
 
         ONode ary2_c = n.select("$..*[1]");
-        assert ary2_c.size()==2;
+        assertEquals(2, ary2_c.size());
 
         ONode ary2_d = n.select("$.*.list[0][0]");
-        assert ary2_d.isValue();
+        assertTrue(ary2_d.isValue());
 
         ONode ary2_e = n.select("$..list[0][0]");
-        assert ary2_e.isValue();
+        assertTrue(ary2_e.isValue());
     }
 
     @Test

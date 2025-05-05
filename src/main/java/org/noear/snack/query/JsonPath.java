@@ -303,7 +303,7 @@ public class JsonPath {
                         FunctionLib.get(funcName).apply(nodes) // 传入节点列表
                 );
             } else if (key.equals("*")) {
-                return nodes;
+                return resolveWildcard(nodes);
             } else {
                 return nodes.stream()
                         .map(n -> getChild(n, key, strict))
