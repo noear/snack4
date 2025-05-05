@@ -209,7 +209,7 @@ public class JsonPath {
                     // ..[?...] 已展开过，不需要再展开
                     currentNodes = resolveFilter(currentNodes, segment.substring(1), context);
                 } else if (segment.contains(",")) {
-                    // 多索引选择，如 [1,4]
+                    // 多索引选择，如 [1,4], ['a','b']
                     currentNodes = resolveMultiIndex(currentNodes, segment);
                 } else if (segment.contains(":")) {
                     // 范围选择，如 [1:4]
@@ -275,40 +275,52 @@ public class JsonPath {
 
         // 新增方法：处理多索引选择
         private List<ONode> resolveMultiIndex(List<ONode> nodes, String indicesStr) {
-            Stream<String> parts = Arrays.stream(indicesStr.split(","))
+            Stream<String> indexParts = Arrays.stream(indicesStr.split(","))
                     .map(String::trim);
 
-            if (indicesStr.startsWith("'")) {
-                Stream<String> keyParts = parts.map(s -> s.substring(1, s.length() - 1));
 
-                return nodes.stream()
-                        .filter(ONode::isObject)
-                        .flatMap(obj -> {
-                            return keyParts.map(key -> {
-                                ONode node = obj.get(key);
-                                node.source = new JsonSource(obj, key, 0);
-                                return node;
-                            });
-                        })
-                        .collect(Collectors.toList());
-            } else {
-                Stream<Integer> indexParts = parts.map(Integer::parseInt);
-
-                return nodes.stream()
-                        .filter(ONode::isArray)
-                        .flatMap(arr -> {
-                            return indexParts.map(idx -> {
-                                if (idx < 0) idx += arr.size();
-                                if (idx < 0 || idx >= arr.size()) {
-                                    throw new PathResolutionException("Index out of bounds: " + idx);
+            return nodes.stream()
+                    .flatMap(n -> {
+                        return indexParts.flatMap(key->{
+                            char ch = key.charAt(0);
+                            if (ch == '\'') {
+                                //string
+                                if (n.isObject()) {
+                                    ONode p = n.get(key.substring(1, key.length() - 1));
+                                    if (p != null) {
+                                        return Stream.of(p);
+                                    }
                                 }
-                                ONode node = arr.get(idx);
-                                node.source = new JsonSource(arr, null, idx);
-                                return node;
-                            });
-                        })
-                        .collect(Collectors.toList());
-            }
+
+                                return Stream.empty();
+                            } else if (ch == '*') {
+                                //*
+                                if (n.isArray()) {
+                                    return n.getArray().stream();
+                                } else if (n.isObject()) {
+                                    return n.getObject().values().stream();
+                                }
+
+                                return Stream.empty();
+                            } else {
+                                //num
+                                if (n.isArray()) {
+                                    int idx = Integer.parseInt(key);
+                                    if (idx < 0) idx += n.size();
+                                    if (idx < 0 || idx >= n.size()) {
+                                        throw new PathResolutionException("Index out of bounds: " + idx);
+                                    }
+                                    ONode node = n.get(idx);
+                                    node.source = new JsonSource(n, null, idx);
+                                    return Stream.of(node);
+                                }
+
+                                return Stream.empty();
+                            }
+                        });
+                    })
+                    .collect(Collectors.toList());
+
         }
 
         // 解析键名或函数调用（如 "store" 或 "count()"）
