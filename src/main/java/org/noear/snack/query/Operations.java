@@ -15,7 +15,7 @@ import java.util.function.BiFunction;
  * @author noear 2025/5/5 created
  */
 public class Operations {
-    private static final Map<String, BiFunction<ONode, JsonPath.Condition, Boolean>> lib = new HashMap<>();
+    private static final Map<String, BiFunction<ONode, Condition, Boolean>> lib = new HashMap<>();
 
     static {
         // 操作函数
@@ -28,15 +28,15 @@ public class Operations {
     /**
      * 注册
      */
-    public static void register(String name, BiFunction<ONode, JsonPath.Condition, Boolean> func) {
+    public static void register(String name, BiFunction<ONode, Condition, Boolean> func) {
         lib.put(name, func);
     }
 
     /**
      * 获取
      */
-    public static BiFunction<ONode, JsonPath.Condition, Boolean> get(String funcName) {
-        BiFunction<ONode, JsonPath.Condition, Boolean> tmp = lib.get(funcName);
+    public static BiFunction<ONode, Condition, Boolean> get(String funcName) {
+        BiFunction<ONode, Condition, Boolean> tmp = lib.get(funcName);
 
         if (tmp == null) {
             return Operations::def;
@@ -47,7 +47,7 @@ public class Operations {
 
     /// /////////////////
 
-    private static boolean startsWith(ONode node, JsonPath.Condition factor) {
+    private static boolean startsWith(ONode node, Condition factor) {
         if (factor.getRight() == null) {
             return false;
         }
@@ -68,7 +68,7 @@ public class Operations {
         return false;
     }
 
-    private static boolean endsWith(ONode node, JsonPath.Condition factor) {
+    private static boolean endsWith(ONode node, Condition factor) {
         if (factor.getRight() == null) {
             return false;
         }
@@ -89,7 +89,7 @@ public class Operations {
         return false;
     }
 
-    private static boolean contains(ONode node, JsonPath.Condition factor) {
+    private static boolean contains(ONode node, Condition factor) {
         if (factor.getRight() == null) {
             return false;
         }
@@ -115,7 +115,7 @@ public class Operations {
         return false;
     }
 
-    private static boolean in(ONode node, JsonPath.Condition factor) {
+    private static boolean in(ONode node, Condition factor) {
         if (factor.getRight() == null) {
             return false;
         }
@@ -134,7 +134,7 @@ public class Operations {
         return found;
     }
 
-    public static boolean def(ONode node, JsonPath.Condition factor) {
+    public static boolean def(ONode node, Condition factor) {
         ONode leftNode = factor.getLeftNode(node);
         if (leftNode == null) {
             return false;

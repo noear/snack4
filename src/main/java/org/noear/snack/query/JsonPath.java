@@ -2,7 +2,6 @@ package org.noear.snack.query;
 
 import org.noear.snack.ONode;
 import org.noear.snack.core.JsonSource;
-import org.noear.snack.core.util.TextUtil;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
@@ -309,7 +308,7 @@ public class JsonPath {
                     .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
                     .filter(n -> {
                         try {
-                            return evaluateFilter(n, filter);
+                            return Filter.evaluateFilter(n, filter);
                         } catch (Exception e) {
                             return false;
                         }
@@ -325,129 +324,6 @@ public class JsonPath {
                         .filter(n -> !n.isNull());
             }
             return Stream.of(node);
-        }
-
-        private boolean evaluateFilter(ONode node, String filter) {
-            try {
-                List<Token> tokens = tokenize(filter);
-                List<Token> rpn = convertToRPN(tokens);
-                return evaluateRPN(node, rpn);
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
-        // 新增分词器
-        private List<Token> tokenize(String filter) {
-            List<Token> tokens = new ArrayList<>();
-            int index = 0;
-            int len = filter.length();
-
-            while (index < len) {
-                char c = filter.charAt(index);
-                if (Character.isWhitespace(c)) {
-                    index++;
-                    continue;
-                }
-
-                if (c == '(') {
-                    tokens.add(new Token(TokenType.LPAREN, "("));
-                    index++;
-                } else if (c == ')') {
-                    tokens.add(new Token(TokenType.RPAREN, ")"));
-                    index++;
-                } else if (c == '&' && index + 1 < len && filter.charAt(index + 1) == '&') {
-                    tokens.add(new Token(TokenType.AND, "&&"));
-                    index += 2;
-                } else if (c == '|' && index + 1 < len && filter.charAt(index + 1) == '|') {
-                    tokens.add(new Token(TokenType.OR, "||"));
-                    index += 2;
-                } else {
-                    int start = index;
-                    while (index < len) {
-                        char curr = filter.charAt(index);
-                        if (curr == '(' || curr == ')' || curr == '&' || curr == '|') {
-                            break;
-                        }
-                        if ((curr == '&' || curr == '|') && index + 1 < len && filter.charAt(index + 1) == curr) {
-                            break;
-                        }
-                        index++;
-                    }
-                    String atom = filter.substring(start, index).trim();
-                    if (!atom.isEmpty()) {
-                        tokens.add(new Token(TokenType.ATOM, atom));
-                    }
-                }
-            }
-            return tokens;
-        }
-
-        // 转换为逆波兰式
-        private List<Token> convertToRPN(List<Token> tokens) {
-            List<Token> output = new ArrayList<>();
-            Deque<Token> stack = new ArrayDeque<>();
-
-            for (Token token : tokens) {
-                switch (token.type) {
-                    case ATOM:
-                        output.add(token);
-                        break;
-                    case LPAREN:
-                        stack.push(token);
-                        break;
-                    case RPAREN:
-                        while (!stack.isEmpty() && stack.peek().type != TokenType.LPAREN) {
-                            output.add(stack.pop());
-                        }
-                        stack.pop();
-                        break;
-                    case AND:
-                    case OR:
-                        while (!stack.isEmpty() && stack.peek().type != TokenType.LPAREN &&
-                                precedence(token) <= precedence(stack.peek())) {
-                            output.add(stack.pop());
-                        }
-                        stack.push(token);
-                        break;
-                }
-            }
-
-            while (!stack.isEmpty()) {
-                output.add(stack.pop());
-            }
-            return output;
-        }
-
-        private int precedence(Token token) {
-            return token.type == TokenType.AND ? 2 : token.type == TokenType.OR ? 1 : 0;
-        }
-
-        // 评估逆波兰式
-        private boolean evaluateRPN(ONode node, List<Token> rpn) {
-            Deque<Boolean> stack = new ArrayDeque<>();
-            for (Token token : rpn) {
-                if (token.type == TokenType.ATOM) {
-                    stack.push(evaluateSingleCondition(node, token.value));
-                } else if (token.type == TokenType.AND || token.type == TokenType.OR) {
-                    boolean b = stack.pop();
-                    boolean a = stack.pop();
-                    stack.push(token.type == TokenType.AND ? a && b : a || b);
-                }
-            }
-            return stack.pop();
-        }
-
-
-        private boolean evaluateSingleCondition(ONode node, String condition) {
-            if (condition.startsWith("!")) {
-                //非运行
-                return !evaluateSingleCondition(node, condition.substring(1));
-            }
-
-            Condition factor = Condition.parse(condition);
-
-            return Operations.get(factor.op).apply(node, factor);
         }
 
 
@@ -513,133 +389,6 @@ public class JsonPath {
             while (index < path.length() && Character.isWhitespace(path.charAt(index))) {
                 index++;
             }
-        }
-    }
-
-
-    private enum TokenType {ATOM, AND, OR, LPAREN, RPAREN}
-
-    private static class Token {
-        final TokenType type;
-        final String value;
-
-        Token(TokenType type, String value) {
-            this.type = type;
-            this.value = value;
-        }
-    }
-
-    /**
-     * 条件描述
-     */
-    public static class Condition {
-        private String left;
-        private String op;
-        private String right;
-
-        public String getLeft() {
-            return left;
-        }
-
-        public String getOp() {
-            return op;
-        }
-
-        public String getRight() {
-            return right;
-        }
-
-        public ONode getLeftNode(ONode node) {
-            if (TextUtil.isEmpty(left)) {
-                return null;
-            } else {
-                if (left.startsWith("@.")) {
-                    return resolveNestedPath(node, left.substring(2));
-                } else {
-                    char ch = left.charAt(0);
-                    if (ch == '\'' || ch == '/') {
-                        return new ONode(left.substring(1, left.length() - 1));
-                    } else {
-                        return ONode.loadJson(left);
-                    }
-                }
-            }
-        }
-
-
-        public ONode getRightNode(ONode node) {
-            if (TextUtil.isEmpty(right)) {
-                return null;
-            } else {
-                if (right.startsWith("@.")) {
-                    return resolveNestedPath(node, right.substring(2));
-                } else {
-                    char ch = right.charAt(0);
-                    if (ch == '\'' || ch == '/') {
-                        return new ONode(right.substring(1, right.length() - 1));
-                    } else {
-                        return ONode.loadJson(right);
-                    }
-                }
-            }
-        }
-
-
-        @Override
-        public String toString() {
-            return "Condition{" +
-                    "left='" + left + '\'' +
-                    ", op='" + op + '\'' +
-                    ", right='" + right + '\'' +
-                    '}';
-        }
-
-        public static Condition parse(String conditionStr) {
-            Condition f = new Condition();
-
-            int spaceIdx = conditionStr.indexOf(' ');
-            if (spaceIdx < 0) {
-                //没有空隔
-                f.left = conditionStr;
-            } else {
-                //有空隔
-                f.left = conditionStr.substring(0, spaceIdx);
-                f.op = conditionStr.substring(spaceIdx + 1).trim();
-                spaceIdx = f.op.indexOf(' ');
-                if (spaceIdx > 0) {
-                    //有第二个空隔
-                    f.right = f.op.substring(spaceIdx + 1).trim();
-                    f.op = f.op.substring(0, spaceIdx);
-                }
-            }
-
-            return f;
-        }
-
-
-        private static ONode resolveNestedPath(ONode node, String keyPath) {
-            String[] keys = keyPath.split("\\.|\\[");
-            ONode current = node;
-            for (String key : keys) {
-                if (key.endsWith("]")) {
-                    key = key.substring(0, key.length() - 1).trim();
-                }
-
-                if (current.isObject()) {
-                    current = current.get(key);
-                } else if (current.isArray()) {
-                    try {
-                        int index = Integer.parseInt(key);
-                        current = current.get(index);
-                    } catch (NumberFormatException e) {
-                        return null;
-                    }
-                } else {
-                    return null;
-                }
-                if (current == null) return null;
-            }
-            return current;
         }
     }
 }
