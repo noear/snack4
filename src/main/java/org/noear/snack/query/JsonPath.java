@@ -183,11 +183,14 @@ public class JsonPath {
                 return Collections.singletonList(
                         Functions.get(funcName).apply(nodes) // 传入节点列表
                 );
+            } else if (key.equals("*")) {
+                return nodes;
+            } else {
+                return nodes.stream()
+                        .map(n -> getChild(n, key, strict))
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList());
             }
-            return nodes.stream()
-                    .map(n -> getChild(n, key, strict))
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
         }
 
         private List<ONode> getChild(ONode node, String key, boolean strict) {
@@ -272,7 +275,7 @@ public class JsonPath {
         // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes) {
             List<ONode> tmp = new ArrayList<>();
-            nodes.forEach(node -> collectRecursive(node, tmp));
+            nodes.forEach(node -> collectRecursive(node, tmp, false));
 
             List<ONode> results = tmp;
 
@@ -293,13 +296,16 @@ public class JsonPath {
             return results;
         }
 
-        private void collectRecursive(ONode node, List<ONode> results) {
+        private void collectRecursive(ONode node, List<ONode> results, boolean isChild) {
             if (node.isArray()) {
-                node.getArray().forEach(n -> collectRecursive(n, results));
+                node.getArray().forEach(n -> collectRecursive(n, results, true));
             } else if (node.isObject()) {
-                node.getObject().values().forEach(n -> collectRecursive(n, results));
+                node.getObject().values().forEach(n -> collectRecursive(n, results, true));
             }
-            results.add(node);
+
+            if (isChild) {
+                results.add(node);
+            }
         }
 
         // 处理过滤器（如 [?(@.price > 10)]）
