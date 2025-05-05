@@ -6,15 +6,14 @@ import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 
 /**
  * 表达式
  *
  * @author noear 2025/5/5 created
  */
-public class Expression implements Predicate<ONode> {
+public class Expression implements BiPredicate<ONode,ONode> {
     private static Map<String, Expression> expressionMap = new ConcurrentHashMap<>();
 
     public static Expression get(String expressionStr) {
@@ -32,12 +31,12 @@ public class Expression implements Predicate<ONode> {
 
     // 评估逆波兰式
     @Override
-    public boolean test(ONode node) {
+    public boolean test(ONode node, ONode root) {
         try {
             Deque<Boolean> stack = new ArrayDeque<>();
             for (Token token : rpn) {
                 if (token.type == TokenType.ATOM) {
-                    stack.push(evaluateSingleCondition(node, token.value));
+                    stack.push(evaluateSingleCondition(node, token.value, root));
                 } else if (token.type == TokenType.AND || token.type == TokenType.OR) {
                     boolean b = stack.pop();
                     boolean a = stack.pop();
@@ -137,10 +136,10 @@ public class Expression implements Predicate<ONode> {
     }
 
 
-    private boolean evaluateSingleCondition(ONode node, String conditionStr) {
+    private boolean evaluateSingleCondition(ONode node, String conditionStr, ONode root) {
         if (conditionStr.startsWith("!")) {
             //非运行
-            return !evaluateSingleCondition(node, conditionStr.substring(1));
+            return !evaluateSingleCondition(node, conditionStr.substring(1), root);
         }
 
         Condition condition = Condition.parse(conditionStr);
@@ -153,19 +152,19 @@ public class Expression implements Predicate<ONode> {
         // 单元操作（如 @.price）
         if (condition.getRight() == null) {
             if (condition.getOp() == null) {
-                return condition.getLeftNode(node) != null;
+                return condition.getLeftNode(node, root) != null;
             } else {
                 return false;
             }
         }
 
-        BiFunction<ONode, Condition, Boolean> operation = Operations.get(condition.getOp());
+        Operation operation = OperationLib.get(condition.getOp());
 
         if (operation == null) {
             throw new PathResolutionException("Unsupported operator : " + condition.getOp());
         }
 
-        return operation.apply(node, condition);
+        return operation.apply(node, condition, root);
     }
 
     private enum TokenType {ATOM, AND, OR, LPAREN, RPAREN}

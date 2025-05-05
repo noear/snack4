@@ -58,9 +58,9 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    currentNodes = handleDot(currentNodes);
+                    currentNodes = handleDot(currentNodes, root);
                 } else if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes);
+                    currentNodes = handleBracket(currentNodes, root);
                 } else {
                     throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
                 }
@@ -89,9 +89,9 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    currentNodes = handleDot(currentNodes);
+                    currentNodes = handleDot(currentNodes, root);
                 } else if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes);
+                    currentNodes = handleBracket(currentNodes, root);
                 } else {
                     throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
                 }
@@ -126,9 +126,9 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    currentNodes = handleDot(currentNodes);
+                    currentNodes = handleDot(currentNodes, root);
                 } else if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes);
+                    currentNodes = handleBracket(currentNodes, root);
                 } else {
                     throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
                 }
@@ -145,11 +145,11 @@ public class JsonPath {
         }
 
         // 处理 '.' 或 '..'，返回新的节点集合
-        private List<ONode> handleDot(List<ONode> currentNodes) {
+        private List<ONode> handleDot(List<ONode> currentNodes, ONode root) {
             index++;
             if (index < path.length() && path.charAt(index) == '.') {
                 index++;
-                currentNodes = resolveRecursive(currentNodes);
+                currentNodes = resolveRecursive(currentNodes, root);
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
                     currentNodes = resolveKey(currentNodes, false);
                 }
@@ -160,7 +160,7 @@ public class JsonPath {
         }
 
         // 处理 '[...]'
-        private List<ONode> handleBracket(List<ONode> nodes) {
+        private List<ONode> handleBracket(List<ONode> nodes, ONode root) {
             index++; // 跳过'['
             String segment = parseSegment(']');
             while (index < path.length() && path.charAt(index) == ']') {
@@ -170,7 +170,7 @@ public class JsonPath {
             if (segment.equals("*")) {
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
-                return resolveFilter(nodes, segment.substring(1));
+                return resolveFilter(nodes, segment.substring(1), root);
             } else if (segment.contains(",")) {
                 // 新增：处理多索引选择，如 [1,4]
                 return resolveMultiIndex(nodes, segment);
@@ -208,7 +208,7 @@ public class JsonPath {
             if (key.endsWith("()")) {
                 String funcName = key.substring(0, key.length() - 2);
                 return Collections.singletonList(
-                        Functions.get(funcName).apply(nodes) // 传入节点列表
+                        FunctionLib.get(funcName).apply(nodes) // 传入节点列表
                 );
             } else if (key.equals("*")) {
                 return nodes;
@@ -300,7 +300,7 @@ public class JsonPath {
         }
 
         // 处理递归搜索 ..
-        private List<ONode> resolveRecursive(List<ONode> nodes) {
+        private List<ONode> resolveRecursive(List<ONode> nodes, ONode root) {
             List<ONode> tmp = new ArrayList<>();
             nodes.forEach(node -> collectRecursive(node, tmp, false));
 
@@ -312,9 +312,9 @@ public class JsonPath {
                 char ch = path.charAt(index);
                 if (ch == '.' || ch == '[') {
                     if (ch == '.') {
-                        results = handleDot(results);
+                        results = handleDot(results, root);
                     } else if (ch == '[') {
-                        results = handleBracket(results);
+                        results = handleBracket(results, root);
                     }
                 } else {
                     break;
@@ -336,12 +336,12 @@ public class JsonPath {
         }
 
         // 处理过滤器（如 [?(@.price > 10)]）
-        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr) {
+        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, ONode root) {
             Expression filter = Expression.get(filterStr);
 
             return nodes.stream()
                     .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
-                    .filter(filter::test)
+                    .filter(n -> filter.test(n, root))
                     .collect(Collectors.toList());
         }
 

@@ -28,14 +28,14 @@ public class Condition {
         return right;
     }
 
-    public ONode getLeftNode(ONode node) {
+    public ONode getLeftNode(ONode node, ONode root) {
         if (TextUtil.isEmpty(left)) {
             return null;
         } else {
-            if (left.startsWith("@.")) {
-                return resolveNestedPath(node, left.substring(2));
+            char ch = left.charAt(0);
+            if (ch == '@' || ch == '$') {
+                return resolveNestedPath(node, left, root);
             } else {
-                char ch = left.charAt(0);
                 if (ch == '\'' || ch == '/') {
                     return new ONode(left.substring(1, left.length() - 1));
                 } else {
@@ -46,14 +46,14 @@ public class Condition {
     }
 
 
-    public ONode getRightNode(ONode node) {
+    public ONode getRightNode(ONode node, ONode root) {
         if (TextUtil.isEmpty(right)) {
             return null;
         } else {
-            if (right.startsWith("@.")) {
-                return resolveNestedPath(node, right.substring(2));
+            char ch = left.charAt(0);
+            if (ch == '@' || ch == '$') {
+                return resolveNestedPath(node, right, root);
             } else {
-                char ch = right.charAt(0);
                 if (ch == '\'' || ch == '/') {
                     return new ONode(right.substring(1, right.length() - 1));
                 } else {
@@ -96,12 +96,21 @@ public class Condition {
     }
 
 
-    private static ONode resolveNestedPath(ONode node, String keyPath) {
+    private static ONode resolveNestedPath(ONode node, String keyPath, ONode root) {
+        if (keyPath.startsWith("$")) {
+            return root.select(keyPath);
+        }
+
+
         String[] keys = keyPath.split("\\.|\\[");
         ONode current = node;
         for (String key : keys) {
             if (key.endsWith("]")) {
                 key = key.substring(0, key.length() - 1).trim();
+            }
+
+            if ("@".equals(key)) {
+                continue;
             }
 
             if (current.isObject()) {

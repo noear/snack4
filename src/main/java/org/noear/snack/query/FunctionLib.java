@@ -15,27 +15,27 @@ import java.util.stream.Stream;
  *
  * @author noear 2025/3/17 created
  */
-public class Functions {
+public class FunctionLib {
     private static final Map<String, Function<List<ONode>, ONode>> LIB = new ConcurrentHashMap<>();
 
     static {
         // 聚合函数
-        register("min", Functions::min);
-        register("max", Functions::max);
-        register("avg", Functions::avg);
-        register("sum", Functions::sum);
+        register("min", FunctionLib::min);
+        register("max", FunctionLib::max);
+        register("avg", FunctionLib::avg);
+        register("sum", FunctionLib::sum);
 
         // 集合函数
-        register("size", Functions::size);
-        register("keys", Functions::keys);
-        register("first", Functions::first);
-        register("last", Functions::last);
+        register("size", FunctionLib::size);
+        register("keys", FunctionLib::keys);
+        register("first", FunctionLib::first);
+        register("last", FunctionLib::last);
 
         // 字符串函数
-        register("length", Functions::length);
-        register("upper", Functions::upper);
-        register("lower", Functions::lower);
-        register("trim", Functions::trim);
+        register("length", FunctionLib::length);
+        register("upper", FunctionLib::upper);
+        register("lower", FunctionLib::lower);
+        register("trim", FunctionLib::trim);
     }
 
     /**
@@ -144,7 +144,7 @@ public class Functions {
 
     private static Stream<ONode> flatten(ONode node) {
         if (node.isArray()) {
-            return node.getArray().stream().flatMap(Functions::flatten);
+            return node.getArray().stream().flatMap(FunctionLib::flatten);
         } else {
             return Stream.of(node);
         }

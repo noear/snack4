@@ -6,53 +6,52 @@ import org.noear.snack.exception.PathResolutionException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 
 /**
  * 操作符处理库(支持动态注册)
  *
  * @author noear 2025/5/5 created
  */
-public class Operations {
-    private static final Map<String, BiFunction<ONode, Condition, Boolean>> LIB = new ConcurrentHashMap<>();
+public class OperationLib {
+    private static final Map<String, Operation> LIB = new ConcurrentHashMap<>();
 
     static {
         // 操作函数
-        register("startsWith", Operations::startsWith);
-        register("endsWith", Operations::endsWith);
-        register("contains", Operations::contains);
-        register("in", Operations::in);
-        register("=~", Operations::matches);
+        register("startsWith", OperationLib::startsWith);
+        register("endsWith", OperationLib::endsWith);
+        register("contains", OperationLib::contains);
+        register("in", OperationLib::in);
+        register("=~", OperationLib::matches);
 
-        register("==", Operations::compare);
-        register("!=", Operations::compare);
-        register(">", Operations::compare);
-        register("<", Operations::compare);
-        register(">=", Operations::compare);
-        register("<=", Operations::compare);
+        register("==", OperationLib::compare);
+        register("!=", OperationLib::compare);
+        register(">", OperationLib::compare);
+        register("<", OperationLib::compare);
+        register(">=", OperationLib::compare);
+        register("<=", OperationLib::compare);
     }
 
     /**
      * 注册
      */
-    public static void register(String name, BiFunction<ONode, Condition, Boolean> func) {
+    public static void register(String name, Operation func) {
         LIB.put(name, func);
     }
 
     /**
      * 获取
      */
-    public static BiFunction<ONode, Condition, Boolean> get(String funcName) {
+    public static Operation get(String funcName) {
         return LIB.get(funcName);
     }
 
     /// /////////////////
 
-    private static boolean startsWith(ONode node, Condition condition) {
-        ONode leftNode = condition.getLeftNode(node);
+    private static boolean startsWith(ONode node, Condition condition, ONode root) {
+        ONode leftNode = condition.getLeftNode(node, root);
 
         if (leftNode.isString()) {
-            ONode rightNode = condition.getRightNode(node);
+            ONode rightNode = condition.getRightNode(node, root);
             if (rightNode == null) {
                 return false;
             }
@@ -62,11 +61,11 @@ public class Operations {
         return false;
     }
 
-    private static boolean endsWith(ONode node, Condition condition) {
-        ONode leftNode = condition.getLeftNode(node);
+    private static boolean endsWith(ONode node, Condition condition, ONode root) {
+        ONode leftNode = condition.getLeftNode(node, root);
 
         if (leftNode.isString()) {
-            ONode rightNode = condition.getRightNode(node);
+            ONode rightNode = condition.getRightNode(node, root);
             if (rightNode == null) {
                 return false;
             }
@@ -76,10 +75,10 @@ public class Operations {
         return false;
     }
 
-    private static boolean contains(ONode node, Condition condition) {
-        ONode leftNode = condition.getLeftNode(node);
+    private static boolean contains(ONode node, Condition condition, ONode root) {
+        ONode leftNode = condition.getLeftNode(node, root);
 
-        ONode expectedNode = condition.getRightNode(node);
+        ONode expectedNode = condition.getRightNode(node, root);
 
         // 支持多类型包含检查
         if (leftNode.isArray()) {
@@ -95,10 +94,10 @@ public class Operations {
         return false;
     }
 
-    private static boolean in(ONode node, Condition condition) {
-        ONode leftNode = condition.getLeftNode(node);
+    private static boolean in(ONode node, Condition condition, ONode root) {
+        ONode leftNode = condition.getLeftNode(node, root);
 
-        ONode rightNode = condition.getRightNode(node);
+        ONode rightNode = condition.getRightNode(node, root);
         if (rightNode == null && rightNode.isArray() == false) {
             return false;
         }
@@ -107,9 +106,9 @@ public class Operations {
         return found;
     }
 
-    public static boolean matches(ONode node, Condition condition) {
-        ONode leftNode = condition.getLeftNode(node);
-        ONode rightNode = condition.getRightNode(node);
+    public static boolean matches(ONode node, Condition condition, ONode root) {
+        ONode leftNode = condition.getLeftNode(node, root);
+        ONode rightNode = condition.getRightNode(node, root);
 
 
         if (leftNode.isString()) {
@@ -121,9 +120,9 @@ public class Operations {
         return false;
     }
 
-    public static boolean compare(ONode node, Condition condition) {
-        ONode leftNode = condition.getLeftNode(node);
-        ONode rightNode = condition.getRightNode(node);
+    public static boolean compare(ONode node, Condition condition, ONode root) {
+        ONode leftNode = condition.getLeftNode(node, root);
+        ONode rightNode = condition.getRightNode(node, root);
 
 
         // 类型判断逻辑
