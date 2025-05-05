@@ -360,7 +360,13 @@ public class JsonPath {
 
                         if (isCreateMode) {
                             //0 算1个，-1 算1个（至少算1个）
-                            int count = Math.abs(idx) + 1 - arr.size();
+                            int count = 0;
+                            if (idx < 0) {
+                                count = Math.abs(idx) - arr.size();
+                            } else {
+                                count = idx + 1 - arr.size();
+                            }
+
                             for (int i = 0; i < count; i++) {
                                 arr.add(new ONode());
                             }
