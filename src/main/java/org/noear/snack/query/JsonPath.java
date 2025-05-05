@@ -177,10 +177,10 @@ public class JsonPath {
                 currentNodes = resolveRecursive(currentNodes, root);
 
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
-                    currentNodes = resolveKey(currentNodes, false);
+                    currentNodes = resolveKey(currentNodes, false, true);
                 }
             } else {
-                currentNodes = resolveKey(currentNodes, false);
+                currentNodes = resolveKey(currentNodes, false, false);
             }
             return currentNodes;
         }
@@ -201,9 +201,9 @@ public class JsonPath {
             } else if (segment.startsWith("?")) {
                 // 条件过滤，如 [?@id]
                 // ..*[?...] 支持进一步深度展开
-                // ..x[?...] 展开过，但查询后是新的结果可以再展开
-                // ..[?...] 展开过，不需要再展开
-                currentNodes = resolveFilter(currentNodes, segment.substring(1), expect != '.', root);
+                // ..x[?...] 已展开过，但查询后是新的结果可以再展开
+                // ..[?...] 已展开过，不需要再展开
+                currentNodes = resolveFilter(currentNodes, segment.substring(1), expect == '.', root);
             } else if (segment.contains(",")) {
                 // 多索引选择，如 [1,4]
                 currentNodes = resolveMultiIndex(currentNodes, segment);
@@ -301,7 +301,7 @@ public class JsonPath {
         }
 
         // 解析键名或函数调用（如 "store" 或 "count()"）
-        private List<ONode> resolveKey(List<ONode> nodes, boolean strict) {
+        private List<ONode> resolveKey(List<ONode> nodes, boolean strict, boolean flattened) {
             String key = parseSegment('.', '[');
             if (key.endsWith("()")) {
                 String funcName = key.substring(0, key.length() - 2);
@@ -309,7 +309,11 @@ public class JsonPath {
                         FunctionLib.get(funcName).apply(nodes) // 传入节点列表
                 );
             } else if (key.equals("*")) {
-                return resolveWildcard(nodes);
+                if (flattened) {
+                    return nodes;
+                } else {
+                    return resolveWildcard(nodes);
+                }
             } else {
                 return nodes.stream()
                         .map(n -> getChild(n, key, strict))
@@ -472,16 +476,16 @@ public class JsonPath {
         }
 
         // 处理过滤器（如 [?(@.price > 10)]）
-        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, boolean isFlatten, ONode root) {
+        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, boolean flattened, ONode root) {
             Expression expression = Expression.get(filterStr);
 
-            if (isFlatten) {
+            if (flattened) {
                 return nodes.stream()
-                        .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
                         .filter(n -> expression.test(n, root))
                         .collect(Collectors.toList());
             } else {
                 return nodes.stream()
+                        .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
                         .filter(n -> expression.test(n, root))
                         .collect(Collectors.toList());
             }
