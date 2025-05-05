@@ -169,7 +169,13 @@ public class JsonPath {
             index++;
             if (index < path.length() && path.charAt(index) == '.') {
                 index++;
+
+                if (path.charAt(index) == '*') {
+                    index++;
+                }
+
                 currentNodes = resolveRecursive(currentNodes, root);
+
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
                     currentNodes = resolveKey(currentNodes, false);
                 }
