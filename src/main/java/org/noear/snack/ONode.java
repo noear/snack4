@@ -330,7 +330,7 @@ public final class ONode {
 
     @Override
     public String toString() {
-        return toJson();
+        return String.valueOf(value);
     }
 
     public void validate(SchemaValidator schema) {

@@ -111,9 +111,9 @@ public class OperationLib {
         ONode rightNode = condition.getRightNode(node, root);
 
 
-        if (leftNode.isString()) {
+        if (leftNode.isValue()) {
             if (rightNode.isString()) {
-                return leftNode.getString().matches(rightNode.getString().replace("\\/", "/"));
+                return leftNode.toString().matches(rightNode.getString().replace("\\/", "/"));
             }
         }
 

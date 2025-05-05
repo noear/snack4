@@ -94,40 +94,47 @@ public class JsonPathTest {
 
         ONode t1 = n.select("$.data.ary2[*].a");
         assert  t1.size()==2;
-
+        assertEquals(2, t1.size());
 
         ONode t2 = n.select("$..a");
-        assert  t2.size()==2;
+        assertEquals(2, t2.size());
 
         ONode t3 = n.select("$.data.*");
-        assert  t3.size()==3;
+        assertEquals(3, t3.size());
 
         ONode t4 = n.select("$.data..a");
-        assert  t4.size()==2;
+        assertEquals(2, t4.size());
 
 //        ONode t5 = n.select("$..a[0]");//a不是数组，不会支持了
 //        assert  t5.getInt()==2;
 
         ONode t60 = n.select("$..b");
-        System.out.println(t60.toJson());
+        assertEquals(4, t60.size());
 
         ONode t6 = n.select("$..list[-1]");
-        assert  t6.get(0).getInt()==5;
+        assertEquals(5, t6.get(0).getInt());
 
         ONode t7 = n.select("$..list[0,1]");
-        assert  t7.size()==2;
+        assertEquals(2, t7.size());
 
         ONode t8 = n.select("$..list[:2]");
-        assert  t8.size()==2;
+        assertEquals(2, t8.size());
 
         ONode t9 = n.select("$..list[1:2]");
-        assert  t9.size()==1;
+        assertEquals(1, t9.size());
 
-        ONode ta = n.select("$..list[-2:]");
-        assert  ta.size()==2;
 
         ONode tb = n.select("$..list[2:]");
-        assert  tb.size()==3;
+        assertEquals(3, tb.size());
+    }
+
+    @Test
+    public void testx1_2() {
+        //1.加载json
+        ONode n = ONode.loadJson("{code:1,msg:'Hello world',data:{list:[1,2,3,4,5],b:2,ary2:[{a:2,b:8},{a:3,b:{c:'ddd',b:23}}]}}");
+
+        ONode ta = n.select("$..list[-2:]");
+        assertEquals(2, ta.size());
     }
 
     @Test
@@ -155,16 +162,28 @@ public class JsonPathTest {
 
         ONode t5 = n.select("$..b[?(@.c in [1,2])]");
         assert  t5.size()==2;
+    }
 
-        ONode t6 = n.select("$..b[?(@.c nin [1,2])]");
+    @Test
+    public void testx2_1() {
+        //1.加载json
+        ONode n = ONode.loadJson("[{b:{c:1}}, {b:{d:1}}, {b:{c:2}}, {b:{c:23}}]");
+
+        ONode t6 = n.select("$..b[?(!@.c in [1,2])]");
         assert  t6.size()==1;
+    }
+
+    @Test
+    public void testx2_2() {
+        //1.加载json
+        ONode n = ONode.loadJson("[{b:{c:1}}, {b:{d:1}}, {b:{c:2}}, {b:{c:23}}]");
 
         ONode t7 = n.select("$..b[?(@.c =~ /\\d+/)]");
         assert  t7.size()==3;
     }
 
     @Test
-    public void testx2_2() {
+    public void testx2_3() {
         //1.加载json
         ONode n = ONode.loadJson("[1,2,3,4]");
 
@@ -173,7 +192,7 @@ public class JsonPathTest {
     }
 
     @Test
-    public void testx2_3() {
+    public void testx2_4() {
         //1.加载json
         ONode n = ONode.loadJson("{ \"store\": { \"book\": [ { \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 } ], \"bicycle\": { \"color\": \"red\", \"price\": 19.95 } }, \"expensive\": 10 }");
 
@@ -182,7 +201,7 @@ public class JsonPathTest {
     }
 
     @Test
-    public void testx2_4() {
+    public void testx2_5() {
         //1.加载json
         ONode n = ONode.loadJson("{ \"store\": { \"book\": [ { \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 } ], \"bicycle\": { \"color\": \"red\", \"price\": 19.95 } }, \"expensive\": 10 }");
 
@@ -191,7 +210,7 @@ public class JsonPathTest {
     }
 
     @Test
-    public void testx2_5() {
+    public void testx2_6() {
         //1.加载json
         ONode n = ONode.loadJson("{ \"store\": { \"book\": [ { \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 } ], \"bicycle\": { \"color\": \"red\", \"price\": 19.95 } }, \"expensive\": 10 }");
 

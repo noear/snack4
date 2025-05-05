@@ -142,12 +142,12 @@ public class JsonPathCompatibleTest1 {
     private void compatible_do(String hint, String json, String jsonpathStr) {
         System.out.println("::::" + hint);
 
-        Object tmp = ONode.loadJson(json).select(jsonpathStr);
+        ONode tmp = ONode.loadJson(json).select(jsonpathStr);
         System.out.println(tmp);
 
         Object tmp2 = JsonPath.read(json, jsonpathStr);
         System.out.println(tmp2);
 
-        assert tmp.toString().equals(tmp2.toString());
+        assert tmp.toJson().equals(tmp2.toString());
     }
 }

@@ -219,7 +219,7 @@ public class JsonPath {
         }
 
         private List<ONode> resolveRangeIndex(List<ONode> nodes, String rangeStr) {
-            String[] parts = rangeStr.split(":");
+            String[] parts = rangeStr.split(":", 2);
             if (parts.length != 2) {
                 throw new PathResolutionException("Invalid range syntax: " + rangeStr);
             }
@@ -228,8 +228,8 @@ public class JsonPath {
                     .filter(ONode::isArray)
                     .flatMap(arr -> {
                         int size = arr.size();
-                        int start = parseRangeBound(parts[0], size);
-                        int end = parseRangeBound(parts[1], size);
+                        int start = parseRangeBound(parts[0], 0, size);
+                        int end = parseRangeBound(parts[1], size, size);
 
                         // 调整范围确保有效
                         start = Math.max(0, Math.min(start, size));
@@ -250,9 +250,9 @@ public class JsonPath {
         }
 
         // 辅助方法：解析范围边界
-        private int parseRangeBound(String boundStr, int size) {
+        private int parseRangeBound(String boundStr, int def, int size) {
             if (boundStr.isEmpty()) {
-                return 0; // 默认开始
+                return def; // 默认开始
             }
 
             int bound = Integer.parseInt(boundStr.trim());
@@ -374,7 +374,7 @@ public class JsonPath {
         // 处理精确索引（支持负数）
         private List<ONode> resolveIndex(List<ONode> nodes, String indexStr) {
             if (indexStr.startsWith("'")) {
-                final String key = indexStr.substring(1, indexStr.length()-1);
+                final String key = indexStr.substring(1, indexStr.length() - 1);
 
                 return nodes.stream()
                         .filter(o -> {
@@ -410,24 +410,21 @@ public class JsonPath {
                         })
                         .map(arr -> {
                             int idx = index;
-                            if (isCreateMode) {
-                                //0 算1个，-1 算1个（至少算1个）
-                                int count = 0;
-                                if (idx < 0) {
-                                    count = Math.abs(idx) - arr.size();
-                                } else {
-                                    count = idx + 1 - arr.size();
-                                }
+                            if (idx < 0) {
+                                idx = arr.size() + idx;
+                            }
 
+                            if (isCreateMode) {
+                                int count = idx + 1 - arr.size();
                                 for (int i = 0; i < count; i++) {
                                     arr.add(new ONode());
                                 }
                             } else {
-                                if (idx < 0) idx += arr.size();
-                                if (idx < 0 || idx >= arr.size()) {
+                                if (idx >= arr.size()) {
                                     throw new PathResolutionException("Index out of bounds: " + idx);
                                 }
                             }
+
                             ONode rst = arr.get(idx);
                             rst.source = new JsonSource(arr, null, idx);
 
