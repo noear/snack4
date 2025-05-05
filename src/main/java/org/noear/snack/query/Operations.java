@@ -2,7 +2,6 @@ package org.noear.snack.query;
 
 
 import org.noear.snack.ONode;
-import org.noear.snack.core.util.TextUtil;
 import org.noear.snack.exception.PathResolutionException;
 
 import java.util.Map;
@@ -23,6 +22,14 @@ public class Operations {
         register("endsWith", Operations::endsWith);
         register("contains", Operations::contains);
         register("in", Operations::in);
+        register("=~", Operations::matches);
+
+        register("==", Operations::compare);
+        register("!=", Operations::compare);
+        register(">", Operations::compare);
+        register("<", Operations::compare);
+        register(">=", Operations::compare);
+        register("<=", Operations::compare);
     }
 
     /**
@@ -36,13 +43,7 @@ public class Operations {
      * 获取
      */
     public static BiFunction<ONode, Condition, Boolean> get(String funcName) {
-        BiFunction<ONode, Condition, Boolean> tmp = LIB.get(funcName);
-
-        if (tmp == null) {
-            return Operations::def;
-        } else {
-            return tmp;
-        }
+        return LIB.get(funcName);
     }
 
     /// /////////////////
@@ -106,26 +107,23 @@ public class Operations {
         return found;
     }
 
-    public static boolean def(ONode node, Condition condition) {
+    public static boolean matches(ONode node, Condition condition) {
         ONode leftNode = condition.getLeftNode(node);
-
-        // 处理存在性检查（如 @.price）
-        if (TextUtil.isEmpty(condition.getOp()) && TextUtil.isEmpty(condition.getRight())) {
-            return true;
-        }
-
         ONode rightNode = condition.getRightNode(node);
 
 
-        if ("=~".equals(condition.getOp()) && condition.getRight() != null) {
-            if (leftNode.isString()) {
-                if (rightNode.isString()) {
-                    return leftNode.getString().matches(rightNode.getString().replace("\\/", "/"));
-                }
+        if (leftNode.isString()) {
+            if (rightNode.isString()) {
+                return leftNode.getString().matches(rightNode.getString().replace("\\/", "/"));
             }
-
-            return false;
         }
+
+        return false;
+    }
+
+    public static boolean compare(ONode node, Condition condition) {
+        ONode leftNode = condition.getLeftNode(node);
+        ONode rightNode = condition.getRightNode(node);
 
 
         // 类型判断逻辑

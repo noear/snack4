@@ -2,9 +2,11 @@ package org.noear.snack.query;
 
 import org.noear.snack.ONode;
 import org.noear.snack.core.util.TextUtil;
+import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 /**
@@ -155,7 +157,13 @@ public class Filter implements Predicate<ONode> {
             }
         }
 
-        return Operations.get(condition.getOp()).apply(node, condition);
+        BiFunction<ONode, Condition, Boolean> operation = Operations.get(condition.getOp());
+
+        if (operation == null) {
+            throw new PathResolutionException("Unsupported operator : " + condition.getOp());
+        }
+
+        return operation.apply(node, condition);
     }
 
     private enum TokenType {ATOM, AND, OR, LPAREN, RPAREN}
