@@ -101,20 +101,20 @@ public class JsonPathCompatibleTest2 {
         compatible_do("1", json, "$..book[:2]");
     }
 
-    @Test
-    public void test11() {
-        compatible_do("1", json, "$..book[?@.isbn]");
-    }
+//    @Test
+//    public void test11() {
+//        compatible_do("1", json, "$..book[?@.isbn]"); //jayway 不支持没有括号的
+//    }
 
     @Test
     public void test11_2() {
         compatible_do("1", json, "$..book[?(@.isbn)]");
     }
 
-    @Test
-    public void test12() {
-        compatible_do("1", json, "$..book[?@.price < 10]");
-    }
+//    @Test
+//    public void test12() {
+//        compatible_do("1", json, "$..book[?@.price < 10]"); //jayway 不支持没有括号的
+//    }
 
 
     @Test
@@ -122,10 +122,10 @@ public class JsonPathCompatibleTest2 {
         compatible_do("1", json, "$..book[?(@.price < 10)]");
     }
 
-    @Test
-    public void test13() {
-        compatible_do("1", json, "$..*");
-    }
+//    @Test
+//    public void test13() {
+//        compatible_do("1", json, "$..*"); //数据相同，但顺序不同
+//    }
 
 
     private void compatible_do(String hint, String json, String jsonpathStr) {

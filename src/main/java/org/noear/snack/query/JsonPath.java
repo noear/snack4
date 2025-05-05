@@ -6,7 +6,6 @@ import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -171,19 +170,22 @@ public class JsonPath {
 
                 if (path.charAt(index) == '*') {
                     index++;
+                } else {
+                    context.flattened = true;
                 }
 
                 currentNodes = resolveRecursive(currentNodes, context);
 
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
-                    currentNodes = resolveKey(currentNodes, false, context);
+                    currentNodes = resolveKey(currentNodes, false, true);
+                    context.flattened = false;
                 }
             } else {
                 char ch = path.charAt(index);
                 if (ch == '[') {
                     currentNodes = handleBracket(currentNodes, context);
                 } else {
-                    currentNodes = resolveKey(currentNodes, false, context);
+                    currentNodes = resolveKey(currentNodes, false, false);
                 }
             }
 
@@ -334,23 +336,20 @@ public class JsonPath {
         }
 
         // 解析键名或函数调用（如 "store" 或 "count()"）
-        private List<ONode> resolveKey(List<ONode> nodes, boolean strict, Context context) {
+        private List<ONode> resolveKey(List<ONode> nodes, boolean strict, boolean flattened) {
             String key = parseSegment('.', '[');
             if (key.endsWith("()")) {
-                context.flattened = false;
                 String funcName = key.substring(0, key.length() - 2);
                 return Collections.singletonList(
                         FunctionLib.get(funcName).apply(nodes) // 传入节点列表
                 );
             } else if (key.equals("*")) {
-                if (context.flattened) {
+                if (flattened) {
                     return nodes;
                 } else {
                     return resolveWildcard(nodes);
                 }
             } else {
-                context.flattened = false;
-
                 return nodes.stream()
                         .map(n -> getChild(n, key, strict))
                         .flatMap(Collection::stream)
@@ -455,10 +454,10 @@ public class JsonPath {
                                 for (int i = 0; i < count; i++) {
                                     arr.add(new ONode());
                                 }
-                            } else {
-                                if (idx >= arr.size()) {
-                                    throw new PathResolutionException("Index out of bounds: " + idx);
-                                }
+                            }
+
+                            if (idx < 0 || idx >= arr.size()) {
+                                throw new PathResolutionException("Index out of bounds: " + idx);
                             }
 
                             ONode rst = arr.get(idx);
@@ -472,8 +471,6 @@ public class JsonPath {
 
         // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes, Context context) {
-            context.flattened = true;
-
             List<ONode> tmp = new ArrayList<>();
             nodes.forEach(node -> collectRecursive(node, tmp));
 
