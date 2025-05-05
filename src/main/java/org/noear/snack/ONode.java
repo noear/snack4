@@ -117,10 +117,6 @@ public final class ONode {
         return getNumber().doubleValue();
     }
 
-    public void setValue(Object value) {
-        this.value = value;
-    }
-
     public ONode get(String key) {
         return getObject().get(key);
     }
@@ -131,6 +127,11 @@ public final class ONode {
 
     public void remove(String key) {
         getObject().remove(key);
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+        this.type = JsonType.resolveType(value);
     }
 
     public ONode set(String key, Object value) {
@@ -265,17 +266,15 @@ public final class ONode {
     /**
      * 根据 jsonpath 删除
      */
-    public ONode delete(String jsonpath) {
+    public void delete(String jsonpath) {
         JsonPath.delete(this, jsonpath);
-        return this;
     }
 
     /**
      * 根据 jsonpath 生成
      */
     public ONode create(String jsonpath) {
-        JsonPath.create(this, jsonpath);
-        return this;
+        return JsonPath.create(this, jsonpath);
     }
 
 

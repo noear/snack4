@@ -25,4 +25,8 @@ public class JsonPathNewTest {
         System.out.println(oNode.toJson());
         //{"orders":[{"price":500},{},{},{},{},{},{},{},{},{},{"price":600}]}
     }
+
+    public void test2(){
+
+    }
 }

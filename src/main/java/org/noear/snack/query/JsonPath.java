@@ -22,19 +22,19 @@ public class JsonPath {
     }
 
     /**
+     * 根据 jsonpath 生成
+     */
+    public static ONode create(ONode root, String path) {
+        if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
+        return new PathParser(path).create(root);
+    }
+
+    /**
      * 根据 jsonpath 删除
      */
     public static void delete(ONode root, String path) {
         if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
         new PathParser(path).delete(root);
-    }
-
-    /**
-     * 根据 jsonpath 生成
-     */
-    public static void create(ONode root, String path) {
-        if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
-        new PathParser(path).create(root);
     }
 
     private static class PathParser {
@@ -64,6 +64,51 @@ public class JsonPath {
                     currentNodes = handleBracket(currentNodes, root);
                 } else {
                     throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
+                }
+            }
+
+            if (currentNodes.size() > 1) {
+                return new ONode(currentNodes);
+            } else {
+                if ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0 && path.indexOf(",") < 0 && path.indexOf(":") < 0) || path.indexOf("()") > 0) {
+                    if (currentNodes.size() > 0) {
+                        return currentNodes.get(0);
+                    } else {
+                        return new ONode();
+                    }
+                } else {
+                    return new ONode(currentNodes);
+                }
+            }
+        }
+
+
+
+        // 创建节点
+        ONode create(ONode root) {
+            isCreateMode = true;
+            List<ONode> currentNodes = Collections.singletonList(root);
+            index++;
+
+            while (index < path.length()) {
+                skipWhitespace();
+                if (index >= path.length()) break;
+
+                char ch = path.charAt(index);
+                if (ch == '.') {
+                    currentNodes = handleDot(currentNodes, root);
+                } else if (ch == '[') {
+                    currentNodes = handleBracket(currentNodes, root);
+                } else {
+                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
+                }
+            }
+
+            for (ONode node : currentNodes) {
+                if (node.isObject()) {
+                    node.set(path.substring(path.lastIndexOf('.') + 1), new ONode());
+                } else if (node.isArray()) {
+                    node.add(new ONode());
                 }
             }
 
@@ -115,36 +160,6 @@ public class JsonPath {
                             n.source.parent.remove(n.source.index);
                         }
                     }
-                }
-            }
-        }
-
-        // 创建节点
-        void create(ONode root) {
-            isCreateMode = true;
-            List<ONode> currentNodes = Collections.singletonList(root);
-            index++;
-
-            while (index < path.length()) {
-                skipWhitespace();
-                if (index >= path.length()) break;
-
-                char ch = path.charAt(index);
-                if (ch == '.') {
-                    currentNodes = handleDot(currentNodes, root);
-                } else if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes, root);
-                } else {
-                    throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
-                }
-            }
-
-            if (currentNodes.size() == 1) {
-                ONode node = currentNodes.get(0);
-                if (node.isObject()) {
-                    node.set(path.substring(path.lastIndexOf('.') + 1), new ONode());
-                } else if (node.isArray()) {
-                    node.add(new ONode());
                 }
             }
         }
@@ -345,7 +360,7 @@ public class JsonPath {
 
                         if (isCreateMode) {
                             //0 算1个，-1 算1个（至少算1个）
-                            int count = Math.max(Math.abs(idx), 1) - arr.size();
+                            int count = Math.abs(idx) + 1 - arr.size();
                             for (int i = 0; i < count; i++) {
                                 arr.add(new ONode());
                             }
