@@ -357,7 +357,7 @@ public class JsonPath {
         // 处理递归搜索 ..
         private List<ONode> resolveRecursive(List<ONode> nodes, ONode root) {
             List<ONode> tmp = new ArrayList<>();
-            nodes.forEach(node -> collectRecursive(node, tmp, false));
+            nodes.forEach(node -> collectRecursive(node, tmp));
 
             List<ONode> results = tmp;
 
@@ -378,15 +378,17 @@ public class JsonPath {
             return results;
         }
 
-        private void collectRecursive(ONode node, List<ONode> results, boolean isChild) {
+        private void collectRecursive(ONode node, List<ONode> results) {
             if (node.isArray()) {
-                node.getArray().forEach(n -> collectRecursive(n, results, true));
+                for (ONode n1 : node.getArray()) {
+                    results.add(n1);
+                    collectRecursive(n1, results);
+                }
             } else if (node.isObject()) {
-                node.getObject().values().forEach(n -> collectRecursive(n, results, true));
-            }
-
-            if (isChild) {
-                results.add(node);
+                for (ONode n1 : node.getObject().values()) {
+                    results.add(n1);
+                    collectRecursive(n1, results);
+                }
             }
         }
 
