@@ -114,8 +114,8 @@ public class OperationLib {
         boolean found = false;
         if (leftNode.isValue()) {
             if (rightNode.isString()) {
-                String v = rightNode.getString().replace("\\/", "/");
-                found = Pattern.compile(v).matcher(leftNode.toString()).find();
+                String v = rightNode.getString();//.replace("\\/", "/");
+                found = Condition.parseJsRegex(v).matcher(leftNode.toString()).find();
             }
         }
 

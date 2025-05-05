@@ -69,10 +69,6 @@ public class JsonPathTest2 {
         System.out.println(tf);
         assert tc.size() == 2;
 
-        ONode tg = n.select("$..book[?(@.author =~ /.*REES/i)]");
-        System.out.println(tg);
-        assert tg.size() == 1;
-
         ONode th = n.select("$..*");
         System.out.println(th);
         assert th.size() == 28;

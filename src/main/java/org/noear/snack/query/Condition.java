@@ -7,6 +7,8 @@ package org.noear.snack.query;
 import org.noear.snack.ONode;
 import org.noear.snack.core.util.TextUtil;
 
+import java.util.regex.Pattern;
+
 /**
  * 条件描述
  */
@@ -108,8 +110,10 @@ public class Condition {
             if (ch == '@' || ch == '$') {
                 return null;
             } else {
-                if (ch == '\'' || ch == '/') {
+                if (ch == '\'') {
                     return new ONode(value.substring(1, value.length() - 1));
+                } else if (ch == '/') {
+                    return new ONode(value);
                 } else {
                     return ONode.loadJson(value);
                 }
@@ -149,5 +153,41 @@ public class Condition {
             if (current == null) return null;
         }
         return current;
+    }
+
+    public static Pattern parseJsRegex(String jsRegex) {
+        // 1. 检查输入是否以 / 开头和结尾
+        if (!jsRegex.startsWith("/") || !jsRegex.contains("/")) {
+            throw new IllegalArgumentException("Invalid JavaScript regex format: " + jsRegex);
+        }
+
+        // 2. 分离正则主体和修饰符
+        int lastSlashIndex = jsRegex.lastIndexOf('/');
+        String regexBody = jsRegex.substring(1, lastSlashIndex);
+        String flags = jsRegex.substring(lastSlashIndex + 1);
+
+        // 3. 转换修饰符为 Java 的 Pattern 标志
+        int javaFlags = 0;
+        for (char flag : flags.toCharArray()) {
+            switch (flag) {
+                case 'i':
+                    javaFlags |= Pattern.CASE_INSENSITIVE;
+                    break;
+                case 'm':
+                    javaFlags |= Pattern.MULTILINE;
+                    break;
+                case 's':
+                    javaFlags |= Pattern.DOTALL;
+                    break;
+                // 忽略 g（全局匹配），Java 通过 Matcher 循环实现
+                case 'g':
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported flag: " + flag);
+            }
+        }
+
+        // 4. 创建 Pattern
+        return Pattern.compile(regexBody, javaFlags);
     }
 }
