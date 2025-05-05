@@ -3,27 +3,51 @@ package org.noear.snack.query;
 import org.noear.snack.ONode;
 import org.noear.snack.core.util.TextUtil;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * @author noear 2025/5/5 created
  */
-public class Filter {
-    public static boolean evaluateFilter(ONode node, String filterStr) {
+public class Filter implements Predicate<ONode> {
+    private static Map<String, Filter> filters = new ConcurrentHashMap<>();
+
+    public static Filter get(String filterStr) {
+        return filters.computeIfAbsent(filterStr, k -> new Filter(filterStr));
+    }
+
+    /// ///////////////////
+
+    private final List<Token> rpn;
+
+    public Filter(String filterStr) {
+        List<Token> tokens = tokenize(filterStr);
+        this.rpn = convertToRPN(tokens);
+    }
+
+    // 评估逆波兰式
+    @Override
+    public boolean test(ONode node) {
         try {
-            List<Token> tokens = tokenize(filterStr);
-            List<Token> rpn = convertToRPN(tokens);
-            return evaluateRPN(node, rpn);
-        } catch (Exception e) {
+            Deque<Boolean> stack = new ArrayDeque<>();
+            for (Token token : rpn) {
+                if (token.type == TokenType.ATOM) {
+                    stack.push(evaluateSingleCondition(node, token.value));
+                } else if (token.type == TokenType.AND || token.type == TokenType.OR) {
+                    boolean b = stack.pop();
+                    boolean a = stack.pop();
+                    stack.push(token.type == TokenType.AND ? a && b : a || b);
+                }
+            }
+            return stack.pop();
+        } catch (Throwable ex) {
             return false;
         }
     }
 
     // 新增分词器
-    private static List<Token> tokenize(String filter) {
+    private List<Token> tokenize(String filter) {
         List<Token> tokens = new ArrayList<>();
         int index = 0;
         int len = filter.length();
@@ -69,7 +93,7 @@ public class Filter {
     }
 
     // 转换为逆波兰式
-    private static List<Token> convertToRPN(List<Token> tokens) {
+    private List<Token> convertToRPN(List<Token> tokens) {
         List<Token> output = new ArrayList<>();
         Deque<Token> stack = new ArrayDeque<>();
 
@@ -104,27 +128,12 @@ public class Filter {
         return output;
     }
 
-    private static int precedence(Token token) {
+    private int precedence(Token token) {
         return token.type == TokenType.AND ? 2 : token.type == TokenType.OR ? 1 : 0;
     }
 
-    // 评估逆波兰式
-    private static boolean evaluateRPN(ONode node, List<Token> rpn) {
-        Deque<Boolean> stack = new ArrayDeque<>();
-        for (Token token : rpn) {
-            if (token.type == TokenType.ATOM) {
-                stack.push(evaluateSingleCondition(node, token.value));
-            } else if (token.type == TokenType.AND || token.type == TokenType.OR) {
-                boolean b = stack.pop();
-                boolean a = stack.pop();
-                stack.push(token.type == TokenType.AND ? a && b : a || b);
-            }
-        }
-        return stack.pop();
-    }
 
-
-    private static boolean evaluateSingleCondition(ONode node, String conditionStr) {
+    private boolean evaluateSingleCondition(ONode node, String conditionStr) {
         if (conditionStr.startsWith("!")) {
             //非运行
             return !evaluateSingleCondition(node, conditionStr.substring(1));

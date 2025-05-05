@@ -303,16 +303,12 @@ public class JsonPath {
         }
 
         // 处理过滤器（如 [?(@.price > 10)]）
-        private List<ONode> resolveFilter(List<ONode> nodes, String filter) {
+        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr) {
+            Filter filter = Filter.get(filterStr);
+
             return nodes.stream()
                     .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
-                    .filter(n -> {
-                        try {
-                            return Filter.evaluateFilter(n, filter);
-                        } catch (Exception e) {
-                            return false;
-                        }
-                    })
+                    .filter(filter::test)
                     .collect(Collectors.toList());
         }
 
