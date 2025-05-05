@@ -36,8 +36,6 @@ public class JsonPathTest2 {
         System.out.println(t6);
         assert t6.isArray();
 
-        Map<String, Object> t7 = n.select("$..book[2]").toBean(Map.class);
-        System.out.println(t7);
 
         ONode t8 = n.select("$..book[-2]");
         System.out.println(t8);

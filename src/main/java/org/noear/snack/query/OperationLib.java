@@ -6,6 +6,7 @@ import org.noear.snack.exception.PathResolutionException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * 操作符处理库(支持动态注册)
@@ -110,14 +111,15 @@ public class OperationLib {
         ONode leftNode = condition.getLeftNode(node, root);
         ONode rightNode = condition.getRightNode(node, root);
 
-
+        boolean found = false;
         if (leftNode.isValue()) {
             if (rightNode.isString()) {
-                return leftNode.toString().matches(rightNode.getString().replace("\\/", "/"));
+                String v = rightNode.getString().replace("\\/", "/");
+                found = Pattern.compile(v).matcher(leftNode.toString()).find();
             }
         }
 
-        return false;
+        return found;
     }
 
     public static boolean compare(ONode node, Condition condition, ONode root) {

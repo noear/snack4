@@ -180,8 +180,14 @@ public class JsonPath {
                     currentNodes = resolveKey(currentNodes, false, true);
                 }
             } else {
-                currentNodes = resolveKey(currentNodes, false, false);
+                char ch = path.charAt(index);
+                if (ch == '[') {
+                    currentNodes = handleBracket(currentNodes, root);
+                } else {
+                    currentNodes = resolveKey(currentNodes, false, false);
+                }
             }
+
             return currentNodes;
         }
 
