@@ -233,27 +233,37 @@ public class JsonPath {
 
             final int step = (parts.length == 3 && parts[2].length() > 0) ? Integer.parseInt(parts[2]) : 1;
 
+            if (step == 0) {
+                return Collections.emptyList();
+            }
+
             return nodes.stream()
                     .filter(ONode::isArray)
                     .flatMap(arr -> {
                         int size = arr.size();
-                        int start = parseRangeBound(parts[0], 0, size);
-                        int end = parseRangeBound(parts[1], size, size);
+                        int start = parseRangeBound(parts[0], (step > 0 ? 0 : size - 1), size);
+                        int end = parseRangeBound(parts[1], (step > 0 ? size : -1), size);
 
                         // 调整范围确保有效
-                        start = Math.max(0, Math.min(start, size));
-                        end = Math.max(0, Math.min(end, size));
-
-                        if (start >= end) {
-                            return Stream.empty();
-                        }
+                        RangeUtil.Bounds bounds = RangeUtil.bounds(start, end, step, size);
 
                         List<ONode> result = new ArrayList<>();
-                        for (int idx = start; idx < end; ) {
-                            ONode node = arr.get(idx);
-                            node.source = new JsonSource(arr, null, idx);
-                            result.add(node);
-                            idx += step;
+                        if (step > 0) {
+                            int i = bounds.lower;
+                            while (i < bounds.upper) {
+                                ONode node = arr.get(i);
+                                node.source = new JsonSource(arr, null, i);
+                                result.add(node);
+                                i += step;
+                            }
+                        } else {
+                            int i = bounds.upper;
+                            while (bounds.lower < i) {
+                                ONode node = arr.get(i);
+                                node.source = new JsonSource(arr, null, i);
+                                result.add(node);
+                                i += step;
+                            }
                         }
                         return result.stream();
                     })
