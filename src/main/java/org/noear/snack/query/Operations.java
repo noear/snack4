@@ -47,18 +47,11 @@ public class Operations {
 
     /// /////////////////
 
-    private static boolean startsWith(ONode node, Condition factor) {
-        if (factor.getRight() == null) {
-            return false;
-        }
-
-        ONode leftNode = factor.getLeftNode(node);
-        if (leftNode == null) {
-            return false;
-        }
+    private static boolean startsWith(ONode node, Condition condition) {
+        ONode leftNode = condition.getLeftNode(node);
 
         if (leftNode.isString()) {
-            ONode rightNode = factor.getRightNode(node);
+            ONode rightNode = condition.getRightNode(node);
             if (rightNode == null) {
                 return false;
             }
@@ -68,18 +61,11 @@ public class Operations {
         return false;
     }
 
-    private static boolean endsWith(ONode node, Condition factor) {
-        if (factor.getRight() == null) {
-            return false;
-        }
-
-        ONode leftNode = factor.getLeftNode(node);
-        if (leftNode == null) {
-            return false;
-        }
+    private static boolean endsWith(ONode node, Condition condition) {
+        ONode leftNode = condition.getLeftNode(node);
 
         if (leftNode.isString()) {
-            ONode rightNode = factor.getRightNode(node);
+            ONode rightNode = condition.getRightNode(node);
             if (rightNode == null) {
                 return false;
             }
@@ -89,17 +75,10 @@ public class Operations {
         return false;
     }
 
-    private static boolean contains(ONode node, Condition factor) {
-        if (factor.getRight() == null) {
-            return false;
-        }
+    private static boolean contains(ONode node, Condition condition) {
+        ONode leftNode = condition.getLeftNode(node);
 
-        ONode expectedNode = factor.getRightNode(node);
-
-        ONode leftNode = factor.getLeftNode(node);
-        if (leftNode == null) {
-            return false;
-        }
+        ONode expectedNode = condition.getRightNode(node);
 
         // 支持多类型包含检查
         if (leftNode.isArray()) {
@@ -115,17 +94,10 @@ public class Operations {
         return false;
     }
 
-    private static boolean in(ONode node, Condition factor) {
-        if (factor.getRight() == null) {
-            return false;
-        }
+    private static boolean in(ONode node, Condition condition) {
+        ONode leftNode = condition.getLeftNode(node);
 
-        ONode leftNode = factor.getLeftNode(node);
-        if (leftNode == null) {
-            return false;
-        }
-
-        ONode rightNode = factor.getRightNode(node);
+        ONode rightNode = condition.getRightNode(node);
         if (rightNode == null && rightNode.isArray() == false) {
             return false;
         }
@@ -134,21 +106,18 @@ public class Operations {
         return found;
     }
 
-    public static boolean def(ONode node, Condition factor) {
-        ONode leftNode = factor.getLeftNode(node);
-        if (leftNode == null) {
-            return false;
-        }
+    public static boolean def(ONode node, Condition condition) {
+        ONode leftNode = condition.getLeftNode(node);
 
         // 处理存在性检查（如 @.price）
-        if (TextUtil.isEmpty(factor.getOp()) && TextUtil.isEmpty(factor.getRight())) {
+        if (TextUtil.isEmpty(condition.getOp()) && TextUtil.isEmpty(condition.getRight())) {
             return true;
         }
 
-        ONode rightNode = factor.getRightNode(node);
+        ONode rightNode = condition.getRightNode(node);
 
 
-        if ("=~".equals(factor.getOp()) && factor.getRight() != null) {
+        if ("=~".equals(condition.getOp()) && condition.getRight() != null) {
             if (leftNode.isString()) {
                 if (rightNode.isString()) {
                     return leftNode.getString().matches(rightNode.getString().replace("\\/", "/"));
@@ -160,10 +129,10 @@ public class Operations {
 
 
         // 类型判断逻辑
-        if (factor.getRight().startsWith("'")) {
+        if (condition.getRight().startsWith("'")) {
             if (leftNode.isString()) {
                 if (rightNode.isString()) {
-                    return compareString(factor.getOp(), leftNode.getString(), factor.getRight().substring(1, factor.getRight().length() - 1));
+                    return compareString(condition.getOp(), leftNode.getString(), condition.getRight().substring(1, condition.getRight().length() - 1));
                 }
             }
 
@@ -171,7 +140,7 @@ public class Operations {
         } else {
             if (leftNode.isNumber()) {
                 if (rightNode.isNumber()) {
-                    return compareNumber(factor.getOp(), leftNode.getDouble(), rightNode.getDouble());
+                    return compareNumber(condition.getOp(), leftNode.getDouble(), rightNode.getDouble());
                 }
             }
 

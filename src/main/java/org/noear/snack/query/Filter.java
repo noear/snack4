@@ -1,6 +1,7 @@
 package org.noear.snack.query;
 
 import org.noear.snack.ONode;
+import org.noear.snack.core.util.TextUtil;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -129,9 +130,23 @@ public class Filter {
             return !evaluateSingleCondition(node, conditionStr.substring(1));
         }
 
-        Condition factor = Condition.parse(conditionStr);
+        Condition condition = Condition.parse(conditionStr);
 
-        return Operations.get(factor.getOp()).apply(node, factor);
+        // 过滤空条件（操作符处理时，就不需要再过滤了）
+        if (TextUtil.isEmpty(condition.getLeft())) {
+            return false;
+        }
+
+        // 单元操作（如 @.price）
+        if (condition.getRight() == null) {
+            if (condition.getOp() == null) {
+                return condition.getLeftNode(node) != null;
+            } else {
+                return false;
+            }
+        }
+
+        return Operations.get(condition.getOp()).apply(node, condition);
     }
 
     private enum TokenType {ATOM, AND, OR, LPAREN, RPAREN}
