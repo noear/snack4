@@ -50,4 +50,39 @@ public class RFC9535FilterTest {
         boolean rst = Expression.get("$.absent != 'g'").test(node, node);
         assertTrue(rst);
     }
+
+    @Test
+    public void case1_6() {
+        ONode node = ONode.loadJson(json1);
+        boolean rst = Expression.get("1 <= 2").test(node, node);
+        assertTrue(rst);
+    }
+
+    @Test
+    public void case1_7() {
+        ONode node = ONode.loadJson(json1);
+        boolean rst = Expression.get("1 > 2").test(node, node);
+        assertFalse(rst);
+    }
+
+    @Test
+    public void case1_8() {
+        ONode node = ONode.loadJson(json1);
+        boolean rst = Expression.get("13 == '13'").test(node, node);
+        assertFalse(rst);
+    }
+
+    @Test
+    public void case1_9() {
+        ONode node = ONode.loadJson(json1);
+        boolean rst = Expression.get("'a' <= 'b'").test(node, node);
+        assertTrue(rst);
+    }
+
+    @Test
+    public void case1_10() {
+        ONode node = ONode.loadJson(json1);
+        boolean rst = Expression.get("'a' > 'b'").test(node, node);
+        assertFalse(rst);
+    }
 }

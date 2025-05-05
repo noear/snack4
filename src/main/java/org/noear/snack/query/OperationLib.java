@@ -153,6 +153,15 @@ public class OperationLib {
                 return Objects.equals(a, b);
             case "!=":
                 return !Objects.equals(a, b);
+            case ">":
+                return Objects.compare(a, b, String::compareTo) > 0;
+            case "<":
+                return Objects.compare(a, b, String::compareTo) < 0;
+            case ">=":
+                return Objects.compare(a, b, String::compareTo) >= 0;
+            case "<=":
+                return Objects.compare(a, b, String::compareTo) <= 0;
+
             default:
                 throw new PathResolutionException("Unsupported operator for string: " + op);
         }
