@@ -18,7 +18,7 @@ public class JsonPath {
      */
     public static ONode select(ONode root, String path) {
         if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
-        return new PathParser(path).select(root);
+        return new PathParser(path).select(new Context(root));
     }
 
     /**
@@ -26,7 +26,7 @@ public class JsonPath {
      */
     public static ONode create(ONode root, String path) {
         if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
-        return new PathParser(path).create(root);
+        return new PathParser(path).create(new Context(root));
     }
 
     /**
@@ -34,7 +34,7 @@ public class JsonPath {
      */
     public static void delete(ONode root, String path) {
         if (!path.startsWith("$")) throw new PathResolutionException("Path must start with $");
-        new PathParser(path).delete(root);
+        new PathParser(path).delete(new Context(root));
     }
 
     private static class PathParser {
@@ -49,8 +49,8 @@ public class JsonPath {
         }
 
         // 主解析逻辑
-        ONode select(ONode root) {
-            List<ONode> currentNodes = Collections.singletonList(root);
+        ONode select(Context context) {
+            List<ONode> currentNodes = Collections.singletonList(context.root);
             index++;
 
             while (index < path.length()) {
@@ -59,9 +59,9 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    currentNodes = handleDot(currentNodes, root);
+                    currentNodes = handleDot(currentNodes, context);
                 } else if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes, root);
+                    currentNodes = handleBracket(currentNodes, context);
                 } else {
                     throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
                 }
@@ -83,11 +83,10 @@ public class JsonPath {
         }
 
 
-
         // 创建节点
-        ONode create(ONode root) {
+        ONode create(Context context) {
             isCreateMode = true;
-            List<ONode> currentNodes = Collections.singletonList(root);
+            List<ONode> currentNodes = Collections.singletonList(context.root);
             index++;
 
             while (index < path.length()) {
@@ -96,9 +95,9 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    currentNodes = handleDot(currentNodes, root);
+                    currentNodes = handleDot(currentNodes, context);
                 } else if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes, root);
+                    currentNodes = handleBracket(currentNodes, context);
                 } else {
                     throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
                 }
@@ -128,9 +127,9 @@ public class JsonPath {
         }
 
         // 删除节点
-        void delete(ONode root) {
+        void delete(Context context) {
             isDeleteMode = true;
-            List<ONode> currentNodes = Collections.singletonList(root);
+            List<ONode> currentNodes = Collections.singletonList(context.root);
             index++;
 
             while (index < path.length()) {
@@ -139,9 +138,9 @@ public class JsonPath {
 
                 char ch = path.charAt(index);
                 if (ch == '.') {
-                    currentNodes = handleDot(currentNodes, root);
+                    currentNodes = handleDot(currentNodes, context);
                 } else if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes, root);
+                    currentNodes = handleBracket(currentNodes, context);
                 } else {
                     throw new PathResolutionException("Unexpected character '" + ch + "' at index " + index);
                 }
@@ -165,7 +164,7 @@ public class JsonPath {
         }
 
         // 处理 '.' 或 '..'，返回新的节点集合
-        private List<ONode> handleDot(List<ONode> currentNodes, ONode root) {
+        private List<ONode> handleDot(List<ONode> currentNodes, Context context) {
             index++;
             if (index < path.length() && path.charAt(index) == '.') {
                 index++;
@@ -174,17 +173,17 @@ public class JsonPath {
                     index++;
                 }
 
-                currentNodes = resolveRecursive(currentNodes, root);
+                currentNodes = resolveRecursive(currentNodes, context);
 
                 if (index < path.length() && path.charAt(index) != '.' && path.charAt(index) != '[') {
-                    currentNodes = resolveKey(currentNodes, false, true);
+                    currentNodes = resolveKey(currentNodes, false, context);
                 }
             } else {
                 char ch = path.charAt(index);
                 if (ch == '[') {
-                    currentNodes = handleBracket(currentNodes, root);
+                    currentNodes = handleBracket(currentNodes, context);
                 } else {
-                    currentNodes = resolveKey(currentNodes, false, false);
+                    currentNodes = resolveKey(currentNodes, false, context);
                 }
             }
 
@@ -192,9 +191,7 @@ public class JsonPath {
         }
 
         // 处理 '[...]'
-        private List<ONode> handleBracket(List<ONode> currentNodes, ONode root) {
-            char expect = path.charAt(index - 1);
-
+        private List<ONode> handleBracket(List<ONode> currentNodes, Context context) {
             index++; // 跳过'['
             String segment = parseSegment(']');
             while (index < path.length() && path.charAt(index) == ']') {
@@ -204,21 +201,25 @@ public class JsonPath {
             if (segment.equals("*")) {
                 // 全选
                 currentNodes = resolveWildcard(currentNodes);
-            } else if (segment.startsWith("?")) {
-                // 条件过滤，如 [?@id]
-                // ..*[?...] 支持进一步深度展开
-                // ..x[?...] 已展开过，但查询后是新的结果可以再展开
-                // ..[?...] 已展开过，不需要再展开
-                currentNodes = resolveFilter(currentNodes, segment.substring(1), expect == '.', root);
-            } else if (segment.contains(",")) {
-                // 多索引选择，如 [1,4]
-                currentNodes = resolveMultiIndex(currentNodes, segment);
-            } else if (segment.contains(":")) {
-                // 范围选择，如 [1:4]
-                currentNodes = resolveRangeIndex(currentNodes, segment);
             } else {
-                // 属性选择
-                currentNodes = resolveIndex(currentNodes, segment);
+                if (segment.startsWith("?")) {
+                    // 条件过滤，如 [?@id]
+                    // ..*[?...] 支持进一步深度展开
+                    // ..x[?...] 已展开过，但查询后是新的结果可以再展开
+                    // ..[?...] 已展开过，不需要再展开
+                    currentNodes = resolveFilter(currentNodes, segment.substring(1), context);
+                } else if (segment.contains(",")) {
+                    // 多索引选择，如 [1,4]
+                    currentNodes = resolveMultiIndex(currentNodes, segment);
+                } else if (segment.contains(":")) {
+                    // 范围选择，如 [1:4]
+                    currentNodes = resolveRangeIndex(currentNodes, segment);
+                } else {
+                    // 属性选择
+                    currentNodes = resolveIndex(currentNodes, segment);
+                }
+
+                context.flattened = false;
             }
 
             return currentNodes;
@@ -274,7 +275,7 @@ public class JsonPath {
                     .map(String::trim);
 
             if (indicesStr.startsWith("'")) {
-                Stream<String> keyParts = parts.map(s->s.substring(1, s.length()-1));
+                Stream<String> keyParts = parts.map(s -> s.substring(1, s.length() - 1));
 
                 return nodes.stream()
                         .filter(ONode::isObject)
@@ -307,20 +308,23 @@ public class JsonPath {
         }
 
         // 解析键名或函数调用（如 "store" 或 "count()"）
-        private List<ONode> resolveKey(List<ONode> nodes, boolean strict, boolean flattened) {
+        private List<ONode> resolveKey(List<ONode> nodes, boolean strict, Context context) {
             String key = parseSegment('.', '[');
             if (key.endsWith("()")) {
+                context.flattened = false;
                 String funcName = key.substring(0, key.length() - 2);
                 return Collections.singletonList(
                         FunctionLib.get(funcName).apply(nodes) // 传入节点列表
                 );
             } else if (key.equals("*")) {
-                if (flattened) {
+                if (context.flattened) {
                     return nodes;
                 } else {
                     return resolveWildcard(nodes);
                 }
             } else {
+                context.flattened = false;
+
                 return nodes.stream()
                         .map(n -> getChild(n, key, strict))
                         .flatMap(Collection::stream)
@@ -441,7 +445,9 @@ public class JsonPath {
         }
 
         // 处理递归搜索 ..
-        private List<ONode> resolveRecursive(List<ONode> nodes, ONode root) {
+        private List<ONode> resolveRecursive(List<ONode> nodes, Context context) {
+            context.flattened = true;
+
             List<ONode> tmp = new ArrayList<>();
             nodes.forEach(node -> collectRecursive(node, tmp));
 
@@ -453,9 +459,9 @@ public class JsonPath {
                 char ch = path.charAt(index);
                 if (ch == '.' || ch == '[') {
                     if (ch == '.') {
-                        results = handleDot(results, root);
+                        results = handleDot(results, context);
                     } else if (ch == '[') {
-                        results = handleBracket(results, root);
+                        results = handleBracket(results, context);
                     }
                 } else {
                     break;
@@ -479,17 +485,17 @@ public class JsonPath {
         }
 
         // 处理过滤器（如 [?(@.price > 10)]）
-        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, boolean flattened, ONode root) {
+        private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, Context context) {
             Expression expression = Expression.get(filterStr);
 
-            if (flattened) {
+            if (context.flattened) {
                 return nodes.stream()
-                        .filter(n -> expression.test(n, root))
+                        .filter(n -> expression.test(n, context.root))
                         .collect(Collectors.toList());
             } else {
                 return nodes.stream()
                         .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
-                        .filter(n -> expression.test(n, root))
+                        .filter(n -> expression.test(n, context.root))
                         .collect(Collectors.toList());
             }
         }
@@ -567,6 +573,15 @@ public class JsonPath {
             while (index < path.length() && Character.isWhitespace(path.charAt(index))) {
                 index++;
             }
+        }
+    }
+
+    static class Context {
+        public boolean flattened = false;
+        public final ONode root;
+
+        public Context(ONode root) {
+            this.root = root;
         }
     }
 }
