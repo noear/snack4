@@ -226,10 +226,12 @@ public class JsonPath {
         }
 
         private List<ONode> resolveRangeIndex(List<ONode> nodes, String rangeStr) {
-            String[] parts = rangeStr.split(":", 2);
-            if (parts.length != 2) {
+            String[] parts = rangeStr.split(":", 3); //[start:end:step]
+            if (parts.length == 1) {
                 throw new PathResolutionException("Invalid range syntax: " + rangeStr);
             }
+
+            final int step = (parts.length == 3 && parts[2].length() > 0) ? Integer.parseInt(parts[2]) : 1;
 
             return nodes.stream()
                     .filter(ONode::isArray)
@@ -246,12 +248,14 @@ public class JsonPath {
                             return Stream.empty();
                         }
 
-                        return IntStream.range(start, end)
-                                .mapToObj(idx -> {
-                                    ONode node = arr.get(idx);
-                                    node.source = new JsonSource(arr, null, idx);
-                                    return node;
-                                });
+                        List<ONode> result = new ArrayList<>();
+                        for (int idx = start; idx < end; ) {
+                            ONode node = arr.get(idx);
+                            node.source = new JsonSource(arr, null, idx);
+                            result.add(node);
+                            idx += step;
+                        }
+                        return result.stream();
                     })
                     .collect(Collectors.toList());
         }
