@@ -33,16 +33,24 @@ public class BeanCodec {
     }
 
     // 反序列化：ONode转对象
-    public static <T> T deserialize(ONode node, Class<T> clazz) {
-        return deserialize(node, clazz, Options.def());
+    public static <T> T deserialize(ONode node, Type type) {
+        return deserialize(node, type, Options.def());
     }
 
-    public static <T> T deserialize(ONode node, Class<T> clazz, Options opts) {
-        if (node == null || clazz == null) {
+    public static <T> T deserialize(ONode node, Type type, Options opts) {
+        if (node == null || type == null) {
             return null;
         }
+
+        if (type instanceof Class) {
+            Class<?> clazz = (Class<?>) type;
+            if (clazz.isAnonymousClass()) {
+                type = clazz.getGenericSuperclass();
+            }
+        }
+
         try {
-            return (T)convertNodeToBean(node, clazz, new IdentityHashMap<>(), opts);
+            return (T) convertNodeToBean(node, type, new IdentityHashMap<>(), opts);
         } catch (Throwable e) {
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -59,7 +67,7 @@ public class BeanCodec {
             return new ONode(null);
         }
 
-        if(bean instanceof ONode){
+        if (bean instanceof ONode) {
             return (ONode) bean;
         }
 
@@ -221,7 +229,22 @@ public class BeanCodec {
     //-- 反序列化逻辑 --//
 
     @SuppressWarnings("unchecked")
-    private static <T> Object convertNodeToBean(ONode node, Class<T> clazz, Map<Object, Object> visited, Options opts) throws Exception {
+    private static <T> Object convertNodeToBean(ONode node, Type type, Map<Object, Object> visited, Options opts) throws Exception {
+        Class<?> clazz = null;
+        if (type instanceof Class<?>) {
+            clazz = (Class<?>) type;
+        } else if (type instanceof ParameterizedType) {
+            clazz = (Class<?>) ((ParameterizedType) type).getRawType();
+        } else if (type instanceof GenericArrayType) {
+            clazz = (Class<?>) ((GenericArrayType) type).getGenericComponentType();
+        } else if (type instanceof TypeVariable) {
+            clazz = (Class<?>) ((TypeVariable) type).getBounds()[0];
+        }
+
+        if (clazz == null) {
+            throw new IllegalArgumentException("can not convert bean to type: " + type);
+        }
+
         // 优先使用自定义编解码器
         Codec<T> codec = (Codec<T>) opts.getCodecRegistry().get(clazz);
         if (codec != null) {
@@ -249,18 +272,82 @@ public class BeanCodec {
             return Enum.valueOf((Class<? extends Enum>) clazz, node.getString());
         }
 
-        T bean = ReflectionUtil.newInstance(clazz);
-
-        for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
-            ONode fieldNode = node.get(field.getAliasName());
-
-            if (fieldNode != null && !fieldNode.isNull()) {
-                Object value = convertValue(fieldNode, field.getField().getGenericType(), visited, opts);
-                field.getField().set(bean, value);
+        Object bean = null;
+        if (clazz.isInterface()) {
+            if (Map.class.isAssignableFrom(clazz)) {
+                clazz = LinkedHashMap.class;
+            } else if (Collection.class.isAssignableFrom(clazz)) {
+                if (Set.class.isAssignableFrom(clazz)) {
+                    clazz = HashSet.class;
+                } else {
+                    clazz = ArrayList.class;
+                }
             } else {
-                setPrimitiveDefault(field.getField(), bean);
+                throw new IllegalArgumentException("can not convert bean to type: " + clazz);
             }
         }
+
+        bean = ReflectionUtil.newInstance(clazz);
+
+        if (bean instanceof Map) {
+            if (node.isNull()) {
+                bean = null;
+            } else if (node.isObject()) {
+                Type itemType = Object.class;
+                if (type instanceof ParameterizedType) {
+                    itemType = ((ParameterizedType) type).getActualTypeArguments()[1];
+                }
+
+                Map map = (Map) bean;
+
+                for (Map.Entry<String, ONode> entry : node.getObject().entrySet()) {
+                    map.put(entry.getKey(), convertNodeToBean(entry.getValue(), itemType, visited, opts));
+                }
+            } else {
+                throw new IllegalArgumentException("The type of node " + node.getType() + " cannot be converted to map.");
+            }
+        } else if (bean instanceof Collection) {
+            Type itemType = Object.class;
+            if (type instanceof ParameterizedType) {
+                itemType = ((ParameterizedType) type).getActualTypeArguments()[0];
+            }
+
+            if (node.isNull()) {
+                bean = null;
+            } else if (node.isArray()) {
+                if (Set.class.isAssignableFrom(clazz)) {
+                    Set tmp = (Set) bean;
+
+                    for (ONode n1 : node.getArray()) {
+                        Object item = convertNodeToBean(n1, itemType, visited, opts);
+                        if (item != null) {
+                            tmp.add(item);
+                        }
+                    }
+                } else {
+                    List tmp = (List) bean;
+
+                    for (ONode n1 : node.getArray()) {
+                        Object item = convertNodeToBean(n1, itemType, visited, opts);
+                        if (item != null) {
+                            tmp.add(item);
+                        }
+                    }
+                }
+            }
+        } else {
+            for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
+                ONode fieldNode = node.get(field.getAliasName());
+
+                if (fieldNode != null && !fieldNode.isNull()) {
+                    Object value = convertValue(fieldNode, field.getField().getGenericType(), visited, opts);
+                    field.getField().set(bean, value);
+                } else {
+                    setPrimitiveDefault(field.getField(), bean);
+                }
+            }
+        }
+
         return bean;
     }
 

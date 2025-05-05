@@ -3,7 +3,10 @@ package features.query.manual;
 import org.junit.jupiter.api.Test;
 import org.noear.snack.ONode;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class JsonPathTest {
@@ -15,25 +18,32 @@ public class JsonPathTest {
 
         //4.获取一个数组
         //List<Integer> list = n.get("data").get("list").toBean(List.class);
-        List<Integer> list = n.select("$.data.list").toBean(List.class);
-
+        List<Integer> list = n.select("$.data.list").toBean(new ArrayList<Integer>(){}.getClass());
+        assertEquals(5, list.size());
 
 
         //int mi = n.get("data").get("list").get(0).getInt();
         int mi = n.select("$.data.list[-1]").getInt();
 
-        List<Integer> list2 = n.select("$.data.list[2,4]").toBean(List.class);
-        List<Integer> list3 = n.select("$.data.list[1:4]").toBean(List.class);
-        List<Integer> list4 = n.select("$.data.list[:4]").toBean(List.class);
+        assertEquals(5, mi);
+
+        List<Integer> list2 = n.select("$.data.list[2,4]").toBean(new ArrayList<Integer>(){}.getClass());
+        assertEquals(2, list2.size());
+
+        List<Integer> list3 = n.select("$.data.list[1:4]").toBean(new ArrayList<Integer>(){}.getClass());
+        assertEquals(3, list3.size());
+
+        List<Integer> list4 = n.select("$.data.list[:4]").toBean(new ArrayList<Integer>(){}.getClass());
+        assertEquals(4, list4.size());
 
         ONode ary2_a = n.select("$.data.ary2[*].b.c");
+        assertEquals(1, ary2_a.size());
 
         ONode ary2_b = n.select("$..b");
+        assertEquals(1, ary2_b.size());
 
         ONode ary2_c = n.select("$.data..b.c");
-
-
-        assert list.size() == 5;
+        assertEquals(1, ary2_c.size());
     }
 
     @Test

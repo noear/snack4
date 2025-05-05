@@ -180,8 +180,8 @@ public class JsonPath {
         }
 
         // 处理 '[...]'
-        private List<ONode> handleBracket(List<ONode> nodes, ONode root) {
-            char expect = path.charAt(index-1);
+        private List<ONode> handleBracket(List<ONode> currentNodes, ONode root) {
+            char expect = path.charAt(index - 1);
 
             index++; // 跳过'['
             String segment = parseSegment(']');
@@ -191,23 +191,25 @@ public class JsonPath {
 
             if (segment.equals("*")) {
                 // 全选
-                return resolveWildcard(nodes);
+                currentNodes = resolveWildcard(currentNodes);
             } else if (segment.startsWith("?")) {
                 // 条件过滤，如 [?@id]
                 // ..*[?...] 支持进一步深度展开
                 // ..x[?...] 展开过，但查询后是新的结果可以再展开
                 // ..[?...] 展开过，不需要再展开
-                return resolveFilter(nodes, segment.substring(1), expect != '.', root);
+                currentNodes = resolveFilter(currentNodes, segment.substring(1), expect != '.', root);
             } else if (segment.contains(",")) {
                 // 多索引选择，如 [1,4]
-                return resolveMultiIndex(nodes, segment);
-            }  else if (segment.contains(":")) {
+                currentNodes = resolveMultiIndex(currentNodes, segment);
+            } else if (segment.contains(":")) {
                 // 范围选择，如 [1:4]
-                return resolveRangeIndex(nodes, segment);
-            }else {
+                currentNodes = resolveRangeIndex(currentNodes, segment);
+            } else {
                 // 属性选择
-                return resolveIndex(nodes, segment);
+                currentNodes = resolveIndex(currentNodes, segment);
             }
+
+            return currentNodes;
         }
 
         private List<ONode> resolveRangeIndex(List<ONode> nodes, String rangeStr) {
