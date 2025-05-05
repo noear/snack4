@@ -66,7 +66,7 @@ public class JsonPath {
                 }
             }
 
-            if ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0) || path.indexOf("()") > 0) {
+            if ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0 && path.indexOf(",") < 0) || path.indexOf("()") > 0) {
                 if (currentNodes.size() > 0) {
                     return currentNodes.get(0);
                 } else {
@@ -166,13 +166,40 @@ public class JsonPath {
             while (index < path.length() && path.charAt(index) == ']') {
                 index++;
             }
+
             if (segment.equals("*")) {
                 return resolveWildcard(nodes);
             } else if (segment.startsWith("?")) {
                 return resolveFilter(nodes, segment.substring(1));
+            } else if (segment.contains(",")) {
+                // 新增：处理多索引选择，如 [1,4]
+                return resolveMultiIndex(nodes, segment);
             } else {
                 return resolveIndex(nodes, segment);
             }
+        }
+
+        // 新增方法：处理多索引选择
+        private List<ONode> resolveMultiIndex(List<ONode> nodes, String indicesStr) {
+            Stream<Integer> indexParts = Arrays.stream(indicesStr.split(","))
+                    .map(String::trim)
+                    .map(Integer::parseInt);
+
+            return nodes.stream()
+                    .filter(ONode::isArray)
+                    .flatMap(arr -> {
+                        return indexParts
+                                .map(idx -> {
+                                    if (idx < 0) idx += arr.size();
+                                    if (idx < 0 || idx >= arr.size()) {
+                                        throw new PathResolutionException("Index out of bounds: " + idx);
+                                    }
+                                    ONode node = arr.get(idx);
+                                    node.source = new JsonSource(arr, null, idx);
+                                    return node;
+                                });
+                    })
+                    .collect(Collectors.toList());
         }
 
         // 解析键名或函数调用（如 "store" 或 "count()"）
