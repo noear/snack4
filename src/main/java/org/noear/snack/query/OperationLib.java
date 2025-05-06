@@ -7,7 +7,6 @@ import org.noear.snack.exception.PathResolutionException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * 操作符处理库(支持动态注册)
