@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonPathSelectComplexTest {
 
-    private static final String JSON = "{\n" +
+    public static final String JSON = "{\n" +
             "  \"store\": {\n" +
             "    \"book\": [\n" +
             "      {\n" +

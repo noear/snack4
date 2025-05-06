@@ -2,12 +2,12 @@ package features.query.manual;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ReadContext;
+import features.query.generated.JsonPathSelectComplexTest;
 import net.minidev.json.JSONArray;
 import org.junit.jupiter.api.Test;
 import org.noear.snack.ONode;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author noear 2023/11/3 created
@@ -154,6 +154,24 @@ public class JsonPathCompatibleTest1 {
         String jsonpathStr1 = "$..book[?(@.author =~ /.*REES/i)]";
 
         compatible_do("1", json, jsonpathStr1);
+    }
+
+    @Test
+    public void test10(){
+        String json = "{\"request1\":{\"result\":[{\"relTickers\":[{\"tickerId\":1},{\"tickerId\":1.1}],\"accountId\":400006},{\"relTickers\":[{\"tickerId\":2},{\"tickerId\":2.2}]},{\"relTickers\":[{\"tickerId\":3}]},{\"relTickers\":[{\"tickerId\":4}]},{\"relTickers\":[{\"tickerId\":5}]},{\"relTickers\":[{\"tickerId\":6}]}]}}\n";
+
+
+        String jsonpathStr3 = "$.request1.result[*].relTickers.first().tickerId";
+        String jsonpathStr3_b = "$.request1.result[*].relTickers.last().tickerId";
+
+        compatible_do("1", json, jsonpathStr3);
+        compatible_do("2", json, jsonpathStr3_b);
+    }
+
+    @Test
+    public void test11(){
+        String jsonpathStr1 = "$.store.book.size()";
+        compatible_do("1", JsonPathSelectComplexTest.JSON, jsonpathStr1);
     }
 
 
