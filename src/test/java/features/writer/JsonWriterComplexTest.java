@@ -2,8 +2,7 @@ package features.writer;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack.ONode;
-import org.noear.snack.core.BeanCodec;
-import org.noear.snack.core.Feature;
+import org.noear.snack.core.BeanEncoder;
 import org.noear.snack.core.JsonWriter;
 import org.noear.snack.core.Options;
 
@@ -344,7 +343,7 @@ public class JsonWriterComplexTest {
     @Test
     public void testWriteObjectWithArrayOfBooleans() throws IOException {
         ONode node = new ONode();
-        node.set("array", BeanCodec.serialize(Arrays.asList(true, false, true)));
+        node.set("array", BeanEncoder.serialize(Arrays.asList(true, false, true)));
         StringWriter writer = new StringWriter();
         new JsonWriter(Options.def(), writer).write(node);
         assertEquals("{\"array\":[true,false,true]}", writer.toString());
