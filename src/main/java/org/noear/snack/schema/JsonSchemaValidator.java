@@ -14,11 +14,11 @@ import java.util.*;
 /**
  * JSON模式验证器，支持JSON Schema规范
  */
-public class SchemaValidator {
+public class JsonSchemaValidator {
     private final ONode schema;
     private final Map<String, CompiledRule> compiledRules;
 
-    public SchemaValidator(ONode schema) {
+    public JsonSchemaValidator(ONode schema) {
         if (!schema.isObject()) {
             throw new IllegalArgumentException("Schema must be a JSON object");
         }

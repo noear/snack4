@@ -8,7 +8,7 @@ import org.noear.snack.core.JsonReader;
 import org.noear.snack.core.Options;
 import org.noear.snack.exception.SchemaException;
 import org.noear.snack.query.JsonPath;
-import org.noear.snack.schema.SchemaValidator;
+import org.noear.snack.schema.JsonSchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -60,7 +60,7 @@ public class BaseTest {
         // 数据校验
         JsonReader parser = new JsonReader(new StringReader(schemaJson));
         ONode schemaNode = parser.read();
-        SchemaValidator validator = new SchemaValidator(schemaNode);
+        JsonSchemaValidator validator = new JsonSchemaValidator(schemaNode);
 
         ONode data = new JsonReader(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).read();
         try {

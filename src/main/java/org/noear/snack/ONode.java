@@ -2,7 +2,7 @@ package org.noear.snack;
 
 import org.noear.snack.core.*;
 import org.noear.snack.query.JsonPath;
-import org.noear.snack.schema.SchemaValidator;
+import org.noear.snack.schema.JsonSchemaValidator;
 
 import java.io.StringReader;
 import java.util.*;
@@ -333,7 +333,7 @@ public final class ONode {
         return String.valueOf(value);
     }
 
-    public void validate(SchemaValidator schema) {
+    public void validate(JsonSchemaValidator schema) {
         schema.validate(this);
     }
 }

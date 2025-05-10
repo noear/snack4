@@ -1,7 +1,7 @@
 package org.noear.snack.core;
 
 import org.noear.snack.ONode;
-import org.noear.snack.schema.SchemaValidator;
+import org.noear.snack.schema.JsonSchemaValidator;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -22,7 +22,7 @@ public final class Options {
     // 通用配置
     private final DateFormat _dateFormat;
     private final Map<Class<?>, Codec<?>> _codecRegistry;
-    private final SchemaValidator _schemaValidator;
+    private final JsonSchemaValidator _schemaValidator;
 
     // 输入配置
     private final int _maxDepth;
@@ -83,7 +83,7 @@ public final class Options {
     /**
      * 获取验证器
      */
-    public SchemaValidator getSchemaValidator() {
+    public JsonSchemaValidator getSchemaValidator() {
         return _schemaValidator;
     }
 
@@ -132,7 +132,7 @@ public final class Options {
         // 通用配置
         private DateFormat dateFormat = DEFAULT_DATE_FORMAT;
         private final Map<Class<?>, Codec<?>> codecRegistry = new HashMap<>();
-        private SchemaValidator schemaValidator;
+        private JsonSchemaValidator schemaValidator;
 
         // 输入配置
         private int maxDepth = 512;
@@ -183,7 +183,7 @@ public final class Options {
          * 设置验证器
          */
         public Builder schema(ONode schema) {
-            this.schemaValidator = new SchemaValidator(schema);
+            this.schemaValidator = new JsonSchemaValidator(schema);
             return this;
         }
 
