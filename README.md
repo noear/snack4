@@ -27,6 +27,7 @@ ONode.loadJson("{}").toBean(User.class);
 
 ```java
 ONode.loadBean(store).select("$..book[?(@.tags contains 'war')]").toBean(Book.class);
+ONode.loadBean(store).select("$..book[?(@.category == 'fiction' && @.price < 20)]").toBean(Book.class);
 ONode.loadJson(store).select("$.store.book.count()");
 
 ONode.loadBean(store).create("$.store.book[0].category").toJson();
@@ -40,4 +41,12 @@ ONode.loadBean(store).delete("$..book[-1]");
 ONode schemaNode = ONode.loadJson("{user:{name:''}}"); //定义架构
 Options options = Options.builder().schema(schemaNode).build();
 ONode.loadJson("{}",options);
+```
+
+支持流解析（或监听）
+
+```java
+new JsonStreamParser("{}").parse(new JsonStreamHandler() {
+    ...
+});
 ```

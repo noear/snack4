@@ -4,33 +4,29 @@ import org.noear.snack.ONode;
 import org.noear.snack.core.JsonReader;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Map;
 
 /**
  * 流式JSON解析器
  */
 public class JsonStreamParser {
-    public interface Handler {
-        void startObject() throws IOException;
-        void endObject() throws IOException;
-        void startArray() throws IOException;
-        void endArray() throws IOException;
-        void key(String key) throws IOException;
-        void value(ONode value) throws IOException;
-    }
-
     private final JsonReader parser;
+
+    public JsonStreamParser(String json) {
+        this(new JsonReader(new StringReader(json)));
+    }
 
     public JsonStreamParser(JsonReader parser) {
         this.parser = parser;
     }
 
-    public void parse(Handler handler) throws IOException {
+    public void parse(JsonStreamHandler handler) throws IOException {
         ONode root = parser.read();
         traverse(root, handler);
     }
 
-    private void traverse(ONode node, Handler handler) throws IOException {
+    private void traverse(ONode node, JsonStreamHandler handler) throws IOException {
         if (node.isObject()) {
             handler.startObject();
             for (Map.Entry<String, ONode> entry : node.getObject().entrySet()) {
