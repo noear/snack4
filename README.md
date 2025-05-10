@@ -40,7 +40,7 @@ ONode.loadBean(store).delete("$..book[-1]");
 ```java
 SchemaValidator schema = new SchemaValidator(ONode.loadJson("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
 
-ONode.loadJson("{useId:'1'}").validate(schema); //校验格式
+ONode.loadJson("{userId:'1'}").validate(schema); //校验格式
 ```
 
 支持流解析（或监听）
