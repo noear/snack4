@@ -38,8 +38,9 @@ ONode.loadBean(store).delete("$..book[-1]");
 支持架构校验
 
 ```java
-ONode schemaNode = ONode.loadJson("{type:'object',properties:{userId:{type:'string'}}}"); //加载架构定义
-schemaNode.verify("{}"); //校验格式
+SchemaValidator schema = new SchemaValidator(ONode.loadJson("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
+
+ONode.loadJson("{useId:'1'}").validate(schema); //校验格式
 ```
 
 支持流解析（或监听）
