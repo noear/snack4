@@ -10,18 +10,18 @@ import org.noear.snack.schema.JsonSchemaValidator;
 public class JsonSchemaTest {
     @Test
     public void case1() {
-        JsonSchemaValidator schema = new JsonSchemaValidator(ONode.loadJson("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
+        JsonSchemaValidator schema = new JsonSchemaValidator(ONode.load("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
 
-        ONode.loadJson("{userId:'1'}").validate(schema); //校验格式
+        ONode.load("{userId:'1'}").validate(schema); //校验格式
     }
 
     @Test
     public void case2() {
-        JsonSchemaValidator schema = new JsonSchemaValidator(ONode.loadJson("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
+        JsonSchemaValidator schema = new JsonSchemaValidator(ONode.load("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
 
         Throwable err = null;
         try {
-            ONode.loadJson("{userId:1}").validate(schema); //校验格式
+            ONode.load("{userId:1}").validate(schema); //校验格式
         } catch (Throwable e) {
             e.printStackTrace();
             err = e;

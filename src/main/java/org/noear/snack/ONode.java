@@ -280,16 +280,16 @@ public final class ONode {
 
     /// /////////////
 
-    public static ONode loadBean(Object bean, Options opts) {
+    public static ONode from(Object bean, Options opts) {
         return BeanEncoder.serialize(bean, opts);
     }
 
-    public static ONode loadBean(Object bean) {
+    public static ONode from(Object bean) {
         return BeanEncoder.serialize(bean, Options.def());
     }
 
     // 添加带 Options 的静态方法
-    public static ONode loadJson(String json, Options opts) {
+    public static ONode load(String json, Options opts) {
         try {
             return new JsonReader(new StringReader(json), opts).read();
         } catch (RuntimeException ex) {
@@ -301,8 +301,8 @@ public final class ONode {
 
 
     // 保持原有方法兼容性
-    public static ONode loadJson(String json) {
-        return loadJson(json, Options.def());
+    public static ONode load(String json) {
+        return load(json, Options.def());
     }
 
 

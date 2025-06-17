@@ -17,30 +17,30 @@ oNode.getOrNew("layout").build(o -> {
 
 ```java
 User user = new User();
-ONode.loadBean(user).toBean(User.class);
-ONode.loadBean(user).toJson();
+ONode.from(user).toBean(User.class);
+ONode.from(user).toJson();
 
-ONode.loadJson("{}").toBean(User.class);
+ONode.load("{}").toBean(User.class);
 ```
 
 支持 jsonpath 查询、构建、删除
 
 ```java
-ONode.loadBean(store).select("$..book[?@.tags contains 'war']").toBean(Book.class); //RFC9535 规范，可以没有括号
-ONode.loadBean(store).select("$..book[?(!(@.category == 'fiction') && @.price < 40)]").toBean(Book.class);
-ONode.loadJson(store).select("$.store.book.count()");
+ONode.from(store).select("$..book[?@.tags contains 'war']").toBean(Book.class); //RFC9535 规范，可以没有括号
+ONode.from(store).select("$..book[?(!(@.category == 'fiction') && @.price < 40)]").toBean(Book.class);
+ONode.load(store).select("$.store.book.count()");
 
-ONode.loadBean(store).create("$.store.book[0].category").toJson();
+ONode.from(store).create("$.store.book[0].category").toJson();
 
-ONode.loadBean(store).delete("$..book[-1]");
+ONode.from(store).delete("$..book[-1]");
 ```
 
 支持架构校验
 
 ```java
-JsonSchemaValidator schema = new JsonSchemaValidator(ONode.loadJson("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
+JsonSchemaValidator schema = new JsonSchemaValidator(ONode.load("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
 
-ONode.loadJson("{userId:'1'}").validate(schema); //校验格式
+ONode.load("{userId:'1'}").validate(schema); //校验格式
 ```
 
 支持流解析（或监听）

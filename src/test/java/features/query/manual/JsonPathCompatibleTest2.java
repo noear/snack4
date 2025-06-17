@@ -1,8 +1,6 @@
 package features.query.manual;
 
 import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.ReadContext;
-import net.minidev.json.JSONArray;
 import org.junit.jupiter.api.Test;
 import org.noear.snack.ONode;
 
@@ -131,7 +129,7 @@ public class JsonPathCompatibleTest2 {
     private void compatible_do(String hint, String json, String jsonpathStr) {
         System.out.println("::::" + hint);
 
-        ONode tmp = ONode.loadJson(json).select(jsonpathStr);
+        ONode tmp = ONode.load(json).select(jsonpathStr);
         System.out.println(tmp.toJson());
 
         Object tmp2 = JsonPath.read(json, jsonpathStr);

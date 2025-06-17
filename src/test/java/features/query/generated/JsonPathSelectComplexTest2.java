@@ -22,7 +22,7 @@ public class JsonPathSelectComplexTest2 {
             "        }";
 
     private ONode loadRoot() {
-        return ONode.loadJson(BOOKS_JSON);
+        return ONode.load(BOOKS_JSON);
     }
 
     @Test

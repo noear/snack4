@@ -18,18 +18,18 @@ public class DemoLab {
 
     public void case2() {
         String store = "{}";
-        ONode.loadBean(store).select("$..book[?(@.tags contains 'war')]").toBean(Book.class);
-        ONode.loadJson(store).select("$.store.book.count()");
+        ONode.from(store).select("$..book[?(@.tags contains 'war')]").toBean(Book.class);
+        ONode.load(store).select("$.store.book.count()");
 
-        ONode.loadBean(store).create("$.store.book[0].category").toJson();
+        ONode.from(store).create("$.store.book[0].category").toJson();
 
-        ONode.loadBean(store).delete("$..book[-1]");
+        ONode.from(store).delete("$..book[-1]");
     }
 
     public void case3() {
-        ONode schemaNode = ONode.loadJson("{user:{name:''}}"); //定义架构
+        ONode schemaNode = ONode.load("{user:{name:''}}"); //定义架构
         Options options = Options.builder().schema(schemaNode).build();
-        ONode.loadJson("{}", options);
+        ONode.load("{}", options);
     }
 
     static class Book {

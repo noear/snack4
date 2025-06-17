@@ -121,7 +121,7 @@ public class Condition {
                 } else if (ch == '/') {
                     return new ONode(value);
                 } else {
-                    return ONode.loadJson(value);
+                    return ONode.load(value);
                 }
             }
         }
