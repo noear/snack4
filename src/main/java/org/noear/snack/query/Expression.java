@@ -76,13 +76,18 @@ public class Expression implements BiPredicate<ONode,ONode> {
                 index += 2;
             } else {
                 int start = index;
+                boolean inQuotes = false;
                 while (index < len) {
                     char curr = filter.charAt(index);
-                    if (curr == '(' || curr == ')' || curr == '&' || curr == '|') {
+                    if (!inQuotes && (curr == '(' || curr == ')' || curr == '&' || curr == '|')) {
                         break;
                     }
-                    if ((curr == '&' || curr == '|') && index + 1 < len && filter.charAt(index + 1) == curr) {
+                    if (!inQuotes && (curr == '&' || curr == '|') &&
+                            index + 1 < len && filter.charAt(index + 1) == curr) {
                         break;
+                    }
+                    if (curr == '\'' || curr == '"') {
+                        inQuotes = !inQuotes;
                     }
                     index++;
                 }

@@ -1,5 +1,6 @@
 package labs;
 
+import org.junit.jupiter.api.Test;
 import org.noear.snack.ONode;
 import org.noear.snack.core.Options;
 
@@ -30,6 +31,16 @@ public class DemoLab {
         ONode schemaNode = ONode.load("{user:{name:''}}"); //定义架构
         Options options = Options.builder().schema(schemaNode).build();
         ONode.load("{}", options);
+    }
+
+    @Test
+    public void case4() {
+        String jsonpath = "$.simpleReportList[?(@.reportStyle == \"1\")].rows[?(@.projectCode == \"BS010101\")].columns[?(@.columnCode == \"#YEAR#YTD#Period#Actual#ACCOUNT#[ICP None]#[None]#BB#REPORT#PRCTotal\")].value";
+
+        ONode obj = new ONode();
+        obj.create(jsonpath);
+
+        System.out.println(obj.toJson());
     }
 
     static class Book {
