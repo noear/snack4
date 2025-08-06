@@ -73,6 +73,14 @@ public final class ONode {
         return (Number) value;
     }
 
+    public Number getNumber(Number def) {
+        if (value == null) {
+            return def;
+        } else {
+            return (Number) value;
+        }
+    }
+
     public String getString() {
         return (String) value;
     }
@@ -106,15 +114,15 @@ public final class ONode {
     }
 
     public int getInt() {
-        return getNumber().intValue();
+        return getNumber(0).intValue();
     }
 
     public long getLong() {
-        return getNumber().longValue();
+        return getNumber(0L).longValue();
     }
 
     public double getDouble() {
-        return getNumber().doubleValue();
+        return getNumber(0D).doubleValue();
     }
 
     public ONode get(String key) {

@@ -30,15 +30,11 @@ public class Expression {
 
     // 评估逆波兰式
     public boolean test(ONode node, ONode root) {
-        return test(node, root, QueryMode.SELECT);
-    }
-
-    public boolean test(ONode node, ONode root, QueryMode mode) {
         try {
             Deque<Boolean> stack = new ArrayDeque<>();
             for (Token token : rpn) {
                 if (token.type == TokenType.ATOM) {
-                    stack.push(evaluateSingleCondition(node, token.value, root, mode));
+                    stack.push(evaluateSingleCondition(node, token.value, root));
                 } else if (token.type == TokenType.AND || token.type == TokenType.OR) {
                     boolean b = stack.pop();
                     boolean a = stack.pop();
@@ -143,10 +139,10 @@ public class Expression {
     }
 
 
-    private boolean evaluateSingleCondition(ONode node, String conditionStr, ONode root, QueryMode mode) {
+    private boolean evaluateSingleCondition(ONode node, String conditionStr, ONode root) {
         if (conditionStr.startsWith("!")) {
             //非运行
-            return !evaluateSingleCondition(node, conditionStr.substring(1), root, mode);
+            return !evaluateSingleCondition(node, conditionStr.substring(1), root);
         }
 
         Condition condition = Condition.get(conditionStr);

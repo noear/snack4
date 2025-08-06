@@ -509,24 +509,16 @@ public class JsonPath {
 
         // 处理过滤器（如 [?(@.price > 10)]）
         private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, Context context) {
-            if (mode == QueryMode.CREATE) {
-                for (ONode node : nodes) {
-                    if (node.isNull()) {
-                        node.newArray();
-                    }
-                }
-            }
-
             Expression expression = Expression.get(filterStr);
 
             if (context.flattened) {
                 return nodes.stream()
-                        .filter(n -> expression.test(n, context.root, mode))
+                        .filter(n -> expression.test(n, context.root))
                         .collect(Collectors.toList());
             } else {
                 return nodes.stream()
                         .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
-                        .filter(n -> expression.test(n, context.root, mode))
+                        .filter(n -> expression.test(n, context.root))
                         .collect(Collectors.toList());
             }
         }
