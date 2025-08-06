@@ -6,14 +6,13 @@ import org.noear.snack.exception.PathResolutionException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiPredicate;
 
 /**
  * 表达式
  *
  * @author noear 2025/5/5 created
  */
-public class Expression implements BiPredicate<ONode,ONode> {
+public class Expression {
     private static Map<String, Expression> expressionMap = new ConcurrentHashMap<>();
 
     public static Expression get(String expressionStr) {
@@ -30,13 +29,16 @@ public class Expression implements BiPredicate<ONode,ONode> {
     }
 
     // 评估逆波兰式
-    @Override
     public boolean test(ONode node, ONode root) {
+        return test(node, root, QueryMode.SELECT);
+    }
+
+    public boolean test(ONode node, ONode root, QueryMode mode) {
         try {
             Deque<Boolean> stack = new ArrayDeque<>();
             for (Token token : rpn) {
                 if (token.type == TokenType.ATOM) {
-                    stack.push(evaluateSingleCondition(node, token.value, root));
+                    stack.push(evaluateSingleCondition(node, token.value, root, mode));
                 } else if (token.type == TokenType.AND || token.type == TokenType.OR) {
                     boolean b = stack.pop();
                     boolean a = stack.pop();
@@ -141,10 +143,10 @@ public class Expression implements BiPredicate<ONode,ONode> {
     }
 
 
-    private boolean evaluateSingleCondition(ONode node, String conditionStr, ONode root) {
+    private boolean evaluateSingleCondition(ONode node, String conditionStr, ONode root, QueryMode mode) {
         if (conditionStr.startsWith("!")) {
             //非运行
-            return !evaluateSingleCondition(node, conditionStr.substring(1), root);
+            return !evaluateSingleCondition(node, conditionStr.substring(1), root, mode);
         }
 
         Condition condition = Condition.get(conditionStr);

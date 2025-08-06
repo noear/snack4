@@ -39,8 +39,7 @@ public class JsonPath {
     private static class PathParser {
         private final String path;
         private int index;
-        private boolean isCreateMode;
-        private boolean isDeleteMode;
+        private QueryMode mode = QueryMode.SELECT;
 
         PathParser(String path) {
             this.path = path;
@@ -49,6 +48,7 @@ public class JsonPath {
 
         // 主解析逻辑
         ONode select(Context context) {
+            mode = QueryMode.SELECT;
             List<ONode> currentNodes = Collections.singletonList(context.root);
             index++;
 
@@ -84,7 +84,7 @@ public class JsonPath {
 
         // 创建节点
         ONode create(Context context) {
-            isCreateMode = true;
+            mode = QueryMode.CREATE;
             List<ONode> currentNodes = Collections.singletonList(context.root);
             index++;
 
@@ -127,7 +127,7 @@ public class JsonPath {
 
         // 删除节点
         void delete(Context context) {
-            isDeleteMode = true;
+            mode = QueryMode.DELETE;
             List<ONode> currentNodes = Collections.singletonList(context.root);
             index++;
 
@@ -358,14 +358,14 @@ public class JsonPath {
         }
 
         private List<ONode> getChild(ONode node, String key, boolean strict) {
-            if (isCreateMode) {
+            if (mode == QueryMode.CREATE) {
                 node.newObject();
             }
 
             if (node.isObject()) {
                 ONode child = node.get(key);
                 if (child == null) {
-                    if (isCreateMode) {
+                    if (mode == QueryMode.CREATE) {
                         child = new ONode();
                         node.set(key, child);
                     } else if (strict) {
@@ -392,7 +392,7 @@ public class JsonPath {
                             childs = Collections.<ONode>emptyList();
                         }
 
-                        if (isDeleteMode) {
+                        if (mode == QueryMode.DELETE) {
                             JsonSource source = new JsonSource(n, "*", 0);
                             for (ONode child : childs) {
                                 child.source = source;
@@ -413,7 +413,7 @@ public class JsonPath {
 
                 return nodes.stream()
                         .filter(o -> {
-                            if (isCreateMode) {
+                            if (mode == QueryMode.CREATE) {
                                 o.newObject();
                                 return true;
                             } else {
@@ -421,7 +421,7 @@ public class JsonPath {
                             }
                         })
                         .map(obj -> {
-                            if (isCreateMode) {
+                            if (mode == QueryMode.CREATE) {
                                 obj.getOrNew(key);
                             }
 
@@ -436,7 +436,7 @@ public class JsonPath {
 
                 return nodes.stream()
                         .filter(o -> {
-                            if (isCreateMode) {
+                            if (mode == QueryMode.CREATE) {
                                 o.newArray();
                                 return true;
                             } else {
@@ -449,7 +449,7 @@ public class JsonPath {
                                 idx = arr.size() + idx;
                             }
 
-                            if (isCreateMode) {
+                            if (mode == QueryMode.CREATE) {
                                 int count = idx + 1 - arr.size();
                                 for (int i = 0; i < count; i++) {
                                     arr.add(new ONode());
@@ -509,16 +509,24 @@ public class JsonPath {
 
         // 处理过滤器（如 [?(@.price > 10)]）
         private List<ONode> resolveFilter(List<ONode> nodes, String filterStr, Context context) {
+            if (mode == QueryMode.CREATE) {
+                for (ONode node : nodes) {
+                    if (node.isNull()) {
+                        node.newArray();
+                    }
+                }
+            }
+
             Expression expression = Expression.get(filterStr);
 
             if (context.flattened) {
                 return nodes.stream()
-                        .filter(n -> expression.test(n, context.root))
+                        .filter(n -> expression.test(n, context.root, mode))
                         .collect(Collectors.toList());
             } else {
                 return nodes.stream()
                         .flatMap(n -> flattenNode(n)) // 使用递归展开多级数组
-                        .filter(n -> expression.test(n, context.root))
+                        .filter(n -> expression.test(n, context.root, mode))
                         .collect(Collectors.toList());
             }
         }

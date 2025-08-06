@@ -161,7 +161,7 @@ public class JsonPathCompatibleTest1 {
         String json = "{\"request1\":{\"result\":[{\"relTickers\":[{\"tickerId\":1},{\"tickerId\":1.1}],\"accountId\":400006},{\"relTickers\":[{\"tickerId\":2},{\"tickerId\":2.2}]},{\"relTickers\":[{\"tickerId\":3}]},{\"relTickers\":[{\"tickerId\":4}]},{\"relTickers\":[{\"tickerId\":5}]},{\"relTickers\":[{\"tickerId\":6}]}]}}\n";
 
 
-        String jsonpathStr3 = "$.request1.result[*].relTickers.first().tickerId";
+        String jsonpathStr3   = "$.request1.result[*].relTickers.first().tickerId";
         String jsonpathStr3_b = "$.request1.result[*].relTickers.last().tickerId";
 
         compatible_do("1", json, jsonpathStr3);

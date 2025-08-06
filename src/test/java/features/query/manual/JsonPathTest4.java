@@ -281,5 +281,14 @@ public class JsonPathTest4 {
                 "  } ]\n" +
                 "}").read("$.columns[?(@.columnCode == '#YEAR(-1)#YTD#Period#Actual#ACCOUNT#[ICP None]#[None]#[None]#REPORT#PRCTotal')]");
         System.out.println(rst2);
+
+        assert rst2.toString().contains(rst1.toJson());
+    }
+
+    @Test
+    public void test12(){
+        ONode rst1 = new ONode().create("$.columns[?(@.columnCode == '#YEAR(-1)#YTD#Period#Actual#ACCOUNT#[ICP None]#[None]#[None]#REPORT#PRCTotal')].first()");
+
+        System.out.println(rst1.toJson());
     }
 }
