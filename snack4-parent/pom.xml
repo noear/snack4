@@ -47,6 +47,7 @@
     <modules>
         <module>../snack4</module>
         <module>../snack4-jsonpath</module>
+        <module>../snack4-jsonschema</module>
     </modules>
 
     <dependencyManagement>

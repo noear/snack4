@@ -27,12 +27,6 @@ public class DemoLab {
         ONode.from(store).delete("$..book[-1]");
     }
 
-    public void case3() {
-        ONode schemaNode = ONode.load("{user:{name:''}}"); //定义架构
-        Options options = Options.builder().schema(schemaNode).build();
-        ONode.load("{}", options);
-    }
-
     @Test
     public void case4() {
         String jsonpath = "$.simpleReportList[?(@.reportStyle == \"1\")].rows[?(@.projectCode == \"BS010101\")].columns[?(@.columnCode == \"#YEAR#YTD#Period#Actual#ACCOUNT#[ICP None]#[None]#BB#REPORT#PRCTotal\")].value";

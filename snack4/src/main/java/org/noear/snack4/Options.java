@@ -18,7 +18,6 @@ package org.noear.snack4;
 import org.noear.snack4.codec.NodeDecoder;
 import org.noear.snack4.codec.NodeEncoder;
 import org.noear.snack4.codec.ObjectFactory;
-import org.noear.snack4.jsonschema.JsonSchemaValidator;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -41,7 +40,6 @@ public final class Options {
     private final Map<Class<?>, NodeDecoder<?>> _decoderRegistry;
     private final Map<Class<?>, NodeEncoder<?>> _encoderRegistry;
     private final Map<Class<?>, ObjectFactory<?>> _objectFactory;
-    private final JsonSchemaValidator _schemaValidator;
 
     // 输入配置
     private final int _maxDepth;
@@ -71,8 +69,6 @@ public final class Options {
         this._decoderRegistry = Collections.unmodifiableMap(builder.decoderRegistry);
         this._encoderRegistry = Collections.unmodifiableMap(builder.encoderRegistry);
         this._objectFactory = Collections.unmodifiableMap(builder.objectFactory);
-
-        this._schemaValidator = builder.schemaValidator;
 
         // 输入配置
         this._maxDepth = builder.maxDepth;
@@ -108,13 +104,6 @@ public final class Options {
 
     public ObjectFactory<?> getObjectFactory(Class<?> clazz) {
         return _objectFactory.get(clazz);
-    }
-
-    /**
-     * 获取验证器
-     */
-    public JsonSchemaValidator getSchemaValidator() {
-        return _schemaValidator;
     }
 
     /**
@@ -164,7 +153,6 @@ public final class Options {
         private final Map<Class<?>, NodeDecoder<?>> decoderRegistry = new HashMap<>();
         private final Map<Class<?>, NodeEncoder<?>> encoderRegistry = new HashMap<>();
         private final Map<Class<?>, ObjectFactory<?>> objectFactory = new HashMap<>();
-        private JsonSchemaValidator schemaValidator;
 
         // 输入配置
         private int maxDepth = 512;
@@ -221,14 +209,6 @@ public final class Options {
 
         public <T> Builder addObjectFactory(Class<T> type, ObjectFactory<T> factory) {
             objectFactory.put(type, factory);
-            return this;
-        }
-
-        /**
-         * 设置验证器
-         */
-        public Builder schema(ONode schema) {
-            this.schemaValidator = new JsonSchemaValidator(schema);
             return this;
         }
 

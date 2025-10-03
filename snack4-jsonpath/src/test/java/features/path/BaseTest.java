@@ -2,16 +2,11 @@ package features.path;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack4.ONode;
-import org.noear.snack4.Options;
 import org.noear.snack4.codec.ObjectDecoder;
 import org.noear.snack4.codec.ObjectEncoder;
-import org.noear.snack4.exception.SchemaException;
 import org.noear.snack4.json.JsonReader;
 import org.noear.snack4.jsonpath.JsonPath;
-import org.noear.snack4.jsonschema.JsonSchemaValidator;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,34 +38,6 @@ public class BaseTest {
         System.out.println(node.get("metadata").get("active").getBoolean()); // true
     }
 
-    @Test
-    public void case2() throws IOException {
-        // Schema定义示例
-        String schemaJson = "{"
-                + "\"type\": \"object\","
-                + "\"required\": [\"name\", \"age\"],"
-                + "\"properties\": {"
-                + "  \"name\": {\"type\": \"string\"},"
-                + "  \"age\": {\"type\": \"integer\", \"minimum\": 0}"
-                + "}"
-                + "}";
-
-
-        System.out.println(schemaJson);
-
-        // 数据校验
-        JsonReader parser = new JsonReader(new StringReader(schemaJson));
-        ONode schemaNode = parser.read();
-        JsonSchemaValidator validator = new JsonSchemaValidator(schemaNode);
-
-        ONode data = new JsonReader(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).read();
-        try {
-            validator.validate(data);
-        } catch (SchemaException e) {
-            System.out.println(e.getMessage());
-            // 输出: Value -5.0 < minimum(0.0) at $.age
-        }
-    }
 
     @Test
     public void case3() throws Exception {
@@ -101,11 +68,5 @@ public class BaseTest {
         ONode result = JsonPath.select(root, "$.store.newNode");
         assertNotNull(result);
         assertTrue(result.isNull());
-    }
-
-    @Test
-    public void case6() {
-        Options options = Options.builder().schema(ONode.load("{user:{name:''}}")).build();
-        ONode.load("{}", options);
     }
 }

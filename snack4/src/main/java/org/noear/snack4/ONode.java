@@ -22,7 +22,6 @@ import org.noear.snack4.json.JsonSource;
 import org.noear.snack4.json.JsonType;
 import org.noear.snack4.json.JsonWriter;
 import org.noear.snack4.jsonpath.JsonPathProvider;
-import org.noear.snack4.jsonschema.JsonSchemaValidator;
 
 import java.io.StringReader;
 import java.util.*;
@@ -379,9 +378,5 @@ public final class ONode {
     @Override
     public String toString() {
         return String.valueOf(value);
-    }
-
-    public void validate(JsonSchemaValidator schema) {
-        schema.validate(this);
     }
 }

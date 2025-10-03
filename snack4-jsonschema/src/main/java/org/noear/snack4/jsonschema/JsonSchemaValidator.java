@@ -16,13 +16,16 @@
 package org.noear.snack4.jsonschema;
 
 import org.noear.snack4.ONode;
+import org.noear.snack4.exception.SchemaException;
 import org.noear.snack4.json.JsonType;
 import org.noear.snack4.jsonschema.rule.EnumRule;
 import org.noear.snack4.jsonschema.rule.TypeRule;
 import org.noear.snack4.jsonschema.rule.ValidationRule;
-import org.noear.snack4.exception.SchemaException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * JSON模式验证器，支持JSON Schema规范
