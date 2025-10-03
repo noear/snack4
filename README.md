@@ -38,15 +38,7 @@ ONode.from(store).delete("$..book[-1]");
 支持架构校验
 
 ```java
-JsonSchemaValidator schema = new JsonSchemaValidator(ONode.load("{type:'object',properties:{userId:{type:'string'}}}")); //加载架构定义
+JsonSchema schema = JsonSchema.load("{type:'object',properties:{userId:{type:'string'}}}"); //加载架构定义
 
-ONode.load("{userId:'1'}").validate(schema); //校验格式
-```
-
-支持流解析（或监听）
-
-```java
-new JsonStreamParser("{}").parse(new JsonStreamHandler() {
-    ...
-});
+schema.validate(ONode.load("{userId:'1'}")); //校验格式
 ```
