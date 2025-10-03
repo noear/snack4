@@ -22,11 +22,7 @@ import org.noear.snack4.codec.encode.*;
 import org.noear.snack4.codec.util.FieldWrapper;
 import org.noear.snack4.codec.util.ReflectionUtil;
 
-import java.io.File;
 import java.lang.reflect.Array;
-import java.net.InetSocketAddress;
-import java.sql.Clob;
-import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.*;
 
@@ -37,71 +33,8 @@ import java.util.*;
  * @since 4.0
  */
 public class ObjectEncoder {
-    private static final Map<Class<?>, NodeEncoder<?>> ENCODERS = new HashMap<>();
-    private static final List<NodePatternEncoder<?>> PATTERN_ENCODERS = new ArrayList<>();
-    static {
-        PATTERN_ENCODERS.add(new CalendarPatternEncoder());
-        PATTERN_ENCODERS.add(new ClobPatternEncoder());
-
-        ENCODERS.put(ONode.class, new ONodeEncoder());
-        ENCODERS.put(Properties.class, new PropertiesEncoder());
-        ENCODERS.put(InetSocketAddress.class, new InetSocketAddressEncoder());
-        ENCODERS.put(SimpleDateFormat.class, new SimpleDateFormatEncoder());
-        ENCODERS.put(File.class, new FileEncoder());
-        ENCODERS.put(Calendar.class, new CalendarPatternEncoder());
-        ENCODERS.put(Class.class, new ClassEncoder());
-        ENCODERS.put(Clob.class, new ClobPatternEncoder());
-        ENCODERS.put(Currency.class, new CurrencyEncoder());
-        ENCODERS.put(TimeZone.class, new TimeZoneEncoder());
-        ENCODERS.put(UUID.class, new UUIDEncoder());
-
-        ENCODERS.put(String.class, new StringEncoder());
-
-        ENCODERS.put(Date.class, new DateEncoder());
-        ENCODERS.put(ZonedDateTime.class, new ZonedDateTimeEncoder());
-
-        ENCODERS.put(OffsetDateTime.class, new OffsetDateTimeEncoder());
-        ENCODERS.put(OffsetTime.class, new OffsetTimeEncoder());
-
-        ENCODERS.put(LocalDateTime.class, new LocalDateTimeEncoder());
-        ENCODERS.put(LocalDate.class, new LocalDateEncoder());
-        ENCODERS.put(LocalTime.class, new LocalTimeEncoder());
-
-
-        ENCODERS.put(Boolean.class, new BooleanEncoder());
-        ENCODERS.put(Boolean.TYPE, new BooleanEncoder());
-
-        ENCODERS.put(Double.class, new DoubleEncoder());
-        ENCODERS.put(Double.TYPE, new DoubleEncoder());
-
-        ENCODERS.put(Float.class, new FloatEncoder());
-        ENCODERS.put(Float.TYPE, new FloatEncoder());
-
-        ENCODERS.put(Long.class, new LongEncoder());
-        ENCODERS.put(Long.TYPE, new LongEncoder());
-
-        ENCODERS.put(Integer.class, new IntegerEncoder());
-        ENCODERS.put(Integer.TYPE, new IntegerEncoder());
-
-        ENCODERS.put(Short.class, new ShortEncoder());
-        ENCODERS.put(Short.TYPE, new ShortEncoder());
-    }
-
     private static NodeEncoder getNodeEncoder(Options opts, Class<?> clazz) {
-        NodeEncoder encoder = opts.getNodeEncoder(clazz);
-        if (encoder == null) {
-            encoder = ENCODERS.get(clazz);
-        }
-
-        if (encoder == null) {
-            for (NodePatternEncoder encoder1 : PATTERN_ENCODERS) {
-                if (encoder1.canEncode(clazz)) {
-                    return encoder1;
-                }
-            }
-        }
-
-        return encoder;
+        return CodecRepository.getNodeEncoder(opts, clazz);
     }
 
     // 序列化：对象转ONode

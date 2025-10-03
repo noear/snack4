@@ -19,17 +19,10 @@ import org.noear.snack4.ONode;
 import org.noear.snack4.Options;
 import org.noear.snack4.annotation.ONodeAttr;
 import org.noear.snack4.codec.decode.*;
-import org.noear.snack4.codec.factory.CollectionFactory;
-import org.noear.snack4.codec.factory.ListFactory;
-import org.noear.snack4.codec.factory.MapFactory;
-import org.noear.snack4.codec.factory.SetFactory;
 import org.noear.snack4.codec.util.FieldWrapper;
 import org.noear.snack4.codec.util.ReflectionUtil;
 
-import java.io.File;
 import java.lang.reflect.*;
-import java.net.InetSocketAddress;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -39,64 +32,12 @@ import java.util.*;
  * @since 4.0
  */
 public class ObjectDecoder {
-
-    private static final Map<Class<?>, NodeDecoder<?>> DECODERS = new HashMap<>();
-    private static final Map<Class<?>, ObjectFactory<?>> FACTORYS = new HashMap<>();
-
-    static {
-        DECODERS.put(Properties.class, new PropertiesDecoder());
-        DECODERS.put(InetSocketAddress.class, new InetSocketAddressDecoder());
-        DECODERS.put(SimpleDateFormat.class, new SimpleDateFormatDecoder());
-        DECODERS.put(File.class, new FileDecoder());
-        DECODERS.put(UUID.class, new UUIDDecoder());
-
-        DECODERS.put(String.class, new StringDecoder());
-        DECODERS.put(Date.class, new DateDecoder());
-
-        DECODERS.put(Boolean.class, new BooleanDecoder());
-        DECODERS.put(Boolean.TYPE, new BooleanDecoder());
-
-        DECODERS.put(Double.class, new DoubleDecoder());
-        DECODERS.put(Double.TYPE, new DoubleDecoder());
-
-        DECODERS.put(Float.class, new FloatDecoder());
-        DECODERS.put(Float.TYPE, new FloatDecoder());
-
-        DECODERS.put(Long.class, new LongDecoder());
-        DECODERS.put(Long.TYPE, new LongDecoder());
-
-        DECODERS.put(Integer.class, new IntegerDecoder());
-        DECODERS.put(Integer.TYPE, new IntegerDecoder());
-
-        DECODERS.put(Short.class, new ShortDecoder());
-        DECODERS.put(Short.TYPE, new ShortDecoder());
-
-        /// //////////////
-
-        FACTORYS.put(Map.class, new MapFactory());
-        FACTORYS.put(List.class, new ListFactory());
-        FACTORYS.put(Set.class, new SetFactory());
-        FACTORYS.put(Collection.class, new CollectionFactory());
-    }
-
     private static NodeDecoder getNodeDecoder(Options opts, Class<?> clazz) {
-        // 优先使用自定义编解码器
-        NodeDecoder decoder = opts.getNodeDecoder(clazz);
-        if (decoder != null) {
-            return decoder;
-        }
-
-        //如果没有，用默认解码库
-        return DECODERS.get(clazz);
+        return CodecRepository.getNodeDecoder(opts, clazz);
     }
 
     private static ObjectFactory getObjectFactory(Options opts, Class<?> clazz) {
-        ObjectFactory factory = opts.getObjectFactory(clazz);
-        if (factory != null) {
-            return factory;
-        }
-
-        return FACTORYS.get(clazz);
+        return CodecRepository.getObjectFactory(opts, clazz);
     }
 
 
