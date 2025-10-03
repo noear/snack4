@@ -25,6 +25,7 @@ import org.noear.snack4.codec.util.ReflectionUtil;
 import java.io.File;
 import java.lang.reflect.Array;
 import java.net.InetSocketAddress;
+import java.sql.Clob;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.*;
@@ -44,6 +45,11 @@ public class ObjectEncoder {
         ENCODER_REPOSITORY.put(InetSocketAddress.class, new InetSocketAddressEncoder());
         ENCODER_REPOSITORY.put(SimpleDateFormat.class, new SimpleDateFormatEncoder());
         ENCODER_REPOSITORY.put(File.class, new FileEncoder());
+        ENCODER_REPOSITORY.put(Calendar.class, new CalendarEncoder());
+        ENCODER_REPOSITORY.put(Class.class, new ClassEncoder());
+        ENCODER_REPOSITORY.put(Clob.class, new ClobEncoder());
+        ENCODER_REPOSITORY.put(Currency.class, new CurrencyEncoder());
+        ENCODER_REPOSITORY.put(TimeZone.class, new TimeZoneEncoder());
         ENCODER_REPOSITORY.put(UUID.class, new UUIDEncoder());
 
         ENCODER_REPOSITORY.put(String.class, new StringEncoder());
