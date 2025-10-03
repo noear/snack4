@@ -3,7 +3,7 @@ package benchmark.load;
 import benchmark.load._models.UserGroupModel;
 import benchmark.load._models.UserModel;
 import org.junit.jupiter.api.Test;
-import org.noear.snack.ONode;
+import org.noear.snack4.ONode;
 
 import java.util.*;
 

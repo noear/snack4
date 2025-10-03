@@ -1,8 +1,8 @@
 package features.schema;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.ONode;
-import org.noear.snack.schema.JsonSchemaValidator;
+import org.noear.snack4.ONode;
+import org.noear.snack4.schema.JsonSchemaValidator;
 
 /**
  * @author noear 2025/5/10 created

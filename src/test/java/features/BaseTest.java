@@ -1,14 +1,14 @@
 package features;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.*;
-import org.noear.snack.core.BeanDecoder;
-import org.noear.snack.core.BeanEncoder;
-import org.noear.snack.core.JsonReader;
-import org.noear.snack.core.Options;
-import org.noear.snack.exception.SchemaException;
-import org.noear.snack.query.JsonPath;
-import org.noear.snack.schema.JsonSchemaValidator;
+import org.noear.snack4.ONode;
+import org.noear.snack4.core.BeanDecoder;
+import org.noear.snack4.core.BeanEncoder;
+import org.noear.snack4.core.JsonReader;
+import org.noear.snack4.core.Options;
+import org.noear.snack4.exception.SchemaException;
+import org.noear.snack4.query.JsonPath;
+import org.noear.snack4.schema.JsonSchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -32,7 +32,7 @@ public class BaseTest {
                 + "}"
                 + "}";
 
-        ONode node = JsonReader.read(json);
+        org.noear.snack4.ONode node = JsonReader.read(json);
 
         // 验证解析结果
         System.out.println(node.get("name").getString()); // Alice
@@ -59,10 +59,10 @@ public class BaseTest {
 
         // 数据校验
         JsonReader parser = new JsonReader(new StringReader(schemaJson));
-        ONode schemaNode = parser.read();
+        org.noear.snack4.ONode schemaNode = parser.read();
         JsonSchemaValidator validator = new JsonSchemaValidator(schemaNode);
 
-        ONode data = new JsonReader(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).read();
+        org.noear.snack4.ONode data = new JsonReader(new StringReader("{\"name\":\"Alice\",\"age\":-5}")).read();
         try {
             validator.validate(data);
         } catch (SchemaException e) {
@@ -76,7 +76,7 @@ public class BaseTest {
         Properties properties = new Properties();
         properties.setProperty("order.item[0].user", "1");
 
-        ONode node = BeanEncoder.serialize(properties);
+        org.noear.snack4.ONode node = BeanEncoder.serialize(properties);
         System.out.println(node.toJson()); // 输出: {"order":{"item":[{"user":"1"}]}}
         assert "{\"order\":{\"item\":[{\"user\":\"1\"}]}}".equals(node.toJson());
 
@@ -87,24 +87,24 @@ public class BaseTest {
 
     @Test
     public void case4() {
-        ONode root = ONode.load("{}");
+        org.noear.snack4.ONode root = org.noear.snack4.ONode.load("{}");
         JsonPath.delete(root, "$.store.book[0]");
-        ONode result = JsonPath.select(root, "$.store.book[0]");
+        org.noear.snack4.ONode result = JsonPath.select(root, "$.store.book[0]");
         assertTrue(result.isNull());
     }
 
     @Test
     public void case5() {
-        ONode root = ONode.load("{}");
+        org.noear.snack4.ONode root = org.noear.snack4.ONode.load("{}");
         JsonPath.create(root, "$.store.newNode");
-        ONode result = JsonPath.select(root, "$.store.newNode");
+        org.noear.snack4.ONode result = JsonPath.select(root, "$.store.newNode");
         assertNotNull(result);
         assertTrue(result.isNull());
     }
 
     @Test
     public void case6() {
-        Options options = Options.builder().schema(ONode.load("{user:{name:''}}")).build();
+        Options options = Options.builder().schema(org.noear.snack4.ONode.load("{user:{name:''}}")).build();
         ONode.load("{}", options);
     }
 }

@@ -1,8 +1,8 @@
 package features.query.generated;
 
-import org.noear.snack.ONode;
+import org.noear.snack4.ONode;
 import org.junit.jupiter.api.Test;
-import org.noear.snack.query.JsonPath;
+import org.noear.snack4.query.JsonPath;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -1,10 +1,10 @@
 package features.reader;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.core.Feature;
-import org.noear.snack.core.JsonReader;
-import org.noear.snack.core.Options;
-import org.noear.snack.exception.ParseException;
+import org.noear.snack4.core.Feature;
+import org.noear.snack4.core.JsonReader;
+import org.noear.snack4.core.Options;
+import org.noear.snack4.exception.ParseException;
 
 import java.io.StringReader;
 

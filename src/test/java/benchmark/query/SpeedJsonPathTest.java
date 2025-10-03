@@ -1,7 +1,7 @@
 package benchmark.query;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.ONode;
+import org.noear.snack4.ONode;
 
 public class SpeedJsonPathTest {
 

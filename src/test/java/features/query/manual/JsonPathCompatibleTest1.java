@@ -5,7 +5,7 @@ import com.jayway.jsonpath.ReadContext;
 import features.query.generated.JsonPathSelectComplexTest;
 import net.minidev.json.JSONArray;
 import org.junit.jupiter.api.Test;
-import org.noear.snack.ONode;
+import org.noear.snack4.ONode;
 
 import static org.junit.jupiter.api.Assertions.*;
 

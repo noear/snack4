@@ -1,8 +1,8 @@
 package features.query.manual;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.ONode;
-import org.noear.snack.query.Expression;
+import org.noear.snack4.ONode;
+import org.noear.snack4.query.Expression;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;

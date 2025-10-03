@@ -1,9 +1,9 @@
 package features.codec;
 
 import org.junit.jupiter.api.Test;
-import org.noear.snack.ONode;
-import org.noear.snack.core.BeanDecoder;
-import org.noear.snack.core.BeanEncoder;
+import org.noear.snack4.ONode;
+import org.noear.snack4.core.BeanDecoder;
+import org.noear.snack4.core.BeanEncoder;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
