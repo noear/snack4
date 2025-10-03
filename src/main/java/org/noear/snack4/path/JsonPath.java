@@ -17,7 +17,6 @@ package org.noear.snack4.path;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.exception.PathResolutionException;
-import org.noear.snack4.path.segment.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,14 +27,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * JSON路径查询工具类
  */
 public class JsonPath {
-    private final String query;
+    private final String path;
     private final List<SegmentFunction> segments;
     private final boolean multiple;
 
-    public JsonPath(String query, List<SegmentFunction> segments) {
-        this.query = query;
+    public JsonPath(String path, List<SegmentFunction> segments) {
+        this.path = path;
         this.segments = segments;
-        this.multiple = ((query.indexOf('?') < 0 && query.indexOf('*') < 0 && query.indexOf("..") < 0 && query.indexOf(",") < 0 && query.indexOf(":") < 0) || query.indexOf("()") > 0);
+        this.multiple = ((path.indexOf('?') < 0 && path.indexOf('*') < 0 && path.indexOf("..") < 0 && path.indexOf(",") < 0 && path.indexOf(":") < 0) || path.indexOf("()") > 0);
     }
 
     public ONode select(ONode root) {
