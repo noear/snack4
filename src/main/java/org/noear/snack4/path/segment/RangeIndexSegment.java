@@ -35,8 +35,8 @@ import java.util.List;
 public class RangeIndexSegment implements SegmentFunction {
     //[start:end:step]
 
-    private String startStr;
-    private String endStr;
+    private Integer startRef;
+    private Integer endRef;
     private int step;
 
     public RangeIndexSegment(String segmentStr) {
@@ -47,8 +47,14 @@ public class RangeIndexSegment implements SegmentFunction {
 
         final int step = (parts.length == 3 && parts[2].length() > 0) ? Integer.parseInt(parts[2]) : 1;
 
-        this.startStr = parts[0];
-        this.endStr = parts[1];
+        if (parts[0].length() > 0) {
+            startRef = Integer.parseInt(parts[0]);
+        }
+
+        if (parts[1].length() > 0) {
+            endRef = Integer.parseInt(parts[1]);
+        }
+
         this.step = step;
     }
 
@@ -63,8 +69,8 @@ public class RangeIndexSegment implements SegmentFunction {
         for (ONode arr : currentNodes) {
             if (arr.isArray()) {
                 int size = arr.size();
-                int start = parseRangeBound(startStr, (step > 0 ? 0 : size - 1), size);
-                int end = parseRangeBound(endStr, (step > 0 ? size : -1), size);
+                int start = parseRangeBound(startRef, (step > 0 ? 0 : size - 1), size);
+                int end = parseRangeBound(endRef, (step > 0 ? size : -1), size);
 
                 // 调整范围确保有效
                 RangeUtil.Bounds bounds = RangeUtil.bounds(start, end, step, size);
@@ -93,12 +99,12 @@ public class RangeIndexSegment implements SegmentFunction {
     }
 
     // 辅助方法：解析范围边界
-    private int parseRangeBound(String boundStr, int def, int size) {
-        if (boundStr.isEmpty()) {
+    private int parseRangeBound(Integer boundRef, int def, int size) {
+        if (boundRef == null) {
             return def; // 默认开始
         }
 
-        int bound = Integer.parseInt(boundStr.trim());
+        int bound = boundRef.intValue();
         if (bound < 0) {
             bound += size;
         }

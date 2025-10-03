@@ -19,25 +19,25 @@ package org.noear.snack4.path;
  * @author noear 2025/5/5 created
  */
 public class RangeUtil {
-    public static int normalize(int val, int len) {
+    public static int normalize(int val, int size) {
         if (val >= 0) {
             return val;
         } else {
-            return len + val;
+            return size + val;
         }
     }
 
-    public static Bounds bounds(int start, int end, int step, int len) {
-        int n_start = start;//normalize(start, len);
-        int n_end = end;//normalize(end, len);
+    public static Bounds bounds(int start, int end, int step, int size) {
+        int n_start = start;//normalize(start, size);
+        int n_end = end;//normalize(end, size);
 
         int lower, upper;
         if (step >= 0) {
-            lower = Math.min(Math.max(n_start, 0), len);
-            upper = Math.min(Math.max(n_end, 0), len);
+            lower = Math.min(Math.max(n_start, 0), size);
+            upper = Math.min(Math.max(n_end, 0), size);
         } else {
-            upper = Math.min(Math.max(n_start, -1), len - 1);
-            lower = Math.min(Math.max(n_end, -1), len - 1);
+            upper = Math.min(Math.max(n_start, -1), size - 1);
+            lower = Math.min(Math.max(n_end, -1), size - 1);
         }
 
         return new Bounds(lower, upper);
