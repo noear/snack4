@@ -36,7 +36,7 @@ public final class Options {
 
     // 通用配置
     private final DateFormat _dateFormat;
-    private final Map<Class<?>, Codec<?>> _codecRegistry;
+    private final Map<Class<?>, NodeCodec<?>> _codecRegistry;
     private final JsonSchemaValidator _schemaValidator;
 
     // 输入配置
@@ -91,7 +91,7 @@ public final class Options {
     /**
      * 获取自定义编解码器注册表
      */
-    public Map<Class<?>, Codec<?>> getCodecRegistry() {
+    public Map<Class<?>, NodeCodec<?>> getCodecRegistry() {
         return _codecRegistry;
     }
 
@@ -146,7 +146,7 @@ public final class Options {
 
         // 通用配置
         private DateFormat dateFormat = DEFAULT_DATE_FORMAT;
-        private final Map<Class<?>, Codec<?>> codecRegistry = new HashMap<>();
+        private final Map<Class<?>, NodeCodec<?>> codecRegistry = new HashMap<>();
         private JsonSchemaValidator schemaValidator;
 
         // 输入配置
@@ -189,7 +189,7 @@ public final class Options {
         /**
          * 注册自定义编解码器
          */
-        public <T> Builder addCodec(Class<T> type, Codec<T> codec) {
+        public <T> Builder addCodec(Class<T> type, NodeCodec<T> codec) {
             codecRegistry.put(type, codec);
             return this;
         }

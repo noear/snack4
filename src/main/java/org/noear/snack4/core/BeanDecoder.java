@@ -75,9 +75,9 @@ public class BeanDecoder {
         }
 
         // 优先使用自定义编解码器
-        Codec<T> codec = (Codec<T>) opts.getCodecRegistry().get(clazz);
+        NodeCodec<T> codec = (NodeCodec<T>) opts.getCodecRegistry().get(clazz);
         if (codec != null) {
-            return codec.decode(node);
+            return codec.decode(node, clazz);
         }
 
         // 处理Properties类型
@@ -240,9 +240,9 @@ public class BeanDecoder {
         Class<?> clazz = (Class<?>) (targetType instanceof Class ? targetType : ((ParameterizedType) targetType).getRawType());
 
         // 优先使用自定义编解码器
-        Codec<?> codec = opts.getCodecRegistry().get(clazz);
+        NodeCodec<?> codec = opts.getCodecRegistry().get(clazz);
         if (codec != null) {
-            return codec.decode(node);
+            return codec.decode(node, clazz);
         }
 
         if (clazz == String.class) return node.getString();

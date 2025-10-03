@@ -64,11 +64,9 @@ public class BeanEncoder {
         }
 
         // 优先使用自定义编解码器
-        Codec<Object> codec = (Codec<Object>) opts.getCodecRegistry().get(bean.getClass());
+        NodeCodec<Object> codec = (NodeCodec<Object>) opts.getCodecRegistry().get(bean.getClass());
         if (codec != null) {
-            ONode node = new ONode();
-            codec.encode(node, bean);
-            return node;
+            return codec.encode(bean, new ONode());
         }
 
         // 处理Properties类型
@@ -123,11 +121,9 @@ public class BeanEncoder {
         }
 
         // 优先使用自定义编解码器
-        Codec<Object> codec = (Codec<Object>) opts.getCodecRegistry().get(value.getClass());
+        NodeCodec<Object> codec = (NodeCodec<Object>) opts.getCodecRegistry().get(value.getClass());
         if (codec != null) {
-            ONode node = new ONode();
-            codec.encode(node, value);
-            return node;
+           return codec.encode(value, new ONode());
         }
 
         if (value instanceof ONode) {

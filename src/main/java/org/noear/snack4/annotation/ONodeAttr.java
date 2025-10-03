@@ -15,7 +15,7 @@
  */
 package org.noear.snack4.annotation;
 
-import org.noear.snack4.core.Codec;
+import org.noear.snack4.core.NodeCodec;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,5 +30,5 @@ import java.lang.annotation.Target;
 public @interface ONodeAttr {
     String alias() default "";
     boolean ignore() default false;
-    Class<? extends Codec> codec() default Codec.class;
+    Class<? extends NodeCodec> codec() default NodeCodec.class;
 }

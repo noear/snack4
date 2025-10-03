@@ -16,7 +16,7 @@
 package org.noear.snack4.core.util;
 
 import org.noear.snack4.annotation.ONodeAttr;
-import org.noear.snack4.core.Codec;
+import org.noear.snack4.core.NodeCodec;
 import org.noear.snack4.exception.AnnotationProcessException;
 
 import java.lang.reflect.Field;
@@ -31,7 +31,7 @@ public class FieldWrapper {
 
     private String alias;
     private boolean ignore;
-    private Codec codec;
+    private NodeCodec codec;
 
     public FieldWrapper(Field field) {
         this.field = field;
@@ -63,7 +63,7 @@ public class FieldWrapper {
         }
     }
 
-    public Codec getCodec() {
+    public NodeCodec getCodec() {
         return codec;
     }
 
