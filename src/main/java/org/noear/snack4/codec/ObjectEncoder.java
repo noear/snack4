@@ -37,60 +37,71 @@ import java.util.*;
  * @since 4.0
  */
 public class ObjectEncoder {
-    private static final Map<Class<?>, NodeEncoder<?>> ENCODER_REPOSITORY = new HashMap<>();
-
+    private static final Map<Class<?>, NodeEncoder<?>> ENCODERS = new HashMap<>();
+    private static final List<NodePatternEncoder<?>> PATTERN_ENCODERS = new ArrayList<>();
     static {
-        ENCODER_REPOSITORY.put(ONode.class, new ONodeEncoder());
-        ENCODER_REPOSITORY.put(Properties.class, new PropertiesEncoder());
-        ENCODER_REPOSITORY.put(InetSocketAddress.class, new InetSocketAddressEncoder());
-        ENCODER_REPOSITORY.put(SimpleDateFormat.class, new SimpleDateFormatEncoder());
-        ENCODER_REPOSITORY.put(File.class, new FileEncoder());
-        ENCODER_REPOSITORY.put(Calendar.class, new CalendarEncoder());
-        ENCODER_REPOSITORY.put(Class.class, new ClassEncoder());
-        ENCODER_REPOSITORY.put(Clob.class, new ClobEncoder());
-        ENCODER_REPOSITORY.put(Currency.class, new CurrencyEncoder());
-        ENCODER_REPOSITORY.put(TimeZone.class, new TimeZoneEncoder());
-        ENCODER_REPOSITORY.put(UUID.class, new UUIDEncoder());
+        PATTERN_ENCODERS.add(new CalendarPatternEncoder());
+        PATTERN_ENCODERS.add(new ClobPatternEncoder());
 
-        ENCODER_REPOSITORY.put(String.class, new StringEncoder());
+        ENCODERS.put(ONode.class, new ONodeEncoder());
+        ENCODERS.put(Properties.class, new PropertiesEncoder());
+        ENCODERS.put(InetSocketAddress.class, new InetSocketAddressEncoder());
+        ENCODERS.put(SimpleDateFormat.class, new SimpleDateFormatEncoder());
+        ENCODERS.put(File.class, new FileEncoder());
+        ENCODERS.put(Calendar.class, new CalendarPatternEncoder());
+        ENCODERS.put(Class.class, new ClassEncoder());
+        ENCODERS.put(Clob.class, new ClobPatternEncoder());
+        ENCODERS.put(Currency.class, new CurrencyEncoder());
+        ENCODERS.put(TimeZone.class, new TimeZoneEncoder());
+        ENCODERS.put(UUID.class, new UUIDEncoder());
 
-        ENCODER_REPOSITORY.put(Date.class, new DateEncoder());
-        ENCODER_REPOSITORY.put(ZonedDateTime.class, new ZonedDateTimeEncoder());
+        ENCODERS.put(String.class, new StringEncoder());
 
-        ENCODER_REPOSITORY.put(OffsetDateTime.class, new OffsetDateTimeEncoder());
-        ENCODER_REPOSITORY.put(OffsetTime.class, new OffsetTimeEncoder());
+        ENCODERS.put(Date.class, new DateEncoder());
+        ENCODERS.put(ZonedDateTime.class, new ZonedDateTimeEncoder());
 
-        ENCODER_REPOSITORY.put(LocalDateTime.class, new LocalDateTimeEncoder());
-        ENCODER_REPOSITORY.put(LocalDate.class, new LocalDateEncoder());
-        ENCODER_REPOSITORY.put(LocalTime.class, new LocalTimeEncoder());
+        ENCODERS.put(OffsetDateTime.class, new OffsetDateTimeEncoder());
+        ENCODERS.put(OffsetTime.class, new OffsetTimeEncoder());
+
+        ENCODERS.put(LocalDateTime.class, new LocalDateTimeEncoder());
+        ENCODERS.put(LocalDate.class, new LocalDateEncoder());
+        ENCODERS.put(LocalTime.class, new LocalTimeEncoder());
 
 
-        ENCODER_REPOSITORY.put(Boolean.class, new BooleanEncoder());
-        ENCODER_REPOSITORY.put(Boolean.TYPE, new BooleanEncoder());
+        ENCODERS.put(Boolean.class, new BooleanEncoder());
+        ENCODERS.put(Boolean.TYPE, new BooleanEncoder());
 
-        ENCODER_REPOSITORY.put(Double.class, new DoubleEncoder());
-        ENCODER_REPOSITORY.put(Double.TYPE, new DoubleEncoder());
+        ENCODERS.put(Double.class, new DoubleEncoder());
+        ENCODERS.put(Double.TYPE, new DoubleEncoder());
 
-        ENCODER_REPOSITORY.put(Float.class, new FloatEncoder());
-        ENCODER_REPOSITORY.put(Float.TYPE, new FloatEncoder());
+        ENCODERS.put(Float.class, new FloatEncoder());
+        ENCODERS.put(Float.TYPE, new FloatEncoder());
 
-        ENCODER_REPOSITORY.put(Long.class, new LongEncoder());
-        ENCODER_REPOSITORY.put(Long.TYPE, new LongEncoder());
+        ENCODERS.put(Long.class, new LongEncoder());
+        ENCODERS.put(Long.TYPE, new LongEncoder());
 
-        ENCODER_REPOSITORY.put(Integer.class, new IntegerEncoder());
-        ENCODER_REPOSITORY.put(Integer.TYPE, new IntegerEncoder());
+        ENCODERS.put(Integer.class, new IntegerEncoder());
+        ENCODERS.put(Integer.TYPE, new IntegerEncoder());
 
-        ENCODER_REPOSITORY.put(Short.class, new ShortEncoder());
-        ENCODER_REPOSITORY.put(Short.TYPE, new ShortEncoder());
+        ENCODERS.put(Short.class, new ShortEncoder());
+        ENCODERS.put(Short.TYPE, new ShortEncoder());
     }
 
     private static NodeEncoder getNodeEncoder(Options opts, Class<?> clazz) {
         NodeEncoder encoder = opts.getNodeEncoder(clazz);
-        if (encoder != null) {
-            return encoder;
+        if (encoder == null) {
+            encoder = ENCODERS.get(clazz);
         }
 
-        return ENCODER_REPOSITORY.get(clazz);
+        if (encoder == null) {
+            for (NodePatternEncoder encoder1 : PATTERN_ENCODERS) {
+                if (encoder1.canEncode(clazz)) {
+                    return encoder1;
+                }
+            }
+        }
+
+        return encoder;
     }
 
     // 序列化：对象转ONode

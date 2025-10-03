@@ -40,43 +40,43 @@ import java.util.*;
  */
 public class ObjectDecoder {
 
-    private static final Map<Class<?>, NodeDecoder<?>> DECODER_REPOSITORY = new HashMap<>();
-    private static final Map<Class<?>, ObjectFactory<?>> objectFactoryLib = new HashMap<>();
+    private static final Map<Class<?>, NodeDecoder<?>> DECODERS = new HashMap<>();
+    private static final Map<Class<?>, ObjectFactory<?>> FACTORYS = new HashMap<>();
 
     static {
-        DECODER_REPOSITORY.put(Properties.class, new PropertiesDecoder());
-        DECODER_REPOSITORY.put(InetSocketAddress.class, new InetSocketAddressDecoder());
-        DECODER_REPOSITORY.put(SimpleDateFormat.class, new SimpleDateFormatDecoder());
-        DECODER_REPOSITORY.put(File.class, new FileDecoder());
-        DECODER_REPOSITORY.put(UUID.class, new UUIDDecoder());
+        DECODERS.put(Properties.class, new PropertiesDecoder());
+        DECODERS.put(InetSocketAddress.class, new InetSocketAddressDecoder());
+        DECODERS.put(SimpleDateFormat.class, new SimpleDateFormatDecoder());
+        DECODERS.put(File.class, new FileDecoder());
+        DECODERS.put(UUID.class, new UUIDDecoder());
 
-        DECODER_REPOSITORY.put(String.class, new StringDecoder());
-        DECODER_REPOSITORY.put(Date.class, new DateDecoder());
+        DECODERS.put(String.class, new StringDecoder());
+        DECODERS.put(Date.class, new DateDecoder());
 
-        DECODER_REPOSITORY.put(Boolean.class, new BooleanDecoder());
-        DECODER_REPOSITORY.put(Boolean.TYPE, new BooleanDecoder());
+        DECODERS.put(Boolean.class, new BooleanDecoder());
+        DECODERS.put(Boolean.TYPE, new BooleanDecoder());
 
-        DECODER_REPOSITORY.put(Double.class, new DoubleDecoder());
-        DECODER_REPOSITORY.put(Double.TYPE, new DoubleDecoder());
+        DECODERS.put(Double.class, new DoubleDecoder());
+        DECODERS.put(Double.TYPE, new DoubleDecoder());
 
-        DECODER_REPOSITORY.put(Float.class, new FloatDecoder());
-        DECODER_REPOSITORY.put(Float.TYPE, new FloatDecoder());
+        DECODERS.put(Float.class, new FloatDecoder());
+        DECODERS.put(Float.TYPE, new FloatDecoder());
 
-        DECODER_REPOSITORY.put(Long.class, new LongDecoder());
-        DECODER_REPOSITORY.put(Long.TYPE, new LongDecoder());
+        DECODERS.put(Long.class, new LongDecoder());
+        DECODERS.put(Long.TYPE, new LongDecoder());
 
-        DECODER_REPOSITORY.put(Integer.class, new IntegerDecoder());
-        DECODER_REPOSITORY.put(Integer.TYPE, new IntegerDecoder());
+        DECODERS.put(Integer.class, new IntegerDecoder());
+        DECODERS.put(Integer.TYPE, new IntegerDecoder());
 
-        DECODER_REPOSITORY.put(Short.class, new ShortDecoder());
-        DECODER_REPOSITORY.put(Short.TYPE, new ShortDecoder());
+        DECODERS.put(Short.class, new ShortDecoder());
+        DECODERS.put(Short.TYPE, new ShortDecoder());
 
         /// //////////////
 
-        objectFactoryLib.put(Map.class, new MapFactory());
-        objectFactoryLib.put(List.class, new ListFactory());
-        objectFactoryLib.put(Set.class, new SetFactory());
-        objectFactoryLib.put(Collection.class, new CollectionFactory());
+        FACTORYS.put(Map.class, new MapFactory());
+        FACTORYS.put(List.class, new ListFactory());
+        FACTORYS.put(Set.class, new SetFactory());
+        FACTORYS.put(Collection.class, new CollectionFactory());
     }
 
     private static NodeDecoder getNodeDecoder(Options opts, Class<?> clazz) {
@@ -87,7 +87,7 @@ public class ObjectDecoder {
         }
 
         //如果没有，用默认解码库
-        return DECODER_REPOSITORY.get(clazz);
+        return DECODERS.get(clazz);
     }
 
     private static ObjectFactory getObjectFactory(Options opts, Class<?> clazz) {
@@ -96,7 +96,7 @@ public class ObjectDecoder {
             return factory;
         }
 
-        return objectFactoryLib.get(clazz);
+        return FACTORYS.get(clazz);
     }
 
 
