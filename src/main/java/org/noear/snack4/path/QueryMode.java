@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.query;
+package org.noear.snack4.path;
 
-import org.noear.snack4.ONode;
-
-public class Context {
-    public boolean flattened = false;
-    public final ONode root;
-
-    public Context(ONode root) {
-        this.root = root;
-    }
+/**
+ * 查询模式
+ *
+ * @author noear 2025/8/6 created
+ */
+public enum QueryMode {
+    SELECT,
+    CREATE,
+    DELETE,
 }

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.query;
+package org.noear.snack4.path;
 
 import org.noear.snack4.ONode;
 
-/**
- * @author noear 2025/5/5 created
- */
-public interface Operation {
-    boolean apply(ONode node, Condition condition, ONode root);
+import java.util.List;
+
+public interface SegmentFunction {
+    List<ONode> resolve(List<ONode> currentNodes, Context context, QueryMode mode);
 }

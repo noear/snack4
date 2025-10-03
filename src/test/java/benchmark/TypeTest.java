@@ -2,7 +2,7 @@ package benchmark;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack4.ONode;
-import org.noear.snack4.query.QueryMode;
+import org.noear.snack4.path.QueryMode;
 
 import java.util.HashMap;
 import java.util.Map;

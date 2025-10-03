@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.query;
+package org.noear.snack4.path;
 
 import org.noear.snack4.ONode;
+import org.noear.snack4.exception.PathResolutionException;
+import org.noear.snack4.path.segment.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author noear
+ * JSON路径查询工具类
  */
-public class CompiledJsonPath {
+public class JsonPath {
     private final String query;
     private final List<SegmentFunction> segments;
     private final boolean multiple;
 
-    public CompiledJsonPath(String query,List<SegmentFunction> segments) {
+    public JsonPath(String query, List<SegmentFunction> segments) {
         this.query = query;
         this.segments = segments;
         this.multiple = ((query.indexOf('?') < 0 && query.indexOf('*') < 0 && query.indexOf("..") < 0 && query.indexOf(",") < 0 && query.indexOf(":") < 0) || query.indexOf("()") > 0);
@@ -100,5 +104,49 @@ public class CompiledJsonPath {
                 }
             }
         }
+    }
+
+    /// //////////
+
+
+    private static Map<String, JsonPath> cached = new ConcurrentHashMap<>();
+
+    /**
+     * 编译
+     */
+    public static JsonPath compile(String path) {
+        if (!path.startsWith("$")) {
+            throw new PathResolutionException("Path must start with $");
+        }
+
+        return cached.computeIfAbsent(path, JsonPathCompiler::compile);
+    }
+
+    /**
+     * 根据 jsonpath 查询
+     */
+    public static ONode select(String json, String path) {
+        return select(ONode.load(json), path);
+    }
+
+    /**
+     * 根据 jsonpath 查询
+     */
+    public static ONode select(ONode root, String path) {
+        return compile(path).select(root);
+    }
+
+    /**
+     * 根据 jsonpath 生成
+     */
+    public static ONode create(ONode root, String path) {
+        return compile(path).create(root);
+    }
+
+    /**
+     * 根据 jsonpath 删除
+     */
+    public static void delete(ONode root, String path) {
+        compile(path).delete(root);
     }
 }

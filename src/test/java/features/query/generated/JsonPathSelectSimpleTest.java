@@ -2,7 +2,7 @@ package features.query.generated;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.exception.PathResolutionException;
-import org.noear.snack4.query.JsonPath;
+import org.noear.snack4.path.JsonPath;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

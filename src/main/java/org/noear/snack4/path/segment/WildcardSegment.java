@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.query.segment;
+package org.noear.snack4.path.segment;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.core.JsonSource;
-import org.noear.snack4.query.Context;
-import org.noear.snack4.query.QueryMode;
-import org.noear.snack4.query.SegmentFunction;
+import org.noear.snack4.path.Context;
+import org.noear.snack4.path.QueryMode;
+import org.noear.snack4.path.SegmentFunction;
 
 import java.util.ArrayList;
 import java.util.Collection;

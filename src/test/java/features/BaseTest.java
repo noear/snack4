@@ -7,7 +7,7 @@ import org.noear.snack4.core.BeanEncoder;
 import org.noear.snack4.core.JsonReader;
 import org.noear.snack4.core.Options;
 import org.noear.snack4.exception.SchemaException;
-import org.noear.snack4.query.JsonPath;
+import org.noear.snack4.path.JsonPath;
 import org.noear.snack4.schema.JsonSchemaValidator;
 
 import java.io.IOException;

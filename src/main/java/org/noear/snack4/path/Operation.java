@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.query;
+package org.noear.snack4.path;
+
+import org.noear.snack4.ONode;
 
 /**
- * 查询模式
+ * 操作符处理
  *
- * @author noear 2025/8/6 created
+ * @author noear 2025/5/5 created
  */
-public enum QueryMode {
-    SELECT,
-    CREATE,
-    DELETE,
+public interface Operation {
+    boolean apply(ONode node, Condition condition, ONode root);
 }
