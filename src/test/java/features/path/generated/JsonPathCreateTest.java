@@ -1,4 +1,4 @@
-package features.query.generated;
+package features.path.generated;
 
 import org.noear.snack4.ONode;
 import org.junit.jupiter.api.Test;

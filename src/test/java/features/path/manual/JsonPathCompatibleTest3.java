@@ -1,4 +1,4 @@
-package features.query.manual;
+package features.path.manual;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;

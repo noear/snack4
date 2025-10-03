@@ -1,4 +1,4 @@
-package features.query.manual;
+package features.path.manual;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack4.ONode;
