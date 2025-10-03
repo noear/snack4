@@ -25,10 +25,10 @@ public class DateDecoder implements NodeDecoder<Date> {
             try {
                 return DateUtil.parse(node.getString());
             } catch (Exception ex) {
-                throw new TypeConvertException("Cannot be converted to date: " + node, ex);
+                throw new TypeConvertException("Cannot be converted to Date: " + node, ex);
             }
         } else {
-            throw new TypeConvertException("Cannot be converted to date: " + node);
+            throw new TypeConvertException("Cannot be converted to Date: " + node);
         }
     }
 }

@@ -124,6 +124,11 @@ public enum Feature {
     Write_EnumUsingName(true),
 
     /**
+     * 写入类名
+     */
+    Write_TypeName(false),
+
+    /**
      * 处理大数字时使用字符串模式（避免精度丢失）
      */
     Write_UseBigNumberMode(false),
