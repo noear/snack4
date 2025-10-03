@@ -2,6 +2,7 @@ package org.noear.snack4.codec.encode;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.Options;
+import org.noear.snack4.annotation.ONodeAttr;
 import org.noear.snack4.codec.NodeEncoder;
 
 /**
@@ -17,7 +18,7 @@ public class ONodeEncoder implements NodeEncoder<ONode> {
     }
 
     @Override
-    public ONode encode(Options opts, ONode value) {
+    public ONode encode(Options opts, ONodeAttr attr, ONode value) {
         return value;
     }
 }

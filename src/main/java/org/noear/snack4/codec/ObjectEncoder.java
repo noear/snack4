@@ -17,6 +17,7 @@ package org.noear.snack4.codec;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.Options;
+import org.noear.snack4.annotation.ONodeAttr;
 import org.noear.snack4.codec.encode.*;
 import org.noear.snack4.codec.util.FieldWrapper;
 import org.noear.snack4.codec.util.ReflectionUtil;
@@ -102,7 +103,7 @@ public class ObjectEncoder {
         // 优先使用自定义编解码器
         NodeEncoder encoder = getNodeEncoder(opts, bean.getClass());
         if (encoder != null) {
-            return encoder.encode(opts, bean);
+            return encoder.encode(opts, null, bean);
         }
 
         // 循环引用检测
@@ -127,7 +128,7 @@ public class ObjectEncoder {
 
             for (FieldWrapper field : ReflectionUtil.getDeclaredFields(clazz)) {
                 Object value = field.getField().get(bean);
-                ONode fieldNode = convertValueToNode(value, visited, opts);
+                ONode fieldNode = convertValueToNode(value, field.getAttr(), visited, opts);
                 node.set(field.getAliasName(), fieldNode);
             }
 
@@ -136,7 +137,7 @@ public class ObjectEncoder {
     }
 
     // 值转ONode处理
-    private static ONode convertValueToNode(Object value, Map<Object, Object> visited, Options opts) throws Exception {
+    private static ONode convertValueToNode(Object value, ONodeAttr attr, Map<Object, Object> visited, Options opts) throws Exception {
         if (value == null) {
             return new ONode(null);
         }
@@ -144,11 +145,11 @@ public class ObjectEncoder {
         // 优先使用自定义编解码器
         NodeEncoder<Object> codec = (NodeEncoder<Object>) opts.getNodeEncoder(value.getClass());
         if (codec != null) {
-            return codec.encode(opts, value);
+            return codec.encode(opts, attr, value);
         }
 
         if (value instanceof Enum) {
-            return EnumEncoder.getInstance().encode(opts, (Enum) value);
+            return EnumEncoder.getInstance().encode(opts, attr, (Enum) value);
         } else if (value instanceof Collection) {
             return convertCollectionToNode((Collection<?>) value, visited, opts);
         } else if (value instanceof Map) {
@@ -168,7 +169,7 @@ public class ObjectEncoder {
         int length = Array.getLength(array);
         for (int i = 0; i < length; i++) {
             Object element = Array.get(array, i);
-            arrayNode.add(convertValueToNode(element, visited, opts));
+            arrayNode.add(convertValueToNode(element, null, visited, opts));
         }
         return arrayNode;
     }
@@ -177,7 +178,7 @@ public class ObjectEncoder {
     private static ONode convertCollectionToNode(Collection<?> collection, Map<Object, Object> visited, Options opts) throws Exception {
         ONode arrayNode = new ONode(new ArrayList<>());
         for (Object item : collection) {
-            arrayNode.add(convertValueToNode(item, visited, opts));
+            arrayNode.add(convertValueToNode(item, null, visited, opts));
         }
         return arrayNode;
     }
@@ -187,7 +188,7 @@ public class ObjectEncoder {
         ONode objNode = new ONode(new LinkedHashMap<>());
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             String key = entry.getKey().toString();
-            ONode valueNode = convertValueToNode(entry.getValue(), visited, opts);
+            ONode valueNode = convertValueToNode(entry.getValue(), null, visited, opts);
             objNode.set(key, valueNode);
         }
         return objNode;

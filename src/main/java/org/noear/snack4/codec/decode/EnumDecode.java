@@ -2,6 +2,7 @@ package org.noear.snack4.codec.decode;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.Options;
+import org.noear.snack4.annotation.ONodeAttr;
 import org.noear.snack4.codec.NodeDecoder;
 
 import java.util.Arrays;
@@ -20,7 +21,7 @@ public class EnumDecode implements NodeDecoder<Object> {
     }
 
     @Override
-    public Object decode(Options opts, ONode node, Class<?> clazz) {
+    public Object decode(Options opts, ONodeAttr attr, ONode node, Class<?> clazz) {
         String value = node.getString();
         try {
             return Enum.valueOf((Class<? extends Enum>) clazz, value);

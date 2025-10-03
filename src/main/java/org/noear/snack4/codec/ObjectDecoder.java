@@ -17,6 +17,7 @@ package org.noear.snack4.codec;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.Options;
+import org.noear.snack4.annotation.ONodeAttr;
 import org.noear.snack4.codec.decode.*;
 import org.noear.snack4.codec.factory.CollectionFactory;
 import org.noear.snack4.codec.factory.ListFactory;
@@ -137,13 +138,13 @@ public class ObjectDecoder {
         // 优先使用自定义编解码器
         NodeDecoder decoder = getNodeDecoder(opts, clazz);
         if (decoder != null) {
-            return decoder.decode(opts, node, clazz);
+            return decoder.decode(opts, null, node, clazz);
         }
 
         if (clazz.isArray()) {
-            return ArrayDecoder.instance().decode(opts, node, clazz);
+            return ArrayDecoder.instance().decode(opts, null, node, clazz);
         } else if (clazz.isEnum()) {
-            return EnumDecode.getInstance().decode(opts, node, clazz);
+            return EnumDecode.getInstance().decode(opts, null, node, clazz);
         }
 
         Object bean = null;
@@ -212,7 +213,7 @@ public class ObjectDecoder {
                 ONode fieldNode = node.get(field.getAliasName());
 
                 if (fieldNode != null && !fieldNode.isNull()) {
-                    Object value = convertValue(fieldNode, field.getField().getGenericType(), visited, opts);
+                    Object value = convertValue(fieldNode, field.getField().getGenericType(), field.getAttr(), visited, opts);
                     field.getField().set(bean, value);
                 } else {
                     setPrimitiveDefault(field.getField(), bean);
@@ -225,14 +226,14 @@ public class ObjectDecoder {
 
 
     // 类型转换核心
-    private static Object convertValue(ONode node, Type targetType, Map<Object, Object> visited, Options opts) throws Exception {
+    private static Object convertValue(ONode node, Type type, ONodeAttr attr, Map<Object, Object> visited, Options opts) throws Exception {
         if (node.isNull()) {
             return null;
         }
 
         // 处理泛型类型
-        if (targetType instanceof ParameterizedType) {
-            ParameterizedType pType = (ParameterizedType) targetType;
+        if (type instanceof ParameterizedType) {
+            ParameterizedType pType = (ParameterizedType) type;
             Type rawType = pType.getRawType();
 
             if (List.class.isAssignableFrom((Class<?>) rawType)) {
@@ -244,18 +245,18 @@ public class ObjectDecoder {
         }
 
         // 处理基本类型
-        Class<?> clazz = (Class<?>) (targetType instanceof Class ? targetType : ((ParameterizedType) targetType).getRawType());
+        Class<?> clazz = (Class<?>) (type instanceof Class ? type : ((ParameterizedType) type).getRawType());
 
         // 优先使用自定义编解码器
         NodeDecoder decoder = getNodeDecoder(opts, clazz);
         if (decoder != null) {
-            return decoder.decode(opts, node, clazz);
+            return decoder.decode(opts, attr, node, clazz);
         }
 
         if (clazz.isArray()) {
-            return ArrayDecoder.instance().decode(opts, node, clazz);
+            return ArrayDecoder.instance().decode(opts, null, node, clazz);
         } else if (clazz.isEnum()) {
-            return EnumDecode.getInstance().decode(opts, node, clazz);
+            return EnumDecode.getInstance().decode(opts, null, node, clazz);
         } else if (clazz == Object.class) {
             return node.getValue();
         }
@@ -269,7 +270,7 @@ public class ObjectDecoder {
     private static List<?> convertToList(ONode node, Type elementType, Map<Object, Object> visited, Options opts) throws Exception {
         List<Object> list = new ArrayList<>();
         for (ONode itemNode : node.getArray()) {
-            list.add(convertValue(itemNode, elementType, visited, opts));
+            list.add(convertValue(itemNode, elementType, null, visited, opts));
         }
         return list;
     }
@@ -280,7 +281,7 @@ public class ObjectDecoder {
 
         for (Map.Entry<String, ONode> kv : node.getObject().entrySet()) {
             Object k = convertKey(kv.getKey(), keyType);
-            Object v = convertValue(kv.getValue(), valueType, visited, opts);
+            Object v = convertValue(kv.getValue(), valueType, null, visited, opts);
             map.put(k, v);
         }
 

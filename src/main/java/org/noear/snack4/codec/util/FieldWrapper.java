@@ -58,6 +58,10 @@ public class FieldWrapper {
         return field;
     }
 
+    public ONodeAttr getAttr() {
+        return attr;
+    }
+
     public String getAliasName() {
         if (alias == null) {
             return field.getName();
@@ -65,6 +69,7 @@ public class FieldWrapper {
             return alias;
         }
     }
+
 
     public NodeDecoder getDecoder() {
         return decoder;
