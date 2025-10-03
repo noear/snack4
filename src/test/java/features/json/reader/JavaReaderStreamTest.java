@@ -1,4 +1,4 @@
-package features.reader;
+package features.json.reader;
 
 import org.noear.snack4.ONode;
 import org.noear.snack4.stream.JsonStreamHandler;

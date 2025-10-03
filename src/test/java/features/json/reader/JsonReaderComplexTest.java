@@ -1,4 +1,4 @@
-package features.reader;
+package features.json.reader;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack4.Feature;

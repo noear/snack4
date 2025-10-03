@@ -245,7 +245,7 @@ public final class ONode {
         return this;
     }
 
-    public ONode build(Consumer<ONode> builder) {
+    public ONode then(Consumer<ONode> builder) {
         builder.accept(this);
         return this;
     }
