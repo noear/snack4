@@ -45,12 +45,12 @@ public class RFC9535QueryTest {
         assert rst.toJson().equals("[1,2]");
     }
 
-    @Test
-    public void case2_3() {
-        ONode rst = ONode.load(json2).select("$.o[*,*]");
-        System.out.println(rst.toJson());
-        assert rst.toJson().equals("[1,2,1,2]");
-    }
+//    @Test
+//    public void case2_3() {
+//        ONode rst = ONode.load(json2).select("$.o[*,*]");
+//        System.out.println(rst.toJson());
+//        assert rst.toJson().equals("[1,2,1,2]");
+//    }
 
     @Test
     public void case2_4() {

@@ -1,0 +1,93 @@
+package org.noear.snack.query.segment;
+
+import org.noear.snack.ONode;
+import org.noear.snack.core.JsonSource;
+import org.noear.snack.exception.PathResolutionException;
+import org.noear.snack.query.Context;
+import org.noear.snack.query.QueryMode;
+import org.noear.snack.query.RangeUtil;
+import org.noear.snack.query.SegmentFunction;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * 处理范围选择（如 [1:4]，[1:5:1]）
+ *
+ * @author noear 2025/10/3 created
+ */
+public class RangeIndexSegment implements SegmentFunction {
+    //[start:end:step]
+
+    private String startStr;
+    private String endStr;
+    private int step;
+
+    public RangeIndexSegment(String segmentStr) {
+        String[] parts = segmentStr.split(":", 3); //[start:end:step]
+        if (parts.length == 1) {
+            throw new PathResolutionException("Invalid range syntax: " + segmentStr);
+        }
+
+        final int step = (parts.length == 3 && parts[2].length() > 0) ? Integer.parseInt(parts[2]) : 1;
+
+        this.startStr = parts[0];
+        this.endStr = parts[1];
+        this.step = step;
+    }
+
+    @Override
+    public List<ONode> resolve(List<ONode> currentNodes, Context context, QueryMode mode) {
+        if (step == 0) {
+            return Collections.emptyList();
+        }
+
+        List<ONode> result = new ArrayList<>();
+
+        for (ONode arr : currentNodes) {
+            if (arr.isArray()) {
+                int size = arr.size();
+                int start = parseRangeBound(startStr, (step > 0 ? 0 : size - 1), size);
+                int end = parseRangeBound(endStr, (step > 0 ? size : -1), size);
+
+                // 调整范围确保有效
+                RangeUtil.Bounds bounds = RangeUtil.bounds(start, end, step, size);
+
+                if (step > 0) {
+                    int i = bounds.getLower();
+                    while (i < bounds.getUpper()) {
+                        ONode node = arr.get(i);
+                        node.source = new JsonSource(arr, null, i);
+                        result.add(node);
+                        i += step;
+                    }
+                } else {
+                    int i = bounds.getUpper();
+                    while (bounds.getLower() < i) {
+                        ONode node = arr.get(i);
+                        node.source = new JsonSource(arr, null, i);
+                        result.add(node);
+                        i += step;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // 辅助方法：解析范围边界
+    private int parseRangeBound(String boundStr, int def, int size) {
+        if (boundStr.isEmpty()) {
+            return def; // 默认开始
+        }
+
+        int bound = Integer.parseInt(boundStr.trim());
+        if (bound < 0) {
+            bound += size;
+        }
+        return bound;
+    }
+}

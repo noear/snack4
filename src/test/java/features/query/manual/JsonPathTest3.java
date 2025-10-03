@@ -30,7 +30,7 @@
 //    @Test
 //    public void test1() {
 //        Entity entity = new Entity(123, new Object());
-//        ONode n = ONode.loadBean(entity);
+//        ONode n = ONode.from(entity);
 //
 //        assert n.select("$.id").getInt() == 123;
 //        assert n.select("$.*").size() == 2;//因为 StringNullAsEmpty，使 name 变成了 ""
@@ -44,7 +44,7 @@
 //        List<Entity> entities = new ArrayList<Entity>();
 //        entities.add(new Entity("wenshao"));
 //        entities.add(new Entity("ljw2083"));
-//        ONode n = ONode.loadBean(entities);
+//        ONode n = ONode.from(entities);
 //
 //        List<String> names = n.select("$.name").toBean(List.class);
 //        assert names.size() == 2;
@@ -59,7 +59,7 @@
 //        entities.add(new Entity("wenshao"));
 //        entities.add(new Entity("ljw2083"));
 //        entities.add(new Entity("Yako"));
-//        ONode n = ONode.loadBean(entities);
+//        ONode n = ONode.from(entities);
 //
 //        List<Entity> result = n.select("$[1,2]").toBean((new ArrayList<Entity>() {
 //        }).getClass());
@@ -76,7 +76,7 @@
 //        entities.add(new Entity("wenshao"));
 //        entities.add(new Entity("ljw2083"));
 //        entities.add(new Entity("Yako"));
-//        ONode n = ONode.loadBean(entities);
+//        ONode n = ONode.from(entities);
 //
 //        List<Entity> result = n.select("$[0:2]").toBean((new ArrayList<Entity>() {
 //        }).getClass());
@@ -93,7 +93,7 @@
 //        entities.add(new Entity(1002, "wenshao"));
 //        entities.add(new Entity(1003, "yakolee"));
 //        entities.add(new Entity(1004, null));
-//        ONode n = ONode.loadBean(entities);
+//        ONode n = ONode.from(entities);
 //
 //        ONode rst = n.select("$[?($.id in [1001,1002])]");
 //        assert rst.size() == 2;
@@ -105,7 +105,7 @@
 //    @Test
 //    public void test6() {
 //        Entity entity = new Entity(1001, "ljw2083");
-//        ONode n = ONode.loadBean(entity);
+//        ONode n = ONode.from(entity);
 //
 //        assert n.select("$[?(id == 1001)]").isObject();
 //        assert n.select("$[?(id == 1002)]").isNull();
@@ -130,7 +130,7 @@
 //                        )
 //                ));
 //
-//        ONode n = ONode.loadBean(root);
+//        ONode n = ONode.from(root);
 //
 //        List<Object> ids = n.select("$..id").toBean(List.class);
 //        assertEquals(3, ids.size());
@@ -165,7 +165,7 @@
 //                "    }\n" +
 //                "}";
 //
-//        ONode o = ONode.loadJson(jsonStr);
+//        ONode o = ONode.from(jsonStr);
 //
 //        //得到所有的书
 //        ONode books = o.select("$.store.book");
@@ -222,7 +222,7 @@
 //    public void testx2() {
 //        String json = "{\"school\":[{\"name\":\"清华\",\"grade\":[{\"class\":\"二\",\"manSum\":12},{\"class\":\"一班\",\"manSum\":12}]},{\"name\":\"北大\",\"grade\":[{\"class\":\"二\",\"manSum\":12},{\"class\":\"一班\",\"manSum\":12}]}]}";
 //
-//        ONode oNode = ONode.loadJson(json);
+//        ONode oNode = ONode.from(json);
 //
 //        ONode oNode1 = null;
 //
@@ -256,7 +256,7 @@
 //    @Test
 //    public void demo1() {
 //        //1.加载json
-//        ONode n = ONode.loadJson("{code:1,msg:'Hello world',data:{list:[1,2,3,4,5], ary2:[{a:2},{a:3,b:{c:'ddd'}}]}}");
+//        ONode n = ONode.from("{code:1,msg:'Hello world',data:{list:[1,2,3,4,5], ary2:[{a:2},{a:3,b:{c:'ddd'}}]}}");
 //
 //        //2.取一个属性的值
 //        String msg = n.get("msg").getString();
@@ -308,13 +308,13 @@
 //    public void test10_3() {
 //        String json = "{\"result\":[]}";
 //
-//        ONode oNode = ONode.loadJson(json).select("$.result[*].amount.max()");
+//        ONode oNode = ONode.load(json).select("$.result[*].amount.max()");
 //        System.out.println(oNode.toString());
 //
 //        assert oNode.getLong() == 0L;
 //
 //
-//        System.out.println(ONode.loadJson(json).select("$.result[*].amount.max()").pathList());
-//        assert ONode.loadJson(json).select("$.result[*].amount.max()").pathList().size() == 0;
+//        System.out.println(ONode.load(json).select("$.result[*].amount.max()").pathList());
+//        assert ONode.load(json).select("$.result[*].amount.max()").pathList().size() == 0;
 //    }
 //}
