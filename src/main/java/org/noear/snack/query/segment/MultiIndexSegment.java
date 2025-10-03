@@ -10,6 +10,7 @@ import org.noear.snack.query.SegmentFunction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -50,7 +51,9 @@ public class MultiIndexSegment implements SegmentFunction {
                 if (n.isArray()) {
                     result.addAll(n.getArray());
                 } else if (n.isObject()) {
-                    result.addAll(n.getObject().values());
+                    for (Map.Entry<String, ONode> entry : n.getObject().entrySet()) {
+                        result.add(entry.getValue());
+                    }
                 }
             } else if (keys != null) {
                 for (String k : keys) {

@@ -29,6 +29,7 @@ public class FilterSegment implements SegmentFunction {
     @Override
     public List<ONode> resolve(List<ONode> currentNodes, Context context, QueryMode mode) {
         if (this.flattened) {
+            //已经偏平化
             List<ONode> result = new ArrayList<>();
             for (ONode n : currentNodes) {
                 if (expression.test(n, context.root)) {
@@ -37,6 +38,7 @@ public class FilterSegment implements SegmentFunction {
             }
             return result;
         } else {
+            //还未偏平化
             List<ONode> result = new ArrayList<>();
 
             for (ONode n : currentNodes) {

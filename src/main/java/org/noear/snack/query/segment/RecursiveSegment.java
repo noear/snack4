@@ -7,6 +7,7 @@ import org.noear.snack.query.SegmentFunction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 处理递归搜索 ..
@@ -32,9 +33,9 @@ public class RecursiveSegment implements SegmentFunction {
                 collectRecursive(n1, results);
             }
         } else if (node.isObject()) {
-            for (ONode n1 : node.getObject().values()) {
-                results.add(n1);
-                collectRecursive(n1, results);
+            for (Map.Entry<String, ONode> entry : node.getObject().entrySet()) {
+                results.add(entry.getValue());
+                collectRecursive(entry.getValue(), results);
             }
         }
     }
