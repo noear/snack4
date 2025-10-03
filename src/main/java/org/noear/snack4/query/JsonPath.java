@@ -33,6 +33,13 @@ public class JsonPath {
     /**
      * 根据 jsonpath 查询
      */
+    public static ONode select(String json, String path) {
+        return select(ONode.load(json), path);
+    }
+
+    /**
+     * 根据 jsonpath 查询
+     */
     public static ONode select(ONode root, String path) {
         if (!path.startsWith("$")) {
             throw new PathResolutionException("Path must start with $");

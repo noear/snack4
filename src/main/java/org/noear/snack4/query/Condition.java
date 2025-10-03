@@ -144,7 +144,7 @@ public class Condition {
 
     private static ONode resolveNestedPath(ONode node, String keyPath, ONode root) {
         if (keyPath.startsWith("$")) {
-            return root.select(keyPath);
+            return JsonPath.select(root, keyPath);
         }
 
 

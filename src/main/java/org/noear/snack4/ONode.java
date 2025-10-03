@@ -16,6 +16,7 @@
 package org.noear.snack4;
 
 import org.noear.snack4.core.*;
+import org.noear.snack4.query.JsonPath;
 import org.noear.snack4.schema.JsonSchemaValidator;
 
 import java.io.StringReader;
@@ -275,6 +276,30 @@ public final class ONode {
     public boolean hasKey(String key) {
         return isObject() && getObject().containsKey(key);
     }
+
+    /// /////////////
+
+    /**
+     * 根据 jsonpath 查询
+     */
+    public ONode select(String jsonpath) {
+        return JsonPath.select(this, jsonpath);
+    }
+
+    /**
+     * 根据 jsonpath 删除
+     */
+    public void delete(String jsonpath) {
+        JsonPath.delete(this, jsonpath);
+    }
+
+    /**
+     * 根据 jsonpath 生成
+     */
+    public ONode create(String jsonpath) {
+        return JsonPath.create(this, jsonpath);
+    }
+
 
     /// /////////////
 
