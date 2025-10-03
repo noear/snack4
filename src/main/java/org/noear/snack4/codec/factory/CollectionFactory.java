@@ -12,12 +12,6 @@ import java.util.Collection;
  *
  */
 public class CollectionFactory implements ObjectFactory<Collection> {
-    private static final CollectionFactory instance = new CollectionFactory();
-
-    public static CollectionFactory getInstance() {
-        return instance;
-    }
-
     @Override
     public Collection create(Options opts, Class<Collection> clazz) {
         return new ArrayList();

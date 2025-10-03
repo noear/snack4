@@ -11,12 +11,6 @@ import org.noear.snack4.codec.NodeEncoder;
  *
  */
 public class ShortEncoder implements NodeEncoder<Short> {
-    private static final ShortEncoder instance = new ShortEncoder();
-
-    public static ShortEncoder getInstance() {
-        return instance;
-    }
-
     @Override
     public ONode encode(Options opts, ONodeAttr attr, Short value) {
         return new ONode(value);

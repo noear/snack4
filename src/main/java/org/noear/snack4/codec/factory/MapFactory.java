@@ -12,12 +12,6 @@ import java.util.Map;
  *
  */
 public class MapFactory implements ObjectFactory<Map> {
-    private static final MapFactory instance = new MapFactory();
-
-    public static MapFactory getInstance() {
-        return instance;
-    }
-
     @Override
     public Map create(Options opts, Class<Map> clazz) {
         return new LinkedHashMap();

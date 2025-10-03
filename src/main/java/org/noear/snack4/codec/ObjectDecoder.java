@@ -41,33 +41,34 @@ public class ObjectDecoder {
     private static final Map<Class<?>, ObjectFactory<?>> objectFactoryLib = new HashMap<>();
 
     static {
-        nodeDecoderLib.put(Properties.class, PropertiesDecoder.getInstance());
-        nodeDecoderLib.put(String.class, StringDecoder.getInstance());
+        nodeDecoderLib.put(Properties.class, new PropertiesDecoder());
+        nodeDecoderLib.put(String.class, new StringDecoder());
+        nodeDecoderLib.put(Date.class, new DateDecoder());
 
-        nodeDecoderLib.put(Boolean.class, BooleanDecoder.getInstance());
-        nodeDecoderLib.put(Boolean.TYPE, BooleanDecoder.getInstance());
+        nodeDecoderLib.put(Boolean.class, new BooleanDecoder());
+        nodeDecoderLib.put(Boolean.TYPE, new BooleanDecoder());
 
-        nodeDecoderLib.put(Double.class, DoubleDecoder.getInstance());
-        nodeDecoderLib.put(Double.TYPE, DoubleDecoder.getInstance());
+        nodeDecoderLib.put(Double.class, new DoubleDecoder());
+        nodeDecoderLib.put(Double.TYPE, new DoubleDecoder());
 
-        nodeDecoderLib.put(Float.class, FloatDecoder.getInstance());
-        nodeDecoderLib.put(Float.TYPE, FloatDecoder.getInstance());
+        nodeDecoderLib.put(Float.class, new FloatDecoder());
+        nodeDecoderLib.put(Float.TYPE, new FloatDecoder());
 
-        nodeDecoderLib.put(Long.class, LongDecoder.getInstance());
-        nodeDecoderLib.put(Long.TYPE, LongDecoder.getInstance());
+        nodeDecoderLib.put(Long.class, new LongDecoder());
+        nodeDecoderLib.put(Long.TYPE, new LongDecoder());
 
-        nodeDecoderLib.put(Integer.class, IntegerDecoder.getInstance());
-        nodeDecoderLib.put(Integer.TYPE, IntegerDecoder.getInstance());
+        nodeDecoderLib.put(Integer.class, new IntegerDecoder());
+        nodeDecoderLib.put(Integer.TYPE, new IntegerDecoder());
 
-        nodeDecoderLib.put(Short.class, ShortDecoder.getInstance());
-        nodeDecoderLib.put(Short.TYPE, ShortDecoder.getInstance());
+        nodeDecoderLib.put(Short.class, new ShortDecoder());
+        nodeDecoderLib.put(Short.TYPE, new ShortDecoder());
 
         /// //////////////
 
-        objectFactoryLib.put(Map.class, MapFactory.getInstance());
-        objectFactoryLib.put(List.class, ListFactory.getInstance());
-        objectFactoryLib.put(Set.class, SetFactory.getInstance());
-        objectFactoryLib.put(Collection.class, CollectionFactory.getInstance());
+        objectFactoryLib.put(Map.class, new MapFactory());
+        objectFactoryLib.put(List.class, new ListFactory());
+        objectFactoryLib.put(Set.class, new SetFactory());
+        objectFactoryLib.put(Collection.class, new CollectionFactory());
     }
 
     private static NodeDecoder getNodeDecoder(Options opts, Class<?> clazz) {
@@ -142,9 +143,9 @@ public class ObjectDecoder {
         }
 
         if (clazz.isArray()) {
-            return ArrayDecoder.instance().decode(opts, null, node, clazz);
+            return _ArrayDecoder.instance().decode(opts, null, node, clazz);
         } else if (clazz.isEnum()) {
-            return EnumDecode.getInstance().decode(opts, null, node, clazz);
+            return _EnumDecode.getInstance().decode(opts, null, node, clazz);
         }
 
         Object bean = null;
@@ -254,9 +255,9 @@ public class ObjectDecoder {
         }
 
         if (clazz.isArray()) {
-            return ArrayDecoder.instance().decode(opts, null, node, clazz);
+            return _ArrayDecoder.instance().decode(opts, null, node, clazz);
         } else if (clazz.isEnum()) {
-            return EnumDecode.getInstance().decode(opts, null, node, clazz);
+            return _EnumDecode.getInstance().decode(opts, null, node, clazz);
         } else if (clazz == Object.class) {
             return node.getValue();
         }

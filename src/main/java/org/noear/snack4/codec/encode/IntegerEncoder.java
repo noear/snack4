@@ -11,12 +11,6 @@ import org.noear.snack4.codec.NodeEncoder;
  *
  */
 public class IntegerEncoder implements NodeEncoder<Integer> {
-    private static final IntegerEncoder instance = new IntegerEncoder();
-
-    public static IntegerEncoder getInstance() {
-        return instance;
-    }
-
     @Override
     public ONode encode(Options opts, ONodeAttr attr, Integer value) {
         return new ONode(value);

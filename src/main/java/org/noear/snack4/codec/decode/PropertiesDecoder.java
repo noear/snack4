@@ -5,7 +5,6 @@ import org.noear.snack4.Options;
 import org.noear.snack4.annotation.ONodeAttr;
 import org.noear.snack4.codec.NodeDecoder;
 
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -13,16 +12,8 @@ import java.util.Properties;
 /**
  *
  * @author noear 2025/10/3 created
- *
  */
 public class PropertiesDecoder implements NodeDecoder<Properties> {
-    private static final PropertiesDecoder instance = new PropertiesDecoder();
-
-    public static PropertiesDecoder getInstance() {
-        return instance;
-    }
-
-
     @Override
     public Properties decode(Options opts, ONodeAttr attr, ONode node, Class<?> clazz) {
         Properties properties = new Properties();

@@ -69,6 +69,10 @@ public final class ONode {
         return type == JsonType.TYPE_STRING;
     }
 
+    public boolean isDate() {
+        return type == JsonType.TYPE_DATE;
+    }
+
     public boolean isArray() {
         return type == JsonType.TYPE_ARRAY;
     }
@@ -103,6 +107,10 @@ public final class ONode {
 
     public String getString() {
         return (String) value;
+    }
+
+    public Date getDate() {
+        return (Date) value;
     }
 
     @SuppressWarnings("unchecked")

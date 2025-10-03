@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
  * @author noear 2025/10/3 created
  *
  */
-public class EnumDecode implements NodeDecoder<Object> {
-    private static final EnumDecode instance = new EnumDecode();
+public class _EnumDecode implements NodeDecoder<Object> {
+    private static final _EnumDecode instance = new _EnumDecode();
 
-    public static EnumDecode getInstance() {
+    public static _EnumDecode getInstance() {
         return instance;
     }
 

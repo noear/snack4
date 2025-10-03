@@ -11,12 +11,6 @@ import org.noear.snack4.codec.NodeDecoder;
  *
  */
 public class BooleanDecoder implements NodeDecoder<Boolean> {
-    private static final BooleanDecoder instance = new BooleanDecoder();
-
-    public static BooleanDecoder getInstance() {
-        return instance;
-    }
-
     @Override
     public Boolean decode(Options opts, ONodeAttr attr, ONode node, Class<?> clazz) {
         return node.getBoolean();

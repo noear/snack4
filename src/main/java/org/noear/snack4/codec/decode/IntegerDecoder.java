@@ -10,15 +10,8 @@ import java.lang.reflect.Type;
 /**
  *
  * @author noear 2025/10/3 created
- *
  */
 public class IntegerDecoder implements NodeDecoder<Integer> {
-    private static final IntegerDecoder instance = new IntegerDecoder();
-
-    public static IntegerDecoder getInstance() {
-        return instance;
-    }
-
     @Override
     public Integer decode(Options opts, ONodeAttr attr, ONode node, Class<?> clazz) {
         return node.getNumber().intValue();

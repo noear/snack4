@@ -10,16 +10,8 @@ import java.lang.reflect.Type;
 /**
  *
  * @author noear 2025/10/3 created
- *
  */
 public class FloatDecoder implements NodeDecoder<Float> {
-    private static final FloatDecoder instance = new FloatDecoder();
-
-    public static FloatDecoder getInstance() {
-        return instance;
-    }
-
-
     @Override
     public Float decode(Options opts, ONodeAttr attr, ONode node, Class<?> clazz) {
         return node.getNumber().floatValue();

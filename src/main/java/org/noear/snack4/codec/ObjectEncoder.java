@@ -23,6 +23,8 @@ import org.noear.snack4.codec.util.FieldWrapper;
 import org.noear.snack4.codec.util.ReflectionUtil;
 
 import java.lang.reflect.Array;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 /**
@@ -35,27 +37,32 @@ public class ObjectEncoder {
     private static final Map<Class<?>, NodeEncoder<?>> nodeEncoderLib = new HashMap<>();
 
     static {
-        nodeEncoderLib.put(ONode.class, ONodeEncoder.getInstance());
-        nodeEncoderLib.put(Properties.class, PropertiesEncoder.getInstance());
-        nodeEncoderLib.put(String.class, StringEncoder.getInstance());
+        nodeEncoderLib.put(ONode.class, new ONodeEncoder());
+        nodeEncoderLib.put(Properties.class, new PropertiesEncoder());
+        nodeEncoderLib.put(UUID.class, new UUIDEncoder());
+        nodeEncoderLib.put(String.class, new StringEncoder());
 
-        nodeEncoderLib.put(Boolean.class, BooleanEncoder.getInstance());
-        nodeEncoderLib.put(Boolean.TYPE, BooleanEncoder.getInstance());
+        nodeEncoderLib.put(Date.class, new DateEncoder());
+        nodeEncoderLib.put(ZonedDateTime.class, new ZonedDateTimeEncoder());
+        nodeEncoderLib.put(OffsetDateTime.class, new OffsetDateTimeEncoder());
 
-        nodeEncoderLib.put(Double.class, DoubleEncoder.getInstance());
-        nodeEncoderLib.put(Double.TYPE, DoubleEncoder.getInstance());
+        nodeEncoderLib.put(Boolean.class, new BooleanEncoder());
+        nodeEncoderLib.put(Boolean.TYPE, new BooleanEncoder());
 
-        nodeEncoderLib.put(Float.class, FloatEncoder.getInstance());
-        nodeEncoderLib.put(Float.TYPE, FloatEncoder.getInstance());
+        nodeEncoderLib.put(Double.class, new DoubleEncoder());
+        nodeEncoderLib.put(Double.TYPE, new DoubleEncoder());
 
-        nodeEncoderLib.put(Long.class, LongEncoder.getInstance());
-        nodeEncoderLib.put(Long.TYPE, LongEncoder.getInstance());
+        nodeEncoderLib.put(Float.class, new FloatEncoder());
+        nodeEncoderLib.put(Float.TYPE, new FloatEncoder());
 
-        nodeEncoderLib.put(Integer.class, IntegerEncoder.getInstance());
-        nodeEncoderLib.put(Integer.TYPE, IntegerEncoder.getInstance());
+        nodeEncoderLib.put(Long.class, new LongEncoder());
+        nodeEncoderLib.put(Long.TYPE, new LongEncoder());
 
-        nodeEncoderLib.put(Short.class, ShortEncoder.getInstance());
-        nodeEncoderLib.put(Short.TYPE, ShortEncoder.getInstance());
+        nodeEncoderLib.put(Integer.class, new IntegerEncoder());
+        nodeEncoderLib.put(Integer.TYPE, new IntegerEncoder());
+
+        nodeEncoderLib.put(Short.class, new ShortEncoder());
+        nodeEncoderLib.put(Short.TYPE, new ShortEncoder());
     }
 
     private static NodeEncoder getNodeEncoder(Options opts, Class<?> clazz) {
@@ -149,7 +156,7 @@ public class ObjectEncoder {
         }
 
         if (value instanceof Enum) {
-            return EnumEncoder.getInstance().encode(opts, attr, (Enum) value);
+            return _EnumEncoder.getInstance().encode(opts, attr, (Enum) value);
         } else if (value instanceof Collection) {
             return convertCollectionToNode((Collection<?>) value, visited, opts);
         } else if (value instanceof Map) {

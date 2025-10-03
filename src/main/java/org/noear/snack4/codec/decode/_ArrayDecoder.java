@@ -12,9 +12,10 @@ import java.lang.reflect.Array;
  * @author noear 2025/10/3 created
  *
  */
-public class ArrayDecoder implements NodeDecoder<Object> {
-    private static final ArrayDecoder instance = new ArrayDecoder();
-    public static ArrayDecoder instance() {
+public class _ArrayDecoder implements NodeDecoder<Object> {
+    private static final _ArrayDecoder instance = new _ArrayDecoder();
+
+    public static _ArrayDecoder instance() {
         return instance;
     }
 

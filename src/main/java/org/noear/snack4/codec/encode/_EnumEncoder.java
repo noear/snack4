@@ -10,10 +10,10 @@ import org.noear.snack4.codec.NodeEncoder;
  * @author noear 2025/10/3 created
  *
  */
-public class EnumEncoder implements NodeEncoder<Enum> {
-    private static final EnumEncoder instance = new EnumEncoder();
+public class _EnumEncoder implements NodeEncoder<Enum> {
+    private static final _EnumEncoder instance = new _EnumEncoder();
 
-    public static EnumEncoder getInstance() {
+    public static _EnumEncoder getInstance() {
         return instance;
     }
 

@@ -11,12 +11,6 @@ import org.noear.snack4.codec.NodeEncoder;
  *
  */
 public class LongEncoder implements NodeEncoder<Long> {
-    private static final LongEncoder instance = new LongEncoder();
-
-    public static LongEncoder getInstance() {
-        return instance;
-    }
-
     @Override
     public ONode encode(Options opts, ONodeAttr attr, Long value) {
         return new ONode(value);

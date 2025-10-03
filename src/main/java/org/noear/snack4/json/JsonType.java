@@ -15,6 +15,7 @@
  */
 package org.noear.snack4.json;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -23,9 +24,12 @@ import java.util.Map;
  */
 public enum JsonType {
     TYPE_NULL,
+
     TYPE_BOOLEAN,
     TYPE_NUMBER,
     TYPE_STRING,
+    TYPE_DATE,
+
     TYPE_ARRAY,
     TYPE_OBJECT,
     ;
@@ -45,6 +49,8 @@ public enum JsonType {
                 return "number";
             case TYPE_STRING:
                 return "string";
+            case TYPE_DATE:
+                return "date";
             case TYPE_ARRAY:
                 return "array";
             case TYPE_OBJECT:
@@ -63,6 +69,7 @@ public enum JsonType {
         if (value instanceof Boolean) return JsonType.TYPE_BOOLEAN;
         if (value instanceof Number) return JsonType.TYPE_NUMBER;
         if (value instanceof String) return JsonType.TYPE_STRING;
+        if (value instanceof Date) return JsonType.TYPE_DATE;
         if (value instanceof List) return JsonType.TYPE_ARRAY;
         if (value instanceof Map) return JsonType.TYPE_OBJECT;
 

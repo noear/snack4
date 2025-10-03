@@ -11,12 +11,6 @@ import org.noear.snack4.codec.NodeEncoder;
  *
  */
 public class FloatEncoder implements NodeEncoder<Float> {
-    private static final FloatEncoder instance = new FloatEncoder();
-
-    public static FloatEncoder getInstance() {
-        return instance;
-    }
-
     @Override
     public ONode encode(Options opts, ONodeAttr attr, Float value) {
         return new ONode(value);

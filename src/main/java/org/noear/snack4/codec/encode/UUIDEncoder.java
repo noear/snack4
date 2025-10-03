@@ -5,14 +5,16 @@ import org.noear.snack4.Options;
 import org.noear.snack4.annotation.ONodeAttr;
 import org.noear.snack4.codec.NodeEncoder;
 
+import java.util.UUID;
+
 /**
  *
  * @author noear 2025/10/3 created
  *
  */
-public class BooleanEncoder implements NodeEncoder<Boolean> {
+public class UUIDEncoder implements NodeEncoder<UUID> {
     @Override
-    public ONode encode(Options opts, ONodeAttr attr, Boolean value) {
-        return new ONode(value);
+    public ONode encode(Options opts, ONodeAttr attr, UUID value) {
+        return new ONode(value.toString());
     }
 }

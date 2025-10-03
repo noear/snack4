@@ -15,12 +15,6 @@ import java.util.Properties;
  *
  */
 public class PropertiesEncoder implements NodeEncoder<Properties> {
-    private static final PropertiesEncoder instance = new PropertiesEncoder();
-
-    public static PropertiesEncoder getInstance() {
-        return instance;
-    }
-
     @Override
     public ONode encode(Options opts, ONodeAttr attr, Properties properties) {
         ONode rootNode = new ONode(new LinkedHashMap<>());

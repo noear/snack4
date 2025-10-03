@@ -11,12 +11,6 @@ import org.noear.snack4.codec.NodeEncoder;
  *
  */
 public class DoubleEncoder implements NodeEncoder<Double> {
-    private static final DoubleEncoder instance = new DoubleEncoder();
-
-    public static DoubleEncoder getInstance() {
-        return instance;
-    }
-
     @Override
     public ONode encode(Options opts, ONodeAttr attr, Double value) {
         return new ONode(value);
