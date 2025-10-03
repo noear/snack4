@@ -13,7 +13,7 @@
 
     <artifactId>snack4-jsonschema</artifactId>
     <name>${project.artifactId}</name>
-    <description>Java project for snack4-jsonpath</description>
+    <description>Java project for snack4-jsonschema</description>
     <packaging>jar</packaging>
 
 
