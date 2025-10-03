@@ -21,8 +21,8 @@ public class SimpleDateFormatDecoder implements NodeDecoder<SimpleDateFormat> {
         } else if (node.isObject()) {
             String pattern = node.get("pattern").getString();
             return new SimpleDateFormat(pattern);
-        } else {
-            throw new TypeConvertException("Cannot be converted to SimpleDateFormat: " + node);
         }
+
+        throw new TypeConvertException("Cannot be converted to SimpleDateFormat: " + node);
     }
 }

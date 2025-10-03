@@ -22,6 +22,7 @@ import org.noear.snack4.codec.encode.*;
 import org.noear.snack4.codec.util.FieldWrapper;
 import org.noear.snack4.codec.util.ReflectionUtil;
 
+import java.io.File;
 import java.lang.reflect.Array;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
@@ -42,6 +43,7 @@ public class ObjectEncoder {
         ENCODER_REPOSITORY.put(Properties.class, new PropertiesEncoder());
         ENCODER_REPOSITORY.put(InetSocketAddress.class, new InetSocketAddressEncoder());
         ENCODER_REPOSITORY.put(SimpleDateFormat.class, new SimpleDateFormatEncoder());
+        ENCODER_REPOSITORY.put(File.class, new FileEncoder());
         ENCODER_REPOSITORY.put(UUID.class, new UUIDEncoder());
 
         ENCODER_REPOSITORY.put(String.class, new StringEncoder());
