@@ -16,7 +16,7 @@
 package org.noear.snack4.stream;
 
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.JsonReader;
+import org.noear.snack4.json.JsonReader;
 
 import java.io.IOException;
 import java.io.StringReader;

@@ -1,0 +1,36 @@
+package org.noear.snack4.codec.decode;
+
+import org.noear.snack4.ONode;
+import org.noear.snack4.Options;
+import org.noear.snack4.codec.NodeDecoder;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
+/**
+ *
+ * @author noear 2025/10/3 created
+ *
+ */
+public class EnumDecode implements NodeDecoder<Object> {
+    private static final EnumDecode instance = new EnumDecode();
+
+    public static EnumDecode getInstance() {
+        return instance;
+    }
+
+    @Override
+    public Object decode(Options opts, ONode node, Class<?> clazz) {
+        String value = node.getString();
+        try {
+            return Enum.valueOf((Class<? extends Enum>) clazz, value);
+        } catch (IllegalArgumentException e) {
+            Enum[] constants = ((Class<? extends Enum>) clazz).getEnumConstants();
+            String valid = Arrays.stream(constants)
+                    .map(Enum::name)
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException(
+                    "Invalid enum value: '" + value + "'. Valid values: " + valid, e);
+        }
+    }
+}

@@ -16,7 +16,7 @@
 package org.noear.snack4.path.segment;
 
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.JsonSource;
+import org.noear.snack4.json.JsonSource;
 import org.noear.snack4.exception.PathResolutionException;
 import org.noear.snack4.path.Context;
 import org.noear.snack4.path.QueryMode;

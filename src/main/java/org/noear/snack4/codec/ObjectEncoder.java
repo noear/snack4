@@ -13,22 +13,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.core;
+package org.noear.snack4.codec;
 
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.util.FieldWrapper;
-import org.noear.snack4.core.util.ReflectionUtil;
+import org.noear.snack4.Options;
+import org.noear.snack4.codec.encode.*;
+import org.noear.snack4.codec.util.FieldWrapper;
+import org.noear.snack4.codec.util.ReflectionUtil;
 
 import java.lang.reflect.Array;
 import java.util.*;
 
 /**
- * Bean 编码器
+ * 对象编码器
  *
  * @author noear
  * @since 4.0
  */
-public class BeanEncoder {
+public class ObjectEncoder {
+    private static final Map<Class<?>, NodeEncoder<?>> nodeEncoderLib = new HashMap<>();
+
+    static {
+        nodeEncoderLib.put(ONode.class, ONodeEncoder.getInstance());
+        nodeEncoderLib.put(Properties.class, PropertiesEncoder.getInstance());
+        nodeEncoderLib.put(String.class, StringEncoder.getInstance());
+
+        nodeEncoderLib.put(Boolean.class, BooleanEncoder.getInstance());
+        nodeEncoderLib.put(Boolean.TYPE, BooleanEncoder.getInstance());
+
+        nodeEncoderLib.put(Double.class, DoubleEncoder.getInstance());
+        nodeEncoderLib.put(Double.TYPE, DoubleEncoder.getInstance());
+
+        nodeEncoderLib.put(Float.class, FloatEncoder.getInstance());
+        nodeEncoderLib.put(Float.TYPE, FloatEncoder.getInstance());
+
+        nodeEncoderLib.put(Long.class, LongEncoder.getInstance());
+        nodeEncoderLib.put(Long.TYPE, LongEncoder.getInstance());
+
+        nodeEncoderLib.put(Integer.class, IntegerEncoder.getInstance());
+        nodeEncoderLib.put(Integer.TYPE, IntegerEncoder.getInstance());
+
+        nodeEncoderLib.put(Short.class, ShortEncoder.getInstance());
+        nodeEncoderLib.put(Short.TYPE, ShortEncoder.getInstance());
+    }
+
+    private static NodeEncoder getNodeEncoder(Options opts, Class<?> clazz) {
+        NodeEncoder encoder = opts.getNodeEncoder(clazz);
+        if (encoder != null) {
+            return encoder;
+        }
+
+        return nodeEncoderLib.get(clazz);
+    }
 
     // 序列化：对象转ONode
     public static ONode serialize(Object bean) {
@@ -64,14 +100,9 @@ public class BeanEncoder {
         }
 
         // 优先使用自定义编解码器
-        NodeCodec<Object> codec = (NodeCodec<Object>) opts.getCodecRegistry().get(bean.getClass());
-        if (codec != null) {
-            return codec.encode(bean, new ONode());
-        }
-
-        // 处理Properties类型
-        if (bean instanceof Properties) {
-            return convertPropertiesToNode((Properties) bean, visited, opts);
+        NodeEncoder encoder = getNodeEncoder(opts, bean.getClass());
+        if (encoder != null) {
+            return encoder.encode(opts, bean);
         }
 
         // 循环引用检测
@@ -104,16 +135,6 @@ public class BeanEncoder {
         }
     }
 
-    // 处理Properties类型
-    private static ONode convertPropertiesToNode(Properties properties, Map<Object, Object> visited, Options opts) throws Exception {
-        ONode rootNode = new ONode(new LinkedHashMap<>());
-        for (String key : properties.stringPropertyNames()) {
-            String value = properties.getProperty(key);
-            setNestedValue(rootNode, key, value);
-        }
-        return rootNode;
-    }
-
     // 值转ONode处理
     private static ONode convertValueToNode(Object value, Map<Object, Object> visited, Options opts) throws Exception {
         if (value == null) {
@@ -121,21 +142,13 @@ public class BeanEncoder {
         }
 
         // 优先使用自定义编解码器
-        NodeCodec<Object> codec = (NodeCodec<Object>) opts.getCodecRegistry().get(value.getClass());
+        NodeEncoder<Object> codec = (NodeEncoder<Object>) opts.getNodeEncoder(value.getClass());
         if (codec != null) {
-           return codec.encode(value, new ONode());
+            return codec.encode(opts, value);
         }
 
-        if (value instanceof ONode) {
-            return (ONode) value;
-        } else if (value instanceof Number) {
-            return new ONode((Number) value);
-        } else if (value instanceof Boolean) {
-            return new ONode((Boolean) value);
-        } else if (value instanceof String) {
-            return new ONode((String) value);
-        } else if (value instanceof Enum) {
-            return new ONode(((Enum<?>) value).name());
+        if (value instanceof Enum) {
+            return EnumEncoder.getInstance().encode(opts, (Enum) value);
         } else if (value instanceof Collection) {
             return convertCollectionToNode((Collection<?>) value, visited, opts);
         } else if (value instanceof Map) {
@@ -178,40 +191,5 @@ public class BeanEncoder {
             objNode.set(key, valueNode);
         }
         return objNode;
-    }
-
-
-    // 设置嵌套值
-    private static void setNestedValue(ONode node, String key, String value) {
-        String[] parts = key.split("\\.");
-        ONode current = node;
-        for (int i = 0; i < parts.length; i++) {
-            String part = parts[i];
-            if (i == parts.length - 1) {
-                current.set(part, new ONode(value));
-            } else {
-                if (part.endsWith("]")) {
-                    // 处理数组
-                    String arrayName = part.substring(0, part.indexOf('['));
-                    int index = Integer.parseInt(part.substring(part.indexOf('[') + 1, part.indexOf(']')));
-                    ONode arrayNode = current.get(arrayName);
-                    if (arrayNode == null || arrayNode.isNull()) {
-                        arrayNode = new ONode(new ArrayList<>());
-                        current.set(arrayName, arrayNode);
-                    }
-                    while (arrayNode.getArray().size() <= index) {
-                        arrayNode.add(new ONode(new LinkedHashMap<>()));
-                    }
-                    current = arrayNode.get(index);
-                } else {
-                    ONode nextNode = current.get(part);
-                    if (nextNode == null || nextNode.isNull()) {
-                        nextNode = new ONode(new LinkedHashMap<>());
-                        current.set(part, nextNode);
-                    }
-                    current = nextNode;
-                }
-            }
-        }
     }
 }

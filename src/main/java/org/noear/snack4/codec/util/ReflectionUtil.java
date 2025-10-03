@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.core.util;
+package org.noear.snack4.codec.util;
 
 import org.noear.snack4.exception.ReflectionException;
 
@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-// file: ReflectionUtil.java
+
 public class ReflectionUtil {
     // 带缓存的字段获取
     private static final Map<Class<?>, Collection<FieldWrapper>> FIELD_CACHE = new ConcurrentHashMap<>();

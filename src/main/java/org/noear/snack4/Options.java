@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.core;
+package org.noear.snack4;
 
-import org.noear.snack4.ONode;
+import org.noear.snack4.codec.NodeDecoder;
+import org.noear.snack4.codec.NodeEncoder;
+import org.noear.snack4.codec.ObjectFactory;
+import org.noear.snack4.codec.decode.*;
 import org.noear.snack4.schema.JsonSchemaValidator;
 
 import java.text.DateFormat;
@@ -36,7 +39,9 @@ public final class Options {
 
     // 通用配置
     private final DateFormat _dateFormat;
-    private final Map<Class<?>, NodeCodec<?>> _codecRegistry;
+    private final Map<Class<?>, NodeDecoder<?>> _decoderRegistry;
+    private final Map<Class<?>, NodeEncoder<?>> _encoderRegistry;
+    private final Map<Class<?>, ObjectFactory<?>> _objectFactory;
     private final JsonSchemaValidator _schemaValidator;
 
     // 输入配置
@@ -64,7 +69,10 @@ public final class Options {
 
         // 通用配置
         this._dateFormat = builder.dateFormat;
-        this._codecRegistry = Collections.unmodifiableMap(builder.codecRegistry);
+        this._decoderRegistry = Collections.unmodifiableMap(builder.decoderRegistry);
+        this._encoderRegistry = Collections.unmodifiableMap(builder.encoderRegistry);
+        this._objectFactory = Collections.unmodifiableMap(builder.objectFactory);
+
         this._schemaValidator = builder.schemaValidator;
 
         // 输入配置
@@ -91,8 +99,16 @@ public final class Options {
     /**
      * 获取自定义编解码器注册表
      */
-    public Map<Class<?>, NodeCodec<?>> getCodecRegistry() {
-        return _codecRegistry;
+    public NodeDecoder<?> getNodeDecoder(Class<?> clazz) {
+        return _decoderRegistry.get(clazz);
+    }
+
+    public NodeEncoder<?> getNodeEncoder(Class<?> clazz) {
+        return _encoderRegistry.get(clazz);
+    }
+
+    public ObjectFactory<?> getObjectFactory(Class<?> clazz) {
+        return _objectFactory.get(clazz);
     }
 
     /**
@@ -146,7 +162,9 @@ public final class Options {
 
         // 通用配置
         private DateFormat dateFormat = DEFAULT_DATE_FORMAT;
-        private final Map<Class<?>, NodeCodec<?>> codecRegistry = new HashMap<>();
+        private final Map<Class<?>, NodeDecoder<?>> decoderRegistry = new HashMap<>();
+        private final Map<Class<?>, NodeEncoder<?>> encoderRegistry = new HashMap<>();
+        private final Map<Class<?>, ObjectFactory<?>> objectFactory = new HashMap<>();
         private JsonSchemaValidator schemaValidator;
 
         // 输入配置
@@ -187,10 +205,23 @@ public final class Options {
         }
 
         /**
-         * 注册自定义编解码器
+         * 注册自定义解码器
          */
-        public <T> Builder addCodec(Class<T> type, NodeCodec<T> codec) {
-            codecRegistry.put(type, codec);
+        public <T> Builder addNodeDecoder(Class<T> type, NodeDecoder<T> decoder) {
+            decoderRegistry.put(type, decoder);
+            return this;
+        }
+
+        /**
+         * 注册自定义编码器
+         */
+        public <T> Builder addNodeEncoder(Class<T> type, NodeEncoder<T> encoder) {
+            encoderRegistry.put(type, encoder);
+            return this;
+        }
+
+        public <T> Builder addObjectFactory(Class<T> type, ObjectFactory<T> factory) {
+            objectFactory.put(type, factory);
             return this;
         }
 

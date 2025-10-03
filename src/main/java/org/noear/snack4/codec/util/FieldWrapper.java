@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.core.util;
+package org.noear.snack4.codec.util;
 
 import org.noear.snack4.annotation.ONodeAttr;
-import org.noear.snack4.core.NodeCodec;
+import org.noear.snack4.codec.NodeDecoder;
+import org.noear.snack4.codec.NodeEncoder;
 import org.noear.snack4.exception.AnnotationProcessException;
 
 import java.lang.reflect.Field;
@@ -31,7 +32,8 @@ public class FieldWrapper {
 
     private String alias;
     private boolean ignore;
-    private NodeCodec codec;
+    private NodeDecoder decoder;
+    private NodeEncoder encoder;
 
     public FieldWrapper(Field field) {
         this.field = field;
@@ -43,7 +45,8 @@ public class FieldWrapper {
             alias = attr.alias();
             ignore = attr.ignore();
 
-            codec = ReflectionUtil.newInstance(attr.codec(), e -> new AnnotationProcessException("Failed to create codec for field: " + field.getName(), e));
+            decoder = ReflectionUtil.newInstance(attr.decoder(), e -> new AnnotationProcessException("Failed to create decoder for field: " + field.getName(), e));
+            encoder = ReflectionUtil.newInstance(attr.encoder(), e -> new AnnotationProcessException("Failed to create encoder for field: " + field.getName(), e));
         }
 
         if (Modifier.isTransient(field.getModifiers())) {
@@ -63,8 +66,12 @@ public class FieldWrapper {
         }
     }
 
-    public NodeCodec getCodec() {
-        return codec;
+    public NodeDecoder getDecoder() {
+        return decoder;
+    }
+
+    public NodeEncoder getEncoder() {
+        return encoder;
     }
 
     public boolean isIgnore() {

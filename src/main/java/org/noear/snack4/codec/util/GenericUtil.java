@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.noear.snack4.core.util;
+package org.noear.snack4.codec.util;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
-// file: GenericUtil.java
+
 public class GenericUtil {
     // 解析泛型类型
     public static Class<?> resolveRawType(Type type) {

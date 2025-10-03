@@ -2,10 +2,10 @@ package features;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.BeanDecoder;
-import org.noear.snack4.core.BeanEncoder;
-import org.noear.snack4.core.JsonReader;
-import org.noear.snack4.core.Options;
+import org.noear.snack4.codec.ObjectDecoder;
+import org.noear.snack4.codec.ObjectEncoder;
+import org.noear.snack4.json.JsonReader;
+import org.noear.snack4.Options;
 import org.noear.snack4.exception.SchemaException;
 import org.noear.snack4.path.JsonPath;
 import org.noear.snack4.schema.JsonSchemaValidator;
@@ -76,11 +76,11 @@ public class BaseTest {
         Properties properties = new Properties();
         properties.setProperty("order.item[0].user", "1");
 
-        org.noear.snack4.ONode node = BeanEncoder.serialize(properties);
+        org.noear.snack4.ONode node = ObjectEncoder.serialize(properties);
         System.out.println(node.toJson()); // 输出: {"order":{"item":[{"user":"1"}]}}
         assert "{\"order\":{\"item\":[{\"user\":\"1\"}]}}".equals(node.toJson());
 
-        Properties deserializedProperties = BeanDecoder.deserialize(node, Properties.class);
+        Properties deserializedProperties = ObjectDecoder.deserialize(node, Properties.class);
         System.out.println(deserializedProperties.getProperty("order.item[0].user")); // 输出: 1
         assert "1".equals(deserializedProperties.getProperty("order.item[0].user"));
     }

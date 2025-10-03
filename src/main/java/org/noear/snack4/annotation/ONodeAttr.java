@@ -15,7 +15,9 @@
  */
 package org.noear.snack4.annotation;
 
-import org.noear.snack4.core.NodeCodec;
+
+import org.noear.snack4.codec.NodeDecoder;
+import org.noear.snack4.codec.NodeEncoder;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,7 +30,52 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface ONodeAttr {
+    /**
+     * 别名
+     */
     String alias() default "";
+
+    /**
+     * 格式化
+     */
+    String format() default "";
+
+    /**
+     * 时区
+     */
+    String timezone() default "";
+
+    /**
+     * 作为字符串
+     */
+    boolean asString() default false;
+
+    /**
+     * 忽略（相当于：serialize=false, deserialize=false）
+     */
     boolean ignore() default false;
-    Class<? extends NodeCodec> codec() default NodeCodec.class;
+
+    /**
+     * 序列化
+     */
+    boolean serialize() default true;
+
+    /**
+     * 反序列化
+     */
+    boolean deserialize() default true;
+
+    /**
+     * 包函null
+     */
+    boolean incNull() default true;
+
+    /**
+     * 扁平化
+     */
+    boolean flatten() default false;
+
+    Class<? extends NodeDecoder> decoder() default NodeDecoder.class;
+
+    Class<? extends NodeEncoder> encoder() default NodeEncoder.class;
 }

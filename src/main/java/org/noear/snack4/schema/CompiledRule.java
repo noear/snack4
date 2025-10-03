@@ -18,7 +18,6 @@ package org.noear.snack4.schema;
 import org.noear.snack4.ONode;
 import org.noear.snack4.exception.SchemaException;
 import org.noear.snack4.schema.rule.ValidationRule;
-import org.noear.snack4.core.PathTracker;
 
 import java.util.List;
 

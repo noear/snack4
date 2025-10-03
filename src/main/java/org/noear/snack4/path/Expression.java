@@ -16,7 +16,7 @@
 package org.noear.snack4.path;
 
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.util.TextUtil;
+import org.noear.snack4.util.Asserts;
 import org.noear.snack4.exception.PathResolutionException;
 
 import java.util.*;
@@ -163,7 +163,7 @@ public class Expression {
         Condition condition = Condition.get(conditionStr);
 
         // 过滤空条件（操作符处理时，就不需要再过滤了）
-        if (TextUtil.isEmpty(condition.getLeft())) {
+        if (Asserts.isEmpty(condition.getLeft())) {
             return false;
         }
 

@@ -20,7 +20,7 @@ package org.noear.snack4.path;
  * @author noear 2025/5/5 created
  * */
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.util.TextUtil;
+import org.noear.snack4.util.Asserts;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,7 +86,7 @@ public class Condition {
     }
 
     public ONode getLeftNode(ONode node, ONode root) {
-        if (TextUtil.isEmpty(left)) {
+        if (Asserts.isEmpty(left)) {
             return null;
         } else {
             if (leftValue == null) {
@@ -99,7 +99,7 @@ public class Condition {
 
 
     public ONode getRightNode(ONode node, ONode root) {
-        if (TextUtil.isEmpty(right)) {
+        if (Asserts.isEmpty(right)) {
             return null;
         } else {
             if (rightValue == null) {
@@ -124,7 +124,7 @@ public class Condition {
      * 分析常量节点
      */
     private static ONode resolveConstantNode(String value) {
-        if (TextUtil.isEmpty(value)) {
+        if (Asserts.isEmpty(value)) {
             return null;
         } else {
             char ch = value.charAt(0);

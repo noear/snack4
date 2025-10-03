@@ -2,7 +2,7 @@ package labs;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.Options;
+import org.noear.snack4.Options;
 
 /**
  * @author noear 2025/3/17 created

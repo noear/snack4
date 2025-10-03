@@ -16,7 +16,7 @@
 package org.noear.snack4.schema.rule;
 
 import org.noear.snack4.ONode;
-import org.noear.snack4.core.JsonType;
+import org.noear.snack4.json.JsonType;
 import org.noear.snack4.exception.SchemaException;
 
 import java.util.HashSet;

@@ -15,7 +15,12 @@
  */
 package org.noear.snack4;
 
-import org.noear.snack4.core.*;
+import org.noear.snack4.codec.ObjectDecoder;
+import org.noear.snack4.codec.ObjectEncoder;
+import org.noear.snack4.json.JsonReader;
+import org.noear.snack4.json.JsonSource;
+import org.noear.snack4.json.JsonType;
+import org.noear.snack4.json.JsonWriter;
 import org.noear.snack4.path.JsonPath;
 import org.noear.snack4.schema.JsonSchemaValidator;
 
@@ -162,9 +167,9 @@ public final class ONode {
         if (value instanceof ONode) {
             oNode = (ONode) value;
         } else if (value instanceof Collection) {
-            oNode = BeanEncoder.serialize(value);
+            oNode = ObjectEncoder.serialize(value);
         } else if (value instanceof Map) {
-            oNode = BeanEncoder.serialize(value);
+            oNode = ObjectEncoder.serialize(value);
         } else {
             oNode = new ONode(value);
         }
@@ -204,9 +209,9 @@ public final class ONode {
         if (value instanceof ONode) {
             oNode = (ONode) value;
         } else if (value instanceof Collection) {
-            oNode = BeanEncoder.serialize(value);
+            oNode = ObjectEncoder.serialize(value);
         } else if (value instanceof Map) {
-            oNode = BeanEncoder.serialize(value);
+            oNode = ObjectEncoder.serialize(value);
         } else {
             oNode = new ONode(value);
         }
@@ -304,11 +309,11 @@ public final class ONode {
     /// /////////////
 
     public static ONode from(Object bean, Options opts) {
-        return BeanEncoder.serialize(bean, opts);
+        return ObjectEncoder.serialize(bean, opts);
     }
 
     public static ONode from(Object bean) {
-        return BeanEncoder.serialize(bean, Options.def());
+        return ObjectEncoder.serialize(bean, Options.def());
     }
 
     // 添加带 Options 的静态方法
@@ -330,7 +335,7 @@ public final class ONode {
 
 
     public <T> T toBean(Class<T> clazz, Options opts) {
-        return BeanDecoder.deserialize(this, clazz, opts);
+        return ObjectDecoder.deserialize(this, clazz, opts);
     }
 
     public <T> T toBean(Class<T> clazz) {
