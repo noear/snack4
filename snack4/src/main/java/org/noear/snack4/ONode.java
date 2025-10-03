@@ -21,8 +21,8 @@ import org.noear.snack4.json.JsonReader;
 import org.noear.snack4.json.JsonSource;
 import org.noear.snack4.json.JsonType;
 import org.noear.snack4.json.JsonWriter;
-import org.noear.snack4.path.JsonPathProvider;
-import org.noear.snack4.schema.JsonSchemaValidator;
+import org.noear.snack4.jsonpath.JsonPathProvider;
+import org.noear.snack4.jsonschema.JsonSchemaValidator;
 
 import java.io.StringReader;
 import java.util.*;

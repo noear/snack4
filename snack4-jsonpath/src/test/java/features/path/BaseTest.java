@@ -7,8 +7,8 @@ import org.noear.snack4.codec.ObjectDecoder;
 import org.noear.snack4.codec.ObjectEncoder;
 import org.noear.snack4.exception.SchemaException;
 import org.noear.snack4.json.JsonReader;
-import org.noear.snack4.path.JsonPath;
-import org.noear.snack4.schema.JsonSchemaValidator;
+import org.noear.snack4.jsonpath.JsonPath;
+import org.noear.snack4.jsonschema.JsonSchemaValidator;
 
 import java.io.IOException;
 import java.io.StringReader;

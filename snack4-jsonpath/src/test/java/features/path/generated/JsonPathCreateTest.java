@@ -2,7 +2,7 @@ package features.path.generated;
 
 import org.junit.jupiter.api.Test;
 import org.noear.snack4.ONode;
-import org.noear.snack4.path.JsonPath;
+import org.noear.snack4.jsonpath.JsonPath;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -18,8 +18,7 @@ package org.noear.snack4;
 import org.noear.snack4.codec.NodeDecoder;
 import org.noear.snack4.codec.NodeEncoder;
 import org.noear.snack4.codec.ObjectFactory;
-import org.noear.snack4.codec.decode.*;
-import org.noear.snack4.schema.JsonSchemaValidator;
+import org.noear.snack4.jsonschema.JsonSchemaValidator;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
