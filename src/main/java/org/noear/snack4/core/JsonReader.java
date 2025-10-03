@@ -58,7 +58,7 @@ public class JsonReader {
             ONode node = parseValue();
             state.skipWhitespace();
 
-            if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
+            if (opts.isFeatureEnabled(Feature.Read_AllowComment)) {
                 state.skipComments();
             }
 
@@ -74,7 +74,7 @@ public class JsonReader {
     private ONode parseValue() throws IOException {
         state.skipWhitespace();
 
-        if (opts.isFeatureEnabled(Feature.Input_AllowComment)) {
+        if (opts.isFeatureEnabled(Feature.Read_AllowComment)) {
             state.skipComments();
         }
 
@@ -82,7 +82,7 @@ public class JsonReader {
 
         if (c == '{') return parseObject();
         if (c == '[') return parseArray();
-        if (c == '"' || (opts.isFeatureEnabled(Feature.Input_AllowSingleQuotes) && c == '\'')) {
+        if (c == '"' || (opts.isFeatureEnabled(Feature.Read_AllowSingleQuotes) && c == '\'')) {
             return new ONode(parseString());
         }
         if (c == '-' || (c >= '0' && c <= '9')) return new ONode(parseNumber());
@@ -104,7 +104,7 @@ public class JsonReader {
 
             String key = parseKey();
 
-            if (key.isEmpty() && opts.isFeatureEnabled(Feature.Input_AllowEmptyKeys) == false) {
+            if (key.isEmpty() && opts.isFeatureEnabled(Feature.Read_AllowEmptyKeys) == false) {
                 throw new ParseException("Empty key is not allowed");
             }
 
@@ -128,7 +128,7 @@ public class JsonReader {
     }
 
     private String parseKey() throws IOException {
-        if (opts.isFeatureEnabled(Feature.Input_AllowUnquotedKeys)) {
+        if (opts.isFeatureEnabled(Feature.Read_AllowUnquotedKeys)) {
             char c = state.peekChar();
             if (c != '"' && c != '\'') {
                 return parseUnquotedString();
@@ -178,7 +178,7 @@ public class JsonReader {
 
     private String parseString() throws IOException {
         char quoteChar = state.nextChar();
-        if (quoteChar != '"' && !(opts.isFeatureEnabled(Feature.Input_AllowSingleQuotes) && quoteChar == '\'')) {
+        if (quoteChar != '"' && !(opts.isFeatureEnabled(Feature.Read_AllowSingleQuotes) && quoteChar == '\'')) {
             throw state.error("Expected string to start with a quote");
         }
 
@@ -222,7 +222,7 @@ public class JsonReader {
                         sb.append((char) Integer.parseInt(new String(hex), 16));
                         break;
                     default:
-                        if (opts.isFeatureEnabled(Feature.Input_AllowBackslashEscapingAnyCharacter)) {
+                        if (opts.isFeatureEnabled(Feature.Read_AllowBackslashEscapingAnyCharacter)) {
                             sb.append("\\").append(c);
                         } else {
                             throw state.error("Invalid escape character: \\" + c);
@@ -247,7 +247,7 @@ public class JsonReader {
         }
 
         // 解析整数部分
-        if (opts.isFeatureEnabled(Feature.Input_AllowZeroLeadingNumbers) == false) {
+        if (opts.isFeatureEnabled(Feature.Read_AllowZeroLeadingNumbers) == false) {
             if (state.peekChar() == '0') {
                 sb.append(state.nextChar());
                 if (isDigit(state.peekChar())) {
@@ -303,13 +303,13 @@ public class JsonReader {
                 return Long.parseLong(numStr);
             } else {
                 if (numStr.indexOf('.') >= 0 || numStr.indexOf('e') >= 0 || numStr.indexOf('E') >= 0) {
-                    if (numStr.length() > 19 || opts.isFeatureEnabled(Feature.UseBigNumberMode)) {
+                    if (numStr.length() > 19 || opts.isFeatureEnabled(Feature.Read_UseBigNumberMode)) {
                         return new BigDecimal(numStr);
                     } else {
                         return Double.parseDouble(numStr);
                     }
                 } else {
-                    if (numStr.length() > 19 || opts.isFeatureEnabled(Feature.UseBigNumberMode)) {
+                    if (numStr.length() > 19 || opts.isFeatureEnabled(Feature.Read_UseBigNumberMode)) {
                         return new BigInteger(numStr);
                     } else {
                         long longVal = Long.parseLong(numStr);

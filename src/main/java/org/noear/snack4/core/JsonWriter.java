@@ -51,7 +51,7 @@ public class JsonWriter {
                 writeString(node.getString());
                 break;
             case TYPE_NUMBER:
-                if(opts.isFeatureEnabled(Feature.UseBigNumberMode)) {
+                if(opts.isFeatureEnabled(Feature.Write_UseBigNumberMode)) {
                     writeString(String.valueOf(node.getValue()));
                 }else {
                     writeNumber(node.getNumber());
@@ -71,7 +71,7 @@ public class JsonWriter {
         depth++;
         boolean first = true;
         for (Map.Entry<String, ONode> entry : map.entrySet()) {
-            if (opts.isFeatureEnabled(Feature.Output_SkipNullValue) && entry.getValue().isNull()) {
+            if (opts.isFeatureEnabled(Feature.Write_SkipNullValue) && entry.getValue().isNull()) {
                 continue;
             }
 
@@ -80,11 +80,11 @@ public class JsonWriter {
             }
             writeIndentation();
 
-            String key = opts.isFeatureEnabled(Feature.Output_UseUnderlineStyle) ?
+            String key = opts.isFeatureEnabled(Feature.Write_UseUnderlineStyle) ?
                     toUnderlineName(entry.getKey()) : entry.getKey();
             writeString(key);
             writer.write(':');
-            if (opts.isFeatureEnabled(Feature.Output_PrettyFormat)) {
+            if (opts.isFeatureEnabled(Feature.Write_PrettyFormat)) {
                 writer.write(' ');
             }
             write(entry.getValue());
@@ -113,7 +113,7 @@ public class JsonWriter {
     }
 
     private void writeIndentation() throws IOException {
-        if (opts.isFeatureEnabled(Feature.Output_PrettyFormat)) {
+        if (opts.isFeatureEnabled(Feature.Write_PrettyFormat)) {
             writer.write('\n');
             for (int i = 0; i < depth; i++) {
                 writer.write(opts.getIndent());
@@ -122,7 +122,7 @@ public class JsonWriter {
     }
 
     private void writeNumber(Number num) throws IOException {
-        if (opts.isFeatureEnabled(Feature.UseBigNumberMode) && num instanceof Double) {
+        if (opts.isFeatureEnabled(Feature.Write_UseBigNumberMode) && num instanceof Double) {
             writer.write('"' + num.toString() + '"');
         } else {
             writer.write(num.toString());
@@ -130,7 +130,7 @@ public class JsonWriter {
     }
 
     private void writeString(String s) throws IOException {
-        char quoteChar = opts.isFeatureEnabled(Feature.Output_UseSingleQuotes) ? '\'' : '"';
+        char quoteChar = opts.isFeatureEnabled(Feature.Write_UseSingleQuotes) ? '\'' : '"';
         writer.write(quoteChar);
         writer.write(escapeString(s, opts));
         writer.write(quoteChar);
@@ -165,7 +165,7 @@ public class JsonWriter {
                     sb.append("\\t");
                     break;
                 default:
-                    if (c < 0x20 || (opts.isFeatureEnabled(Feature.EscapeNonAscii) && c > 0x7F)) {
+                    if (c < 0x20 || (opts.isFeatureEnabled(Feature.Write_EscapeNonAscii) && c > 0x7F)) {
                         sb.append(String.format("\\u%04x", (int) c));
                     } else {
                         sb.append(c);
